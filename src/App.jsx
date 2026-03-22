@@ -1169,8 +1169,8 @@ export default function App(){
     return()=>document.removeEventListener("mousedown",fn);
   },[]);
 
-  function selCity(c){setCin(c);setCity(c);setShowS(false);}
-  function selOriginCity(c){setOriginIn(c);setOriginCity(c);setShowOriginS(false);}
+  function selCity(c){const f=formatCity(c);setCin(f);setCity(f);setShowS(false);}
+  function selOriginCity(c){const f=formatCity(c);setOriginIn(f);setOriginCity(f);setShowOriginS(false);}
 
   // Auto-calculate numDays from dates
   useEffect(()=>{
@@ -1540,6 +1540,12 @@ export default function App(){
 
   // ── DERIVED ─────────────────────────────────────────────────
   function goStep(n){ setStep(n); setMaxStep(m=>Math.max(m,n)); }
+  // Format city name to proper title case (e.g. "lorton va" → "Lorton, VA" or "paris" → "Paris")
+  function formatCity(raw){
+    if(!raw)return raw;
+    // Handle "city, state" or "city state" patterns
+    return raw.trim().replace(/\w+/g, w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase());
+  }
   const blabel=budget?BUDGETS.find(b=>b.id===budget)?.label:null;
   const tlabel=TRANSPORT.find(t=>t.id===transport)?.name||"Walking";
   const allAdded=dayPlans.flat();
@@ -1729,15 +1735,7 @@ export default function App(){
         const totalSpend=effFlight+effHotel;
         const over=budgetNum>0&&totalSpend>budgetNum;
 
-        // CSS conic-gradient donut — no SVG math needed
-        const flightPct=budgetNum>0?Math.round(effFlight/budgetNum*100):0;
-        const hotelPct=budgetNum>0?Math.round(effHotel/budgetNum*100):0;
-        const actPct=budgetNum>0?Math.round(effActivities/budgetNum*100):0;
-        const gradient=budgetNum>0
-          ?`conic-gradient(#1b5e8a 0% ${flightPct}%, #4a9fd4 ${flightPct}% ${flightPct+hotelPct}%, #4a7c59 ${flightPct+hotelPct}% ${flightPct+hotelPct+actPct}%, ${overWithAct?"#e07060":"#c8e6d4"} ${flightPct+hotelPct+actPct}% 100%)`
-          :`conic-gradient(var(--sand2) 0% 100%)`;
-
-        // Activities cost = sum of instant prices for all pinned places
+        // Activities cost — declared BEFORE it's used in gradient/segments
         const effActivities=(()=>{
           try{
             return dayPlans.flat().reduce((s,p)=>{
@@ -1749,6 +1747,14 @@ export default function App(){
         const totalSpendWithAct=effFlight+effHotel+effActivities;
         const remainingWithAct=Math.max(0,budgetNum-totalSpendWithAct);
         const overWithAct=budgetNum>0&&totalSpendWithAct>budgetNum;
+
+        // CSS conic-gradient donut
+        const flightPct=budgetNum>0?Math.round(effFlight/budgetNum*100):0;
+        const hotelPct=budgetNum>0?Math.round(effHotel/budgetNum*100):0;
+        const actPct=budgetNum>0?Math.round(effActivities/budgetNum*100):0;
+        const gradient=budgetNum>0
+          ?`conic-gradient(#1b5e8a 0% ${flightPct}%, #4a9fd4 ${flightPct}% ${flightPct+hotelPct}%, #4a7c59 ${flightPct+hotelPct}% ${flightPct+hotelPct+actPct}%, ${overWithAct?"#e07060":"#c8e6d4"} ${flightPct+hotelPct+actPct}% 100%)`
+          :`conic-gradient(var(--sand2) 0% 100%)`;
 
         const segments=[
           {label:"✈️ Flights",color:"#1b5e8a",value:effFlight},
