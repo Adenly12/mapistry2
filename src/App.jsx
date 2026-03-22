@@ -1201,9 +1201,13 @@ export default function App(){
       if(fd.price){
         setFlightCost({
           cost:fd.price,
-          note:fd.airline?`${fd.airline} · ${fd.stops===0?"Nonstop":`${fd.stops} stop${fd.stops>1?"s":""}`}·  Economy round-trip`:"Economy round-trip",
+          note:fd.airline?`${fd.airline} · ${fd.stops===0?"Nonstop":`${fd.stops} stop${fd.stops>1?"s":""}`} · Economy round-trip`:"Economy round-trip",
           priceLevel:fd.price_level,
           typicalRange:fd.typical_range,
+          originCode:fd.origin_code||null,
+          destCode:fd.dest_code||null,
+          originAirport:fd.origin_airport||null,
+          destAirport:fd.dest_airport||null,
           real:true,
         });
       } else if(fd.error&&!originCity){
@@ -1217,7 +1221,9 @@ export default function App(){
           cost:hd.nightly,
           total:hd.total,
           note:hd.note,
-          real:false, // estimate
+          source:hd.source||"estimate",
+          method:hd.method||"",
+          real:hd.source==="live",
         });
       }
     }catch(e){
@@ -1757,6 +1763,17 @@ export default function App(){
                     <div className="cost-card-amount" style={{color:"#1b5e8a"}}>
                       {flightOverride!==""?`$${Number(flightOverride).toLocaleString()}`:flightCost?.cost>0?`$${flightCost.cost.toLocaleString()}`:"—"}
                     </div>
+                    {/* Airport route label */}
+                    {flightCost?.originCode&&flightCost?.destCode&&!flightOverride&&(
+                      <div style={{fontSize:"0.72rem",fontWeight:600,color:"var(--ocean)",marginBottom:4,display:"flex",alignItems:"center",gap:4}}>
+                        <span>{flightCost.originCode}</span>
+                        <span style={{color:"var(--muted2)"}}>→</span>
+                        <span>{flightCost.destCode}</span>
+                        <span style={{color:"var(--muted2)",fontWeight:400,fontSize:"0.65rem"}}>
+                          · {flightCost.originAirport&&flightCost.originAirport!==originCity?flightCost.originAirport:""}
+                        </span>
+                      </div>
+                    )}
                     <div className="cost-card-note">
                       {flightOverride!==""?"Your override"
                         :flightCost?.real?<span style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
@@ -1798,6 +1815,15 @@ export default function App(){
                   {hotelOverride!==""?`$${hotelOverride}/night · your override`
                     :hotelCost?.note||"Loading estimate…"}
                 </div>
+                {hotelCost&&!hotelOverride&&(
+                  <div style={{fontSize:"0.68rem",color:"var(--muted2)",marginBottom:4}}>
+                    {hotelCost.source==="live"
+                      ?`Based on current listings in ${city}`
+                      :hotelCost.method==="country"
+                        ?`Regional average for this area`
+                        :`Average mid-range hotel price in ${city}`}
+                  </div>
+                )}
                 <div className="cost-card-edit">
                   {editingHotel
                     ?<><input className="cost-card-override" type="number" min={0} placeholder="Price per night"
