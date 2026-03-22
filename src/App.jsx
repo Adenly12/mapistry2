@@ -1721,10 +1721,10 @@ export default function App(){
       )}
 
       {/* STEP 2 — BUDGET */}
-      {step===2&&(()=>{
-        const effFlight=flightOverride!==""?Number(flightOverride):(flightCost?.cost||0);
-        const effHotel=hotelOverride!==""?(Number(hotelOverride)*numDays):(hotelCost?.total||0);
-        const budgetNum=Number(totalBudget)||0;
+      {step===2&&(()=>{try{
+        const effFlight=Math.max(0,flightOverride!==""?Number(flightOverride)||(flightCost?.cost||0):(flightCost?.cost||0));
+        const effHotel=Math.max(0,hotelOverride!==""?(Number(hotelOverride)||0)*numDays:(hotelCost?.total||0));
+        const budgetNum=Math.max(0,Number(totalBudget)||0);
         const remaining=Math.max(0,budgetNum-effFlight-effHotel);
         const totalSpend=effFlight+effHotel;
         const over=budgetNum>0&&totalSpend>budgetNum;
@@ -1738,10 +1738,14 @@ export default function App(){
           :`conic-gradient(var(--sand2) 0% 100%)`;
 
         // Activities cost = sum of instant prices for all pinned places
-        const effActivities=dayPlans.flat().reduce((s,p)=>{
-          const ip=getInstantPrice(p);
-          return s+(ip?.cost||0);
-        },0);
+        const effActivities=(()=>{
+          try{
+            return dayPlans.flat().reduce((s,p)=>{
+              const ip=getInstantPrice(p);
+              return s+(ip?.cost||0);
+            },0);
+          }catch{return 0;}
+        })();
         const totalSpendWithAct=effFlight+effHotel+effActivities;
         const remainingWithAct=Math.max(0,budgetNum-totalSpendWithAct);
         const overWithAct=budgetNum>0&&totalSpendWithAct>budgetNum;
@@ -1873,7 +1877,7 @@ export default function App(){
                       <div style={{fontSize:"0.71rem",fontWeight:600,color:indicator.color}}>{indicator.label}</div>
                     </div>
                   );
-                })()}
+                }catch(e){console.error('Step 2 render error',e);return null;}})()}
                 <div className="cost-card-edit-row">
                   <button className={`cost-card-pencil ${editingHotel?"active":""}`}
                     onClick={()=>setEditingHotel(e=>!e)}
