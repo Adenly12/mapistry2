@@ -6,11 +6,36 @@ const ANTHROPIC_KEY = CONFIG.ANTHROPIC_KEY;
 
 // ─── HERO PHOTOS ──────────────────────────────────────────────
 const HERO_PHOTOS = [
-  "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1400&q=85", // Paris Eiffel
-  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1400&q=85", // Tokyo
-  "https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=1400&q=85", // Rome
-  "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1400&q=85", // New York
-  "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1400&q=85", // Bali
+  "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1400&q=85", // Paris Eiffel Tower
+  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1400&q=85", // Tokyo streets
+  "https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=1400&q=85", // Rome Colosseum
+  "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1400&q=85", // New York City
+  "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1400&q=85", // Bali temple
+  "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=1400&q=85", // Venice canals
+  "https://images.unsplash.com/photo-1525874684015-58379d421a52?w=1400&q=85", // Santorini Greece
+  "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1400&q=85", // London Tower Bridge
+  "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=1400&q=85", // Barcelona Sagrada
+  "https://images.unsplash.com/photo-1534430480872-3498386e7856?w=1400&q=85", // Kyoto Japan
+  "https://images.unsplash.com/photo-1533929736458-ca588d08c8be?w=1400&q=85", // Amsterdam canals
+  "https://images.unsplash.com/photo-1549180030-48bf079fb38a?w=1400&q=85", // Swiss Alps
+  "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=1400&q=85", // Morocco Marrakech
+  "https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=1400&q=85", // Maldives
+  "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=1400&q=85", // Sydney Opera House
+  "https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=1400&q=85", // Rio de Janeiro
+  "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1400&q=85", // Prague
+  "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=1400&q=85", // Dubai skyline
+  "https://images.unsplash.com/photo-1518684079-3c830dcef090?w=1400&q=85", // Dubai at night
+  "https://images.unsplash.com/photo-1548013146-72479768bada?w=1400&q=85", // India Taj Mahal
+  "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=1400&q=85", // Amalfi Coast
+  "https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=1400&q=85", // Istanbul
+  "https://images.unsplash.com/photo-1559494007-9f5847c49d94?w=1400&q=85", // Maldives water villas
+  "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=1400&q=85", // Cinque Terre Italy
+  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1400&q=85", // Bora Bora
+  "https://images.unsplash.com/photo-1600240644455-3edc55c375fe?w=1400&q=85", // Lisbon Portugal
+  "https://images.unsplash.com/photo-1504214208698-ea1916a2195a?w=1400&q=85", // Ha Long Bay Vietnam
+  "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1400&q=85", // Lake mountains
+  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1400&q=85", // Nature landscape
+  "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1400&q=85", // Aerial beach
 ];
 
 // ─── STYLES ───────────────────────────────────────────────────
@@ -484,7 +509,15 @@ const CITIES = [
   {city:"Bali",country:"Indonesia",flag:"🇮🇩"},{city:"Istanbul",country:"Turkey",flag:"🇹🇷"},
   {city:"Prague",country:"Czech Republic",flag:"🇨🇿"},{city:"Buenos Aires",country:"Argentina",flag:"🇦🇷"},
 ];
-const PHOTO_CAPTIONS = ["Paris, France","Tokyo, Japan","Rome, Italy","New York City, USA","Bali, Indonesia"];
+const PHOTO_CAPTIONS = [
+  "Paris, France","Tokyo, Japan","Rome, Italy","New York City, USA","Bali, Indonesia",
+  "Venice, Italy","Santorini, Greece","London, England","Barcelona, Spain","Kyoto, Japan",
+  "Amsterdam, Netherlands","Swiss Alps, Switzerland","Marrakech, Morocco","Maldives",
+  "Sydney, Australia","Rio de Janeiro, Brazil","Prague, Czech Republic","Dubai, UAE",
+  "Dubai, UAE","Taj Mahal, India","Amalfi Coast, Italy","Istanbul, Turkey",
+  "Maldives","Cinque Terre, Italy","Bora Bora, French Polynesia","Lisbon, Portugal",
+  "Ha Long Bay, Vietnam","Patagonia","Tuscany, Italy","Tropical Beach",
+];
 const MOCK = [
   {id:1,name:"Central Park",type:"Park",rating:4.8,reviews:42300,emoji:"🌳",desc:"An iconic 843-acre urban oasis with meadows, lakes, and world-famous skyline views.",duration:90,lat:40.7851,lng:-73.9683,priceLevel:0},
   {id:2,name:"Metropolitan Museum of Art",type:"Museum",rating:4.9,reviews:31000,emoji:"🎨",desc:"One of the world's great art museums spanning 5,000 years of civilizations.",duration:120,lat:40.7794,lng:-73.9632,priceLevel:2},
