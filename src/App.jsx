@@ -612,7 +612,7 @@ async function aiCall(prompt, maxTokens=1200){
       }
     );
     const d=await r.json();
-    if(d.error){console.error("aiCall error — type:",d.error.code,"message:",d.error.message);return null;}
+    if(d.error){console.error("aiCall error — code:",d.error.code,"message:",d.error.message);return null;}
     return d.candidates?.[0]?.content?.parts?.[0]?.text?.replace(/```json|```/g,"").trim()||null;
   }catch(e){console.error("aiCall fetch error",e);return null;}
 }
@@ -648,7 +648,7 @@ Respond ONLY as JSON array with no markdown:
 
 async function fetchCardDesc(place, city){
   const txt=await aiCall(
-    `You are an expert travel writer. Write a vivid, specific 3–4 sentence description of "${place.name}" (${place.type}) in ${city}. Include what makes it uniquely special, sensory details, an insider tip, and any notable history. Be concrete — avoid generic tourist-brochure language. Write in present tense, second person.`,
+    `You are an expert travel writer. Write a vivid, specific 3–4 sentence description of "${place.name}" (${place.type}) in ${city}. Include what makes it uniquely special, sensory details, an insider tip, and any notable history. Avoid generic tourist-brochure language. Write in present tense, second person.`,
     350
   );
   return txt||null;
@@ -1476,7 +1476,7 @@ export default function App(){
     setModalAiDesc("");
     setModalLoading(true);
     try{
-      const prompt=`You are an expert travel writer. Write a rich, engaging 3–4 sentence description of "${place.name}" (${place.type}) in ${city}. Cover: what makes it iconic or unique, the atmosphere and sensory experience, one specific insider tip or best time to visit, and any notable history or cultural significance. Be vivid and specific — avoid generic phrases. Write in second person, present tense.`;
+      const prompt=`You are an expert travel writer. Write a rich, engaging 3–4 sentence description of "${place.name}" (${place.type}) in ${city}. Cover what makes it iconic or unique, the atmosphere and sensory experience, one specific insider tip or best time to visit, and any notable history or cultural significance. Be vivid and specific. Write in second person, present tense.`;
       const txt=await aiCall(prompt, 350);
       setModalAiDesc(txt||place.desc||"");
     }catch{setModalAiDesc(place.desc||"");}
