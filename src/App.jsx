@@ -167,6 +167,16 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .cost-card-override:focus { border-color: var(--ocean); background: white; }
 .cost-card-editbtn { background: none; border: none; color: var(--ocean3); cursor: pointer; font-size: 0.75rem; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
 .cost-card-editbtn:hover { color: var(--ocean); }
+.cost-card-edit-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.cost-card-pencil { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--border2); background: var(--sand); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; transition: all 0.18s; flex-shrink: 0; }
+.cost-card-pencil:hover { border-color: var(--ocean3); color: var(--ocean); background: white; }
+.cost-card-pencil.active { border-color: var(--ocean); color: var(--ocean); background: rgba(27,94,138,0.06); }
+.cost-card-inline-input { flex: 1; border: 1.5px solid var(--ocean3); border-radius: var(--rxs); padding: 5px 9px; font-family: 'DM Sans',sans-serif; font-size: 0.85rem; color: var(--ink); outline: none; background: white; transition: border-color 0.2s; }
+.cost-card-inline-input:focus { border-color: var(--ocean); }
+.cost-card-confirm { width: 26px; height: 26px; border-radius: 50%; border: none; background: var(--ocean); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0; transition: all 0.18s; }
+.cost-card-confirm:hover { background: var(--ocean2); }
+.cost-card-clear { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border2); background: none; color: var(--muted2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; flex-shrink: 0; transition: all 0.18s; }
+.cost-card-clear:hover { border-color: #c45c26; color: #c45c26; }
 /* Donut chart */
 .donut-wrap { display: flex; align-items: center; gap: 32px; background: white; border: 2px solid var(--border); border-radius: var(--r); padding: 24px; box-shadow: var(--sh); margin-bottom: 28px; }
 .donut-svg { flex-shrink: 0; }
@@ -1224,6 +1234,8 @@ export default function App(){
           source:hd.source||"estimate",
           method:hd.method||"",
           real:hd.source==="live",
+          baseline:hd.baseline||null,
+          trend:hd.trend||null,
         });
       }
     }catch(e){
@@ -1789,18 +1801,29 @@ export default function App(){
                         {flightCost.priceLevel&&<span style={{marginLeft:6,fontWeight:600,color:flightCost.priceLevel==="low"?"var(--sage)":flightCost.priceLevel==="high"?"#c45c26":"var(--muted)"}}>· {flightCost.priceLevel}</span>}
                       </div>
                     )}
-                    <div className="cost-card-edit">
-                      {editingFlight
-                        ?<><input className="cost-card-override" type="number" min={0} placeholder="Your flight cost"
-                            value={flightOverride} onChange={e=>setFlightOverride(e.target.value)}
-                            autoFocus onKeyDown={e=>e.key==="Enter"&&setEditingFlight(false)}/>
-                          <button className="cost-card-editbtn" onClick={()=>setEditingFlight(false)}>Done</button></>
-                        :<button className="cost-card-editbtn" onClick={()=>setEditingFlight(true)}>
-                            {flightOverride!==""?"✎ Edit":"✎ Override"}
-                          </button>
-                      }
-                      {flightOverride!==""&&!editingFlight&&<button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>setFlightOverride("")}>Reset</button>}
-                      {!flightOverride&&flightCost&&<button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>{setFlightCost(null);fetchRealCosts();}}>🔄</button>}
+                    <div className="cost-card-edit-row">
+                      <button className={`cost-card-pencil ${editingFlight?"active":""}`}
+                        onClick={()=>setEditingFlight(e=>!e)}
+                        title={flightOverride?"Edit your price":"Enter your own price"}>
+                        ✏️
+                      </button>
+                      {editingFlight&&(
+                        <>
+                          <input className="cost-card-inline-input" type="number" min={0}
+                            placeholder="Total round-trip cost"
+                            value={flightOverride}
+                            onChange={e=>setFlightOverride(e.target.value)}
+                            autoFocus
+                            onKeyDown={e=>e.key==="Enter"&&setEditingFlight(false)}/>
+                          <button className="cost-card-confirm" onClick={()=>setEditingFlight(false)} title="Confirm">✓</button>
+                        </>
+                      )}
+                      {flightOverride!==""&&!editingFlight&&(
+                        <button className="cost-card-clear" onClick={()=>setFlightOverride("")} title="Reset to live price">✕</button>
+                      )}
+                      {!flightOverride&&flightCost&&!editingFlight&&(
+                        <button className="cost-card-pencil" style={{marginLeft:"auto"}} onClick={()=>{setFlightCost(null);fetchRealCosts();}} title="Refresh price">🔄</button>
+                      )}
                     </div>
                   </>
                 }
@@ -1816,27 +1839,54 @@ export default function App(){
                   {hotelOverride!==""?`$${hotelOverride}/night · your override`
                     :hotelCost?.note||"Loading estimate…"}
                 </div>
-                {hotelCost&&!hotelOverride&&(
-                  <div style={{fontSize:"0.68rem",color:"var(--muted2)",marginBottom:4}}>
-                    {hotelCost.source==="live"
-                      ?`Based on current listings in ${city}`
-                      :hotelCost.method==="country"
-                        ?`Regional average for this area`
-                        :`Average mid-range hotel price in ${city}`}
-                  </div>
-                )}
-                <div className="cost-card-edit">
-                  {editingHotel
-                    ?<><input className="cost-card-override" type="number" min={0} placeholder="Price per night"
-                        value={hotelOverride} onChange={e=>setHotelOverride(e.target.value)}
-                        autoFocus onKeyDown={e=>e.key==="Enter"&&setEditingHotel(false)}/>
-                      <button className="cost-card-editbtn" onClick={()=>setEditingHotel(false)}>Done</button></>
-                    :<button className="cost-card-editbtn" onClick={()=>setEditingHotel(true)}>
-                        {hotelOverride!==""?"✎ Edit":"✎ Override"}
-                      </button>
+                {hotelCost&&!hotelOverride&&(()=>{
+                  const rate=hotelCost.cost||0;
+                  const trend=hotelCost.trend;
+                  // If we have a live vs baseline comparison, show that
+                  // Otherwise fall back to absolute price level
+                  let indicator;
+                  if(trend){
+                    indicator=trend.direction==="up"
+                      ?{label:`📈 ${trend.label} (~$${trend.baseline}/night typical)`,color:"#c45c26"}
+                      :trend.direction==="down"
+                      ?{label:`📉 ${trend.label} (~$${trend.baseline}/night typical)`,color:"var(--sage)"}
+                      :{label:`✓ ${trend.label}`,color:"var(--muted)"};
+                  } else {
+                    indicator=rate<80?{label:"🟢 Budget-friendly destination",color:"var(--sage)"}
+                      :rate<140?{label:"🟡 Typical price range",color:"var(--muted)"}
+                      :rate<200?{label:"🟠 Above average for hotels",color:"#c8820a"}
+                      :{label:"🔴 Expensive city for hotels",color:"#c45c26"};
                   }
+                  const source=hotelCost.source==="live"
+                    ?`Current listings in ${city} · avg of ${hotelCost.note?.match(/avg of (\d+)/)?.[1]||""} hotels`
+                    :hotelCost.method==="country"?"Regional average for this area"
+                    :`Mid-range estimate for ${city}`;
+                  return(
+                    <div style={{marginBottom:6}}>
+                      <div style={{fontSize:"0.68rem",color:"var(--muted2)",marginBottom:3}}>{source}</div>
+                      <div style={{fontSize:"0.71rem",fontWeight:600,color:indicator.color}}>{indicator.label}</div>
+                    </div>
+                  );
+                })()}
+                <div className="cost-card-edit-row">
+                  <button className={`cost-card-pencil ${editingHotel?"active":""}`}
+                    onClick={()=>setEditingHotel(e=>!e)}
+                    title={hotelOverride?"Edit your price":"Enter your own nightly rate"}>
+                    ✏️
+                  </button>
+                  {editingHotel&&(
+                    <>
+                      <input className="cost-card-inline-input" type="number" min={0}
+                        placeholder="Nightly rate"
+                        value={hotelOverride}
+                        onChange={e=>setHotelOverride(e.target.value)}
+                        autoFocus
+                        onKeyDown={e=>e.key==="Enter"&&setEditingHotel(false)}/>
+                      <button className="cost-card-confirm" onClick={()=>setEditingHotel(false)} title="Confirm">✓</button>
+                    </>
+                  )}
                   {hotelOverride!==""&&!editingHotel&&(
-                    <button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>setHotelOverride("")}>Reset</button>
+                    <button className="cost-card-clear" onClick={()=>setHotelOverride("")} title="Reset to estimate">✕</button>
                   )}
                 </div>
               </div>
