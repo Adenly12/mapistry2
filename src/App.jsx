@@ -413,33 +413,39 @@ function purl(ref){if(!ref||!GOOGLE_KEY||GOOGLE_KEY==="PASTE_YOUR_GOOGLE_KEY_HER
 function ft(h,m){const ap=h>=12?"PM":"AM";const hh=h>12?h-12:h===0?12:h;return`${hh}:${String(m).padStart(2,"0")} ${ap}`;}
 function useToast(){const[msg,setMsg]=useState("");const[vis,setVis]=useState(false);const t=useRef();const show=m=>{setMsg(m);setVis(true);clearTimeout(t.current);t.current=setTimeout(()=>setVis(false),2600);};return{msg,vis,show};}
 
-// Static map with all pins — numbered markers per place, optional focused preview marker
+// Build an interactive Embed API URL showing all pinned places
+// Uses directions mode (origin -> destination + waypoints) for 2+ places, place mode for 1
 function buildStaticMapUrl(places, focusedPlace=null){
   if(!GOOGLE_KEY||!places.length)return null;
-  const colors=["0xC45C26","0x1B5E8A","0x4A7C59","0xC8820A","0x7C5CBF","0xC45C26","0x1B5E8A","0x4A7C59"];
-  const markers=places.map((p,i)=>`&markers=color:${colors[i%colors.length]}|label:${i+1}|${p.lat},${p.lng}`).join("");
-  const focusedMarker=focusedPlace?`&markers=color:0x888888|size:small|${focusedPlace.lat},${focusedPlace.lng}`:"";
-  return`https://maps.googleapis.com/maps/api/staticmap?size=600x300&scale=2${markers}${focusedMarker}&key=${GOOGLE_KEY}`;
+  if(places.length===1){
+    return `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${places[0].lat},${places[0].lng}&zoom=15`;
+  }
+  // Directions mode: origin, destination, up to 8 waypoints in between
+  const origin=`${places[0].lat},${places[0].lng}`;
+  const dest=`${places[places.length-1].lat},${places[places.length-1].lng}`;
+  const middle=places.slice(1,-1);
+  const waypoints=middle.map(p=>`${p.lat},${p.lng}`).join("|");
+  let url=`https://www.google.com/maps/embed/v1/directions?key=${GOOGLE_KEY}&origin=${origin}&destination=${dest}`;
+  if(waypoints)url+=`&waypoints=${encodeURIComponent(waypoints)}`;
+  url+=`&mode=walking&zoom=13`;
+  return url;
 }
 
-// Build a Static Maps image with one marker per visited city
+// Build Embed API search URL showing all visited cities as pins
 function buildCityEmbedUrl(tripHistory, googleKey){
   if(!googleKey||!tripHistory.length)return null;
   const seen=new Set();
-  const entries=tripHistory.reduce((acc,h)=>{
-    if(!seen.has(h.city)){seen.add(h.city);acc.push({city:h.city,lat:h.lat||null,lng:h.lng||null});}
+  const cities=tripHistory.reduce((acc,h)=>{
+    if(!seen.has(h.city)){seen.add(h.city);acc.push(h.city);}
     return acc;
   },[]);
-  if(!entries.length)return null;
-  const colors=["red","blue","green","orange","purple","yellow"];
-  const markers=entries.map((e,i)=>{
-    const color=colors[i%colors.length];
-    const loc=(e.lat&&e.lng)?`${e.lat},${e.lng}`:encodeURIComponent(e.city);
-    return `&markers=color:${color}|label:${String.fromCharCode(65+i%26)}|${loc}`;
-  }).join("");
-  const zoom=entries.length===1?8:2;
-  const center=entries.length===1&&entries[0].lat?`&center=${entries[0].lat},${entries[0].lng}`:`&center=20,10`;
-  return `https://maps.googleapis.com/maps/api/staticmap?size=600x300&scale=2${center}&zoom=${zoom}${markers}&key=${googleKey}`;
+  if(!cities.length)return null;
+  if(cities.length===1){
+    return `https://www.google.com/maps/embed/v1/place?key=${googleKey}&q=${encodeURIComponent(cities[0])}&zoom=10`;
+  }
+  // Join city names with OR so the Embed search API pins all of them
+  const q=cities.join(" OR ");
+  return `https://www.google.com/maps/embed/v1/search?key=${googleKey}&q=${encodeURIComponent(q)}&zoom=2`;
 }
 
 // ─── AI ───────────────────────────────────────────────────────
@@ -835,20 +841,16 @@ export default function App(){
     setActiveSideDay(d=>Math.min(d,numDays-1));
   },[numDays]);
 
-  // Update static map when itin or focused place changes
+  // Rebuild interactive map URL whenever pinned places change
   useEffect(()=>{
     const all=dayPlans.flat();
     if(all.length>0){
-      // Build map with all pinned places; if a non-pinned place is focused, add it as a distinct marker
-      const focused=focusedId&&!all.find(p=>p.id===focusedId)
-        ?places.find(p=>p.id===focusedId)
-        :null;
-      const url=buildStaticMapUrl(all,focused);
+      const url=buildStaticMapUrl(all);
       if(url)setStaticMapUrl(url);
     }else{
       setStaticMapUrl("");
     }
-  },[dayPlans,focusedId]);
+  },[dayPlans]);
 
   // City autocomplete
   useEffect(()=>{
@@ -908,7 +910,9 @@ export default function App(){
       emoji:all[0]?.emoji||"📍",
       places:all.map(p=>p.name)
     };
-    const nh=[entry,...hist].slice(0,30);
+    // Read fresh from localStorage to avoid stale closure bug (hist state may lag)
+    const freshHist=getHist(activeUser);
+    const nh=[entry,...freshHist].slice(0,30);
     setHist(nh);saveHist(activeUser,nh);
   }
 
@@ -1286,10 +1290,15 @@ export default function App(){
             <div>
               <div className="map-wrap">
                 <div className="mapbox">
-                  {staticMapUrl&&allAdded.length>0
-                    ?<img src={staticMapUrl} alt="Map with all pinned locations" onError={()=>setStaticMapUrl("")}/>
-                    :<iframe key={previewSrc} title="map" src={previewSrc||`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(city)}&zoom=13`} allowFullScreen/>
-                  }
+                  <iframe
+                    key={staticMapUrl&&allAdded.length>0?staticMapUrl:previewSrc}
+                    title="map"
+                    src={staticMapUrl&&allAdded.length>0
+                      ?staticMapUrl
+                      :(previewSrc||`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(city)}&zoom=13`)}
+                    allowFullScreen
+                    style={{width:"100%",height:"100%",border:"none"}}
+                  />
                 </div>
                 <div className="map-hint">
                   {allAdded.length>0
@@ -1522,7 +1531,7 @@ export default function App(){
                 <div className="pm-sec">🌍 Cities Explored</div>
                 <div className="pm-map">
                   {cityEmbedUrl
-                    ?<img key={cityEmbedUrl} src={cityEmbedUrl} alt="Cities visited map" style={{width:"100%",height:"100%",objectFit:"cover",display:"block",borderRadius:"inherit"}} onError={e=>{e.target.style.display="none";}}/>
+                    ?<iframe key={cityEmbedUrl} title="cities-map" src={cityEmbedUrl} allowFullScreen loading="lazy" style={{width:"100%",height:"100%",border:"none"}}/>
                     :<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:"var(--muted2)",fontSize:"0.82rem",background:"var(--sand)"}}>Plan your first trip to see it here!</div>
                   }
                 </div>
