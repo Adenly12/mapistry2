@@ -476,19 +476,21 @@ function buildCityEmbedUrl(tripHistory){
 }
 
 // ─── AI ───────────────────────────────────────────────────────
-const AI_HEADERS={
-  "Content-Type":"application/json",
-  "x-api-key":typeof CONFIG!=="undefined"?CONFIG.ANTHROPIC_KEY:"",
-  "anthropic-version":"2023-06-01",
-  "anthropic-dangerous-direct-browser-access":"true",
-};
+function getAIHeaders(key){
+  return{
+    "Content-Type":"application/json",
+    "x-api-key":key,
+    "anthropic-version":"2023-06-01",
+    "anthropic-dangerous-direct-browser-access":"true",
+  };
+}
 
 async function aiCall(prompt, maxTokens=1200){
   if(!ANTHROPIC_KEY||ANTHROPIC_KEY==="PASTE_YOUR_ANTHROPIC_KEY_HERE")return null;
   try{
     const r=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
-      headers:{...AI_HEADERS,"x-api-key":ANTHROPIC_KEY},
+      headers:getAIHeaders(ANTHROPIC_KEY),
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
     });
     const d=await r.json();
@@ -503,11 +505,7 @@ async function aiCallWithSearch(prompt, maxTokens=1200){
   try{
     const r=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
-      headers:{
-        ...AI_HEADERS,
-        "x-api-key":ANTHROPIC_KEY,
-        "anthropic-beta":"web-search-2025-03-05",
-      },
+      headers:{...getAIHeaders(ANTHROPIC_KEY),"anthropic-beta":"web-search-2025-03-05"},
       body:JSON.stringify({
         model:"claude-sonnet-4-20250514",
         max_tokens:maxTokens,
@@ -823,7 +821,7 @@ async function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMa
 
     allPlaces.forEach((p,i)=>{
       if(y>H-14){doc.addPage();y=16;}
-      const c=costMap[p.id];
+      const c=effectiveCostMap[p.id];
       const even=i%2===0;
       if(even){doc.setFillColor(248,244,239); doc.roundedRect(MAR,y-2,INNER,7,1,1,"F");}
       doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...INK2);
