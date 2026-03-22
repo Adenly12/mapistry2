@@ -6,36 +6,36 @@ const ANTHROPIC_KEY = CONFIG.ANTHROPIC_KEY;
 
 // ─── HERO PHOTOS ──────────────────────────────────────────────
 const HERO_PHOTOS = [
-  "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1400&q=85", // Paris Eiffel Tower
-  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1400&q=85", // Tokyo streets
-  "https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=1400&q=85", // Rome Colosseum
-  "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1400&q=85", // New York City
-  "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1400&q=85", // Bali temple
-  "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=1400&q=85", // Venice canals
-  "https://images.unsplash.com/photo-1525874684015-58379d421a52?w=1400&q=85", // Santorini Greece
-  "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1400&q=85", // London Tower Bridge
-  "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=1400&q=85", // Barcelona Sagrada
-  "https://images.unsplash.com/photo-1534430480872-3498386e7856?w=1400&q=85", // Kyoto Japan
-  "https://images.unsplash.com/photo-1533929736458-ca588d08c8be?w=1400&q=85", // Amsterdam canals
+  "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1400&q=85", // Paris
+  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1400&q=85", // Tokyo
+  "https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=1400&q=85", // Rome
+  "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1400&q=85", // New York
+  "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1400&q=85", // Bali
+  "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?w=1400&q=85", // Venice
+  "https://images.unsplash.com/photo-1525874684015-58379d421a52?w=1400&q=85", // Santorini
+  "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1400&q=85", // London
+  "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=1400&q=85", // Barcelona
+  "https://images.unsplash.com/photo-1534430480872-3498386e7856?w=1400&q=85", // Kyoto
+  "https://images.unsplash.com/photo-1533929736458-ca588d08c8be?w=1400&q=85", // Amsterdam
   "https://images.unsplash.com/photo-1549180030-48bf079fb38a?w=1400&q=85", // Swiss Alps
-  "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=1400&q=85", // Morocco Marrakech
+  "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=1400&q=85", // Morocco
   "https://images.unsplash.com/photo-1580060839134-75a5edca2e99?w=1400&q=85", // Maldives
-  "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=1400&q=85", // Sydney Opera House
-  "https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=1400&q=85", // Rio de Janeiro
+  "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=1400&q=85", // Sydney
+  "https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=1400&q=85", // Rio
   "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1400&q=85", // Prague
-  "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=1400&q=85", // Dubai skyline
-  "https://images.unsplash.com/photo-1518684079-3c830dcef090?w=1400&q=85", // Dubai at night
-  "https://images.unsplash.com/photo-1548013146-72479768bada?w=1400&q=85", // India Taj Mahal
+  "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?w=1400&q=85", // Dubai
+  "https://images.unsplash.com/photo-1548013146-72479768bada?w=1400&q=85", // Taj Mahal
   "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=1400&q=85", // Amalfi Coast
   "https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=1400&q=85", // Istanbul
-  "https://images.unsplash.com/photo-1559494007-9f5847c49d94?w=1400&q=85", // Maldives water villas
-  "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=1400&q=85", // Cinque Terre Italy
+  "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=1400&q=85", // Cinque Terre
   "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1400&q=85", // Bora Bora
-  "https://images.unsplash.com/photo-1600240644455-3edc55c375fe?w=1400&q=85", // Lisbon Portugal
-  "https://images.unsplash.com/photo-1504214208698-ea1916a2195a?w=1400&q=85", // Ha Long Bay Vietnam
-  "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1400&q=85", // Lake mountains
-  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1400&q=85", // Nature landscape
-  "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1400&q=85", // Aerial beach
+  "https://images.unsplash.com/photo-1600240644455-3edc55c375fe?w=1400&q=85", // Lisbon
+  "https://images.unsplash.com/photo-1504214208698-ea1916a2195a?w=1400&q=85", // Ha Long Bay
+  "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1400&q=85", // Patagonia
+  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1400&q=85", // Iceland
+  "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1400&q=85", // Tropical beach
+  "https://images.unsplash.com/photo-1528702748617-c64d49f918af?w=1400&q=85", // Jordan Petra
+  "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=1400&q=85", // Positano
 ];
 
 // ─── STYLES ───────────────────────────────────────────────────
@@ -278,7 +278,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .gobt:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
 /* ── RESULTS ── */
-.rl { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+.rl { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
 @media(max-width:960px) { .rl { grid-template-columns: 1fr; } }
 .map-wrap { margin-bottom: 18px; }
 .mapbox { width: 100%; height: 300px; border-radius: var(--r); overflow: hidden; border: 2px solid var(--border2); box-shadow: var(--shm); background: var(--sand2); }
@@ -512,11 +512,11 @@ const CITIES = [
 const PHOTO_CAPTIONS = [
   "Paris, France","Tokyo, Japan","Rome, Italy","New York City, USA","Bali, Indonesia",
   "Venice, Italy","Santorini, Greece","London, England","Barcelona, Spain","Kyoto, Japan",
-  "Amsterdam, Netherlands","Swiss Alps, Switzerland","Marrakech, Morocco","Maldives",
-  "Sydney, Australia","Rio de Janeiro, Brazil","Prague, Czech Republic","Dubai, UAE",
-  "Dubai, UAE","Taj Mahal, India","Amalfi Coast, Italy","Istanbul, Turkey",
-  "Maldives","Cinque Terre, Italy","Bora Bora, French Polynesia","Lisbon, Portugal",
-  "Ha Long Bay, Vietnam","Patagonia","Tuscany, Italy","Tropical Beach",
+  "Amsterdam, Netherlands","Swiss Alps","Marrakech, Morocco","Maldives","Sydney, Australia",
+  "Rio de Janeiro, Brazil","Prague, Czech Republic","Dubai, UAE","Taj Mahal, India",
+  "Amalfi Coast, Italy","Istanbul, Turkey","Cinque Terre, Italy","Bora Bora",
+  "Lisbon, Portugal","Ha Long Bay, Vietnam","Patagonia","Iceland","Tropical Beach",
+  "Petra, Jordan","Positano, Italy",
 ];
 const MOCK = [
   {id:1,name:"Central Park",type:"Park",rating:4.8,reviews:42300,emoji:"🌳",desc:"An iconic 843-acre urban oasis with meadows, lakes, and world-famous skyline views.",duration:90,lat:40.7851,lng:-73.9683,priceLevel:0},
@@ -2200,8 +2200,106 @@ export default function App(){
               </div>
             </div>
           </div>
+          {/* ── FULL WIDTH PANEL: budget + transport + weather ── */}
+          <div style={{display:"flex",gap:16,marginBottom:18,flexWrap:"wrap",alignItems:"stretch"}}>
 
-          <div className="rl">          <div className="rl">
+            {/* Budget donut */}
+            {Number(totalBudget)>0&&(()=>{
+              const bNum=Number(totalBudget)||0;
+              const flt=(flightCost?.cost||0)*(travelers||1);
+              const hot=hotelCost?.total||0;
+              const act=allAdded.reduce((s,p)=>{try{const ip=getInstantPrice(p);return s+(ip?.cost||0);}catch{return s;}},0)*(travelers||1);
+              const tCostObjP=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
+              const milesPnl=(()=>{
+                if(Object.values(travelMap||{}).some(t=>t?.distanceMiles)) return Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0);
+                let mi=0;for(const day of dayPlans){for(let i=0;i<day.length-1;i++){const pa=day[i],pb=day[i+1];if(pa.lat&&pb.lat)mi+=haversineMiles(pa.lat,pa.lng,pb.lat,pb.lng);else mi+=1;}}return mi;
+              })();
+              const trans=tCostObjP.perMile*(tCostObjP.multiply?(travelers||1):1)*(milesPnl*ROAD_FACTOR);
+              const spent=flt+hot+act+trans;
+              const rem=Math.max(0,bNum-spent);
+              const over=spent>bNum;
+              const fp=bNum>0?Math.round(flt/bNum*100):0;
+              const hp=bNum>0?Math.round(hot/bNum*100):0;
+              const ap=bNum>0?Math.round(act/bNum*100):0;
+              const tp=bNum>0?Math.round(trans/bNum*100):0;
+              const grad=`conic-gradient(#1b5e8a 0% ${fp}%, #4a9fd4 ${fp}% ${fp+hp}%, #4a7c59 ${fp+hp}% ${fp+hp+ap}%, #7c5cbf ${fp+hp+ap}% ${fp+hp+ap+tp}%, ${over?"#e07060":"#c8e6d4"} ${fp+hp+ap+tp}% 100%)`;
+              return(
+                <div style={{background:"white",borderRadius:16,border:"1px solid var(--border)",padding:"16px 20px",display:"flex",gap:20,alignItems:"center",flexShrink:0}}>
+                  <div style={{position:"relative",width:110,height:110,flexShrink:0}}>
+                    <div style={{width:110,height:110,borderRadius:"50%",background:grad,transition:"background 0.4s"}}/>
+                    <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:68,height:68,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.08)"}}>
+                      <div style={{fontSize:"0.5rem",color:"var(--muted2)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{over?"Over":"Left"}</div>
+                      <div style={{fontSize:rem>9999?"0.85rem":"1.05rem",fontWeight:700,color:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1}}>${rem.toLocaleString()}</div>
+                      <div style={{fontSize:"0.48rem",color:"var(--muted2)"}}>of ${bNum.toLocaleString()}</div>
+                    </div>
+                  </div>
+                  <div style={{fontSize:"0.72rem",display:"flex",flexDirection:"column",gap:5,minWidth:140}}>
+                    {[
+                      {label:"✈️ Flights",color:"#1b5e8a",val:flt},
+                      {label:"🏨 Hotel",color:"#4a9fd4",val:hot},
+                      {label:"🎭 Activities",color:"#4a7c59",val:act},
+                      {label:"🚌 Transport",color:"#7c5cbf",val:trans},
+                    ].map(sg=>(
+                      <div key={sg.label} style={{display:"flex",alignItems:"center",gap:6}}>
+                        <div style={{width:7,height:7,borderRadius:"50%",background:sg.color,flexShrink:0}}/>
+                        <span style={{color:"var(--muted2)",flex:1}}>{sg.label}</span>
+                        <span style={{fontWeight:600}}>{sg.val>0?`$${Math.round(sg.val).toLocaleString()}`:"—"}</span>
+                      </div>
+                    ))}
+                    {over&&<div style={{fontSize:"0.65rem",color:"#c45c26",fontWeight:600}}>⚠️ Over budget</div>}
+                    {(travelers||1)>1&&<div style={{fontSize:"0.62rem",color:"var(--ocean)",fontWeight:600}}>👥 {travelers} travelers</div>}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Transport selector */}
+            <div style={{background:"white",borderRadius:16,border:"1px solid var(--border)",padding:"16px 20px",display:"flex",flexDirection:"column",gap:10,justifyContent:"center"}}>
+              <div style={{fontSize:"0.68rem",fontWeight:700,color:"var(--ink)",letterSpacing:"0.5px"}}>🚌 Getting Around</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {TRANSPORT.map(t=>(
+                  <div key={t.id}
+                    style={{padding:"6px 12px",borderRadius:20,border:"1.5px solid",fontSize:"0.76rem",cursor:"pointer",transition:"all 0.18s",
+                      borderColor:transport===t.id?"var(--ocean)":"var(--border2)",
+                      background:transport===t.id?"var(--ocean)":"white",
+                      color:transport===t.id?"white":"var(--muted)"}}
+                    onClick={()=>setTransport(t.id)}>
+                    {t.icon} {t.name}
+                  </div>
+                ))}
+              </div>
+              {transport&&transport!=="walking"&&(
+                <div style={{fontSize:"0.65rem",color:"var(--muted2)"}}>
+                  {TRANSPORT_COSTS[transport]?.note} · {TRANSPORT_COSTS[transport]?.multiply?"multiplied by travelers":"shared cost"}
+                </div>
+              )}
+            </div>
+
+            {/* Weather */}
+            {(weatherLoading||(weather&&weather.length>0))&&(
+              <div style={{background:"white",borderRadius:16,border:"1px solid var(--border)",padding:"16px 20px",flex:1,minWidth:220}}>
+                <div style={{fontSize:"0.68rem",fontWeight:700,color:"var(--ink)",marginBottom:10,letterSpacing:"0.5px"}}>🌤 Weather Forecast</div>
+                {weatherLoading&&<div style={{fontSize:"0.72rem",color:"var(--muted2)",display:"flex",gap:6,alignItems:"center"}}><div className="bbd-spinner"/>Loading…</div>}
+                {weather&&weather.length>0&&(
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    {weather.slice(0,numDays).map((day,i)=>{
+                      const icon=day.main==="Rain"||day.main==="Drizzle"?"🌧":day.main==="Snow"?"❄️":day.main==="Thunderstorm"?"⛈":day.main==="Clear"?"☀️":day.main==="Clouds"?"⛅":"🌤";
+                      return(
+                        <div key={i} style={{textAlign:"center",minWidth:48}}>
+                          <div style={{fontSize:"0.6rem",color:"var(--muted2)",fontWeight:600,marginBottom:2}}>Day {i+1}</div>
+                          <div style={{fontSize:"1.2rem"}}>{icon}</div>
+                          <div style={{fontSize:"0.78rem",fontWeight:700,color:"var(--ink)"}}>{day.temp}°</div>
+                          <div style={{fontSize:"0.55rem",color:"var(--muted2)",lineHeight:1.2,maxWidth:52}}>{day.description}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="rl">
             <div>
               <div className="map-wrap">
                 <div className="mapbox">
@@ -2267,100 +2365,11 @@ export default function App(){
               {places.length<=visibleCount&&allPlaces.length>=8&&<button className="show-more" onClick={showMore} disabled={!nextToken.current}>{nextToken.current?"+ Load More from Google":"✓ All places loaded"}</button>}
             </div>
 
-            {/* SIDEBAR */}
+            {/* SIDEBAR — day builder only */}
             <div className="sb">
-              <div className="sbt">Your Itinerary</div>
-              <div className="sbs">{allAdded.length} place{allAdded.length!==1?"s":""} across {numDays} day{numDays!==1?"s":""}</div>
+              <div className="sbt">Day Builder</div>
+              <div className="sbs">{allAdded.length} place{allAdded.length!==1?"s":""} pinned</div>
               <div className="sb-scroll">
-
-                {/* ── BUDGET DONUT (sticky in sidebar) ── */}
-                {Number(totalBudget)>0&&(()=>{
-                  const bNum=Number(totalBudget)||0;
-                  const flt=(flightCost?.cost||0)*(travelers||1);
-                  const hot=hotelCost?.total||0;
-                  const act=allAdded.reduce((s,p)=>{try{const ip=getInstantPrice(p);return s+(ip?.cost||0);}catch{return s;}},0)*(travelers||1);
-                  const tCostObjP=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
-                  const milesPnl=(()=>{
-                    if(Object.values(travelMap||{}).some(t=>t?.distanceMiles)) return Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0);
-                    let mi=0;for(const day of dayPlans){for(let i=0;i<day.length-1;i++){const pa=day[i],pb=day[i+1];if(pa.lat&&pb.lat)mi+=haversineMiles(pa.lat,pa.lng,pb.lat,pb.lng);else mi+=1;}}return mi;
-                  })();
-                  const trans=tCostObjP.perMile*(tCostObjP.multiply?(travelers||1):1)*(milesPnl*ROAD_FACTOR);
-                  const spent=flt+hot+act+trans;
-                  const rem=Math.max(0,bNum-spent);
-                  const over=spent>bNum;
-                  const fp=bNum>0?Math.round(flt/bNum*100):0;
-                  const hp=bNum>0?Math.round(hot/bNum*100):0;
-                  const ap=bNum>0?Math.round(act/bNum*100):0;
-                  const tp=bNum>0?Math.round(trans/bNum*100):0;
-                  const grad=`conic-gradient(#1b5e8a 0% ${fp}%, #4a9fd4 ${fp}% ${fp+hp}%, #4a7c59 ${fp+hp}% ${fp+hp+ap}%, #7c5cbf ${fp+hp+ap}% ${fp+hp+ap+tp}%, ${over?"#e07060":"#c8e6d4"} ${fp+hp+ap+tp}% 100%)`;
-                  return(
-                    <div style={{padding:"14px 0 16px",borderBottom:"1px solid var(--border)",marginBottom:14}}>
-                      <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:10}}>
-                        <div style={{position:"relative",width:100,height:100,flexShrink:0}}>
-                          <div style={{width:100,height:100,borderRadius:"50%",background:grad,transition:"background 0.4s"}}/>
-                          <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:62,height:62,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 6px rgba(0,0,0,0.08)"}}>
-                            <div style={{fontSize:"0.48rem",color:"var(--muted2)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{over?"Over":"Left"}</div>
-                            <div style={{fontSize:rem>9999?"0.82rem":"1rem",fontWeight:700,color:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1}}>${rem.toLocaleString()}</div>
-                            <div style={{fontSize:"0.45rem",color:"var(--muted2)"}}>of ${bNum.toLocaleString()}</div>
-                          </div>
-                        </div>
-                        <div style={{flex:1,fontSize:"0.75rem",display:"flex",flexDirection:"column",gap:5}}>
-                          {[
-                            {label:"✈️ Flights",color:"#1b5e8a",val:flt},
-                            {label:"🏨 Hotel",color:"#4a9fd4",val:hot},
-                            {label:"🎭 Activities",color:"#4a7c59",val:act},
-                            {label:"🚌 Transport",color:"#7c5cbf",val:trans},
-                          ].map(sg=>(
-                            <div key={sg.label} style={{display:"flex",alignItems:"center",gap:5}}>
-                              <div style={{width:7,height:7,borderRadius:"50%",background:sg.color,flexShrink:0}}/>
-                              <span style={{color:"var(--muted2)",flex:1,fontSize:"0.72rem"}}>{sg.label}</span>
-                              <span style={{fontWeight:700,fontSize:"0.78rem"}}>{sg.val>0?`$${Math.round(sg.val).toLocaleString()}`:"—"}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      {over&&<div style={{fontSize:"0.7rem",color:"#c45c26",fontWeight:600,padding:"6px 10px",background:"rgba(196,92,38,0.07)",borderRadius:8}}>⚠️ Over budget by ${Math.round(spent-bNum).toLocaleString()}</div>}
-                      {(travelers||1)>1&&!over&&<div style={{fontSize:"0.68rem",color:"var(--ocean)",fontWeight:600}}>👥 {travelers} travelers included</div>}
-                    </div>
-                  );
-                })()}
-
-                {/* ── WEATHER + TRANSPORT MERGED CARD ── */}
-                <div style={{padding:"12px 0 14px",borderBottom:"1px solid var(--border)",marginBottom:14}}>
-                  {/* Transport */}
-                  <div style={{fontSize:"0.72rem",fontWeight:700,color:"var(--ink)",marginBottom:8}}>🚌 Getting Around</div>
-                  <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:weather&&weather.length>0?12:0}}>
-                    {TRANSPORT.map(t=>(
-                      <div key={t.id}
-                        style={{padding:"5px 10px",borderRadius:20,border:"1.5px solid",fontSize:"0.73rem",cursor:"pointer",transition:"all 0.18s",
-                          borderColor:transport===t.id?"var(--ocean)":"var(--border2)",
-                          background:transport===t.id?"var(--ocean)":"white",
-                          color:transport===t.id?"white":"var(--muted)"}}
-                        onClick={()=>setTransport(t.id)}>
-                        {t.icon} {t.name}
-                      </div>
-                    ))}
-                  </div>
-                  {/* Weather */}
-                  {weatherLoading&&<div style={{fontSize:"0.7rem",color:"var(--muted2)",display:"flex",gap:6,alignItems:"center",marginTop:8}}><div className="bbd-spinner"/>Loading forecast…</div>}
-                  {weather&&weather.length>0&&(
-                    <>
-                      <div style={{fontSize:"0.72rem",fontWeight:700,color:"var(--ink)",marginBottom:8}}>🌤 Forecast</div>
-                      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(44px,1fr))",gap:5}}>
-                        {weather.slice(0,numDays).map((day,i)=>{
-                          const icon=day.main==="Rain"||day.main==="Drizzle"?"🌧":day.main==="Snow"?"❄️":day.main==="Thunderstorm"?"⛈":day.main==="Clear"?"☀️":day.main==="Clouds"?"⛅":"🌤";
-                          return(
-                            <div key={i} style={{textAlign:"center",padding:"6px 4px",borderRadius:8,background:"var(--sand)"}}>
-                              <div style={{fontSize:"0.58rem",color:"var(--muted2)",fontWeight:600,marginBottom:1}}>D{i+1}</div>
-                              <div style={{fontSize:"1rem"}}>{icon}</div>
-                              <div style={{fontSize:"0.72rem",fontWeight:700,color:"var(--ink)"}}>{day.temp}°</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-                </div>
               <div className="day-drop-zone" onDragOver={onDragOver} onDrop={e=>onDropOnDay(e,activeSideDay)}>
                 {(dayPlans[activeSideDay]||[]).length===0
                   ?<div className="em">No places yet — add some!</div>
@@ -2421,15 +2430,11 @@ export default function App(){
               {/* AI description */}
               <div style={{marginBottom:16,minHeight:60}}>
                 <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
-                  <span style={{fontSize:"0.65rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--ocean)",fontWeight:600}}>✦ Claude AI Description</span>
+                  <span style={{fontSize:"0.65rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--ocean)",fontWeight:600}}>✦ Claude AI</span>
                 </div>
                 {modalLoading
-                  ?<div style={{display:"flex",gap:8,alignItems:"center",color:"var(--muted2)",fontSize:"0.82rem"}}><div className="bbd-spinner"/>Claude is writing a description…</div>
-                  :modalAiDesc
-                    ?<p style={{fontSize:"0.9rem",lineHeight:1.7,color:"var(--ink)",margin:0}}>{modalAiDesc}</p>
-                    :placeModal.desc
-                      ?<p style={{fontSize:"0.9rem",lineHeight:1.7,color:"var(--muted)",margin:0,fontStyle:"italic"}}>{placeModal.desc}</p>
-                      :<p style={{fontSize:"0.9rem",color:"var(--muted2)",margin:0}}>No description available.</p>
+                  ?<div style={{display:"flex",gap:8,alignItems:"center",color:"var(--muted2)",fontSize:"0.82rem"}}><div className="bbd-spinner"/>Writing description…</div>
+                  :<p style={{fontSize:"0.88rem",lineHeight:1.65,color:"var(--ink)",margin:0}}>{modalAiDesc||placeModal.desc}</p>
                 }
               </div>
               {/* Stats row */}
@@ -2514,7 +2519,6 @@ export default function App(){
               :`conic-gradient(var(--sand2) 0% 100%)`;
 
             return(
-              <>
               <div style={{marginBottom:28}}>
 
                 {/* ── HERO BANNER ── */}
@@ -2543,20 +2547,16 @@ export default function App(){
                     {aiUsed&&<div style={{marginTop:8,fontSize:"0.72rem",color:"rgba(255,255,255,0.5)",fontStyle:"italic"}}>Descriptions & costs researched by Claude AI</div>}
                   </div>
                   {/* Cost pill */}
-                  <div style={{position:"relative",zIndex:1,textAlign:"right",background:"rgba(0,0,0,0.2)",borderRadius:14,padding:"14px 18px"}}>
-                    <div style={{fontSize:"0.65rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"rgba(255,255,255,0.7)",marginBottom:6,fontWeight:600}}>
-                      {bNum>0?"Budget Remaining":"Estimated Total"}
+                  <div style={{position:"relative",zIndex:1,textAlign:"right"}}>
+                    <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"rgba(255,255,255,0.5)",marginBottom:4}}>
+                      {bNum>0?"Budget remaining":"Est. total"}
                     </div>
-                    <div style={{fontFamily:"Cormorant Garamond,serif",fontSize:"2.6rem",fontWeight:700,lineHeight:1,color:over?"#ffaa88":"#ffffff",textShadow:"0 2px 8px rgba(0,0,0,0.3)"}}>
+                    <div style={{fontFamily:"Cormorant Garamond,serif",fontSize:"2.8rem",fontWeight:700,lineHeight:1,color:over?"#ff8a70":"white"}}>
                       ${bNum>0?remaining.toLocaleString():grandTotal.toLocaleString()}
                     </div>
-                    {bNum>0&&<div style={{fontSize:"0.78rem",color:"rgba(255,255,255,0.65)",marginTop:4}}>of ${bNum.toLocaleString()} total budget</div>}
-                    {travelers>1&&grandTotal>0&&(
-                      <div style={{fontSize:"0.78rem",color:"rgba(255,255,255,0.65)",marginTop:2,padding:"4px 8px",background:"rgba(255,255,255,0.1)",borderRadius:8,display:"inline-block",marginTop:6}}>
-                        ${Math.round(grandTotal/travelers).toLocaleString()} per person
-                      </div>
-                    )}
-                    {over&&<div style={{fontSize:"0.75rem",color:"#ffaa88",fontWeight:700,marginTop:6}}>⚠️ Over by ${(grandTotal-bNum).toLocaleString()}</div>}
+                    {bNum>0&&<div style={{fontSize:"0.72rem",color:"rgba(255,255,255,0.5)"}}>of ${bNum.toLocaleString()} budget</div>}
+                    {travelers>1&&grandTotal>0&&<div style={{fontSize:"0.72rem",color:"rgba(255,255,255,0.6)",marginTop:2}}>${Math.round(grandTotal/travelers).toLocaleString()} per person</div>}
+                    {over&&<div style={{fontSize:"0.72rem",color:"#ff8a70",fontWeight:600,marginTop:4}}>⚠️ Over by ${(grandTotal-bNum).toLocaleString()}</div>}
                   </div>
                 </div>
 
@@ -2611,68 +2611,29 @@ export default function App(){
                       ))}
                     </div>
 
-                    {/* Day cost breakdown + bar chart */}
-                    {numDays>1&&(()=>{
-                      const maxCost=Math.max(...dayCosts,1);
-                      return(
-                        <div style={{background:"white",borderRadius:14,border:"1px solid var(--border)",padding:"16px"}}>
-                          <div style={{fontSize:"0.65rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginBottom:14}}>Daily Spending</div>
-                          <div style={{display:"flex",gap:6,alignItems:"flex-end",height:80,marginBottom:10}}>
-                            {dayCosts.map((cost,di)=>{
-                              const pct=maxCost>0?cost/maxCost:0;
-                              const weath=weather&&weather[di];
-                              const wIcon=weath?(weath.main==="Rain"||weath.main==="Drizzle"?"🌧":weath.main==="Clear"?"☀️":weath.main==="Snow"?"❄️":weath.main==="Thunderstorm"?"⛈":"⛅"):"";
-                              return(
-                                <div key={di} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                                  <div style={{fontSize:"0.65rem",fontWeight:700,color:"var(--ink)"}}>{cost===0?"Free":`$${cost}`}</div>
-                                  <div style={{width:"100%",height:Math.max(pct*56,4),background:cost===0?"#c8e6d4":cost===maxCost?"#c45c26":"var(--ocean)",borderRadius:"4px 4px 0 0",transition:"height 0.4s ease",minHeight:4}}/>
-                                  <div style={{fontSize:"0.58rem",color:"var(--muted2)"}}>D{di+1} {wIcon}</div>
+                    {/* Day cost breakdown */}
+                    {numDays>1&&(
+                      <div style={{background:"white",borderRadius:14,border:"1px solid var(--border)",padding:"14px 16px"}}>
+                        <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginBottom:10}}>Cost by Day</div>
+                        <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                          {dayCosts.map((cost,di)=>(
+                            <div key={di} style={{flex:1,minWidth:72,textAlign:"center",padding:"12px 8px",borderRadius:12,background:"var(--sand)",boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
+                              <div style={{fontSize:"0.65rem",color:"var(--muted2)",marginBottom:4,fontWeight:600,letterSpacing:"0.5px"}}>Day {di+1}</div>
+                              <div style={{fontSize:"1.05rem",fontWeight:700,color:"var(--ink)",fontFamily:"Cormorant Garamond,serif"}}>{cost===0?"Free":`$${cost}`}</div>
+                              {weather&&weather[di]&&(
+                                <div style={{fontSize:"1rem",marginTop:4}}>
+                                  {weather[di].main==="Rain"||weather[di].main==="Drizzle"?"🌧":weather[di].main==="Clear"?"☀️":weather[di].main==="Snow"?"❄️":weather[di].main==="Thunderstorm"?"⛈":"⛅"}
+                                  <div style={{fontSize:"0.62rem",color:"var(--muted2)",marginTop:1}}>{weather[di].temp}°F</div>
                                 </div>
-                              );
-                            })}
-                          </div>
-                          {/* Spending trend note */}
-                          {dayCosts.some(c=>c>0)&&(()=>{
-                            const maxDay=dayCosts.indexOf(Math.max(...dayCosts))+1;
-                            const minNonZero=dayCosts.filter(c=>c>0);
-                            const avg=Math.round(minNonZero.reduce((s,v)=>s+v,0)/minNonZero.length);
-                            return <div style={{fontSize:"0.68rem",color:"var(--muted2)",borderTop:"1px solid var(--border)",paddingTop:8,marginTop:4}}>
-                              Day {maxDay} is your heaviest day · avg ${avg}/day across active days
-                            </div>;
-                          })()}
-                        </div>
-                      );
-                    })()}
-
-                    {/* Spending breakdown horizontal bar */}
-                    {grandTotal>0&&(
-                      <div style={{background:"white",borderRadius:14,border:"1px solid var(--border)",padding:"16px"}}>
-                        <div style={{fontSize:"0.65rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginBottom:12}}>Where Your Money Goes</div>
-                        {[
-                          {label:"✈️ Flights",color:"#1b5e8a",val:flt},
-                          {label:"🏨 Hotel",color:"#4a9fd4",val:hot},
-                          {label:"🎭 Activities",color:"#4a7c59",val:actTotal},
-                          {label:"🚌 Transport",color:"#7c5cbf",val:transTotal},
-                        ].filter(s=>s.val>0).map(seg=>{
-                          const pct=Math.round(seg.val/grandTotal*100);
-                          return(
-                            <div key={seg.label} style={{marginBottom:10}}>
-                              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,fontSize:"0.73rem"}}>
-                                <span style={{color:"var(--muted2)"}}>{seg.label}</span>
-                                <span style={{fontWeight:700,color:"var(--ink)"}}>${seg.val.toLocaleString()} <span style={{color:"var(--muted2)",fontWeight:400}}>({pct}%)</span></span>
-                              </div>
-                              <div style={{height:8,borderRadius:4,background:"var(--sand)",overflow:"hidden"}}>
-                                <div style={{height:"100%",width:`${pct}%`,background:seg.color,borderRadius:4,transition:"width 0.5s ease"}}/>
-                              </div>
+                              )}
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
-              </>
             );
           })()}
 
