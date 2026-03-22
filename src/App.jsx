@@ -612,7 +612,7 @@ async function aiCall(prompt, maxTokens=1200){
     const r=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
       headers:getAIHeaders(ANTHROPIC_KEY),
-      body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+      body:JSON.stringify({model:"claude-haiku-4-5",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
     });
     const d=await r.json();
     if(d.error){console.error("aiCall error",d.error);return null;}
@@ -651,8 +651,8 @@ Respond ONLY as JSON array with no markdown:
 
 async function fetchCardDesc(place, city){
   const txt=await aiCall(
-    `You are an expert travel writer. Write a vivid, specific, 3–4 sentence description of "${place.name}" (${place.type}) in ${city}. Include what makes it uniquely special, specific sensory details, insider tips, and any notable history. Be concrete — avoid generic tourist-brochure language. Write in present tense, second person.`,
-    400
+    `You are an expert travel writer. Write a vivid, specific 3–4 sentence description of "${place.name}" (${place.type}) in ${city}. Include what makes it uniquely special, sensory details, an insider tip, and any notable history. Be concrete — avoid generic tourist-brochure language. Write in present tense, second person.`,
+    350
   );
   return txt||null;
 }
@@ -1146,10 +1146,10 @@ export default function App(){
 
   const[editTimeVal,setEditTimeVal]=useState("");
   const[editDurVal,setEditDurVal]=useState(60);
-  const[placeModal,setPlaceModal]=useState(null); // {place, aiDesc, loading}
+  const[placeModal,setPlaceModal]=useState(null);
   const[modalAiDesc,setModalAiDesc]=useState("");
   const[modalLoading,setModalLoading]=useState(false);
-  // Per-card AI descriptions (Step 3 — click desc to expand)
+  // Per-card inline AI descriptions (Step 3)
   const[cardDescMap,setCardDescMap]=useState({});
   const[cardDescLoading,setCardDescLoading]=useState({});
   // accounts
@@ -1480,8 +1480,10 @@ export default function App(){
     setModalAiDesc("");
     setModalLoading(true);
     try{
-      const prompt=`Write a vivid, specific 3-sentence description of ${place.name} in ${city} for a traveler. Include what makes it special, best time to visit, and one insider tip. Be concise and evocative.`;
-      const txt=await aiCall(prompt,200);
+      const prompt=`You are an expert travel writer. Write a rich, engaging 3–4 sentence description of "${place.name}" (${place.type}) in ${city}.
+
+Cover: what makes it iconic or unique, the atmosphere and sensory experience, one specific insider tip or best time to visit, and any notable history or cultural significance. Be vivid and specific — avoid generic phrases. Write in second person, present tense ("you'll find…", "don't miss…").`;
+      const txt=await aiCall(prompt, 350);
       setModalAiDesc(txt||place.desc||"");
     }catch{setModalAiDesc(place.desc||"");}
     setModalLoading(false);
