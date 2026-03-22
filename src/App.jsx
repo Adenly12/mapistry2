@@ -974,6 +974,50 @@ function getInstantPrice(place){
   return{cost:est,note};
 }
 
+
+// ─── DONUT CHART ──────────────────────────────────────────────
+function DonutChart({segments, budgetNum, remaining, over}){
+  const size=180, r=62, stroke=24;
+  const cx=size/2, cy=size/2;
+  const circ=2*Math.PI*r;
+  const total=segments.reduce((s,sg)=>s+sg.value,0)||1;
+  let offset=0;
+  const arcs=segments.filter(sg=>sg.value>0).map((sg,i)=>{
+    const dash=(sg.value/total)*circ;
+    const arc=(
+      <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+        stroke={sg.color} strokeWidth={stroke}
+        strokeDasharray={`${dash} ${circ-dash}`}
+        strokeDashoffset={circ/4-offset}
+      />
+    );
+    offset+=dash;
+    return arc;
+  });
+  return(
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{flexShrink:0}}>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--sand2)" strokeWidth={stroke}/>
+      {arcs}
+      {budgetNum>0&&(
+        <>
+          <text x={cx} y={cy-10} textAnchor="middle"
+            style={{fontSize:"9px",fill:"var(--muted2)",fontFamily:"DM Sans,sans-serif",fontWeight:600,letterSpacing:"0.5px"}}>
+            REMAINING
+          </text>
+          <text x={cx} y={cy+12} textAnchor="middle"
+            style={{fontSize:remaining>9999?"14px":"18px",fill:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",fontWeight:700}}>
+            ${remaining.toLocaleString()}
+          </text>
+          <text x={cx} y={cy+26} textAnchor="middle"
+            style={{fontSize:"8px",fill:"var(--muted2)",fontFamily:"DM Sans,sans-serif"}}>
+            of ${budgetNum.toLocaleString()}
+          </text>
+        </>
+      )}
+    </svg>
+  );
+}
+
 // ─── MAIN APP ─────────────────────────────────────────────────
 export default function App(){
   const[step,setStep]=useState(1);
@@ -1059,7 +1103,7 @@ export default function App(){
 
   // Auto-fetch estimates when entering step 2
   useEffect(()=>{
-    if(step===2&&city&&!flightCost&&!budgetLoading){
+    if(step===2&&city&&!budgetLoading){
       fetchTravelCostEstimates(city,originCity,numDays);
     }
   },[step]);
@@ -1125,27 +1169,28 @@ export default function App(){
   async function fetchTravelCostEstimates(dest, origin, nights){
     if(!dest)return;
     setBudgetLoading(true);
-    const prompt=`You are a travel cost expert. Estimate these two costs:
-
-1. FLIGHT: Round-trip economy flight from "${origin||"unknown city"}" to "${dest}".
-   - If origin is unknown, estimate $0
-   - Give a realistic average economy price in USD
-   - Consider typical airline prices, not best-case deals
-
-2. HOTEL: Average nightly hotel cost in "${dest}" for a mid-range traveler (3-star equivalent).
-   - Per night cost in USD
-   - For ${nights} night${nights!==1?"s":""}
-
-Respond ONLY as JSON, no markdown:
-{"flight_roundtrip":NUMBER,"hotel_per_night":NUMBER,"flight_note":"e.g. Economy round-trip, avg price","hotel_note":"e.g. 3-star hotel per night"}`;
-    const txt = await aiCall(prompt, 300);
-    if(txt){
-      try{
-        const match = txt.match(/\{[\s\S]*?\}/);
-        const parsed = JSON.parse(match ? match[0] : txt);
-        if(typeof parsed.flight_roundtrip === "number") setFlightCost({cost:parsed.flight_roundtrip, note:parsed.flight_note||""});
-        if(typeof parsed.hotel_per_night === "number") setHotelCost({cost:parsed.hotel_per_night, note:parsed.hotel_note||""});
-      }catch(e){console.log("cost parse error",e);}
+    setFlightCost(null);
+    setHotelCost(null);
+    // Simple, separate prompts — one for flights, one for hotel
+    // This avoids complex JSON parsing of a multi-field response
+    try{
+      const flightPrompt=`What is the typical round-trip economy flight cost in USD from ${origin||"a major US city"} to ${dest}? Reply with just a single integer number, nothing else. Example: 650`;
+      const hotelPrompt=`What is the typical nightly cost in USD for a mid-range 3-star hotel in ${dest}? Reply with just a single integer number, nothing else. Example: 120`;
+      const [flightTxt, hotelTxt] = await Promise.all([
+        aiCall(flightPrompt, 50),
+        aiCall(hotelPrompt, 50),
+      ]);
+      console.log("flight raw:", flightTxt, "hotel raw:", hotelTxt);
+      const flightNum = flightTxt ? parseInt(flightTxt.replace(/[^0-9]/g,""), 10) : null;
+      const hotelNum = hotelTxt ? parseInt(hotelTxt.replace(/[^0-9]/g,""), 10) : null;
+      if(flightNum&&!isNaN(flightNum)) setFlightCost({cost:flightNum, note:origin?`Est. economy round-trip from ${origin}`:"Est. economy round-trip"});
+      else setFlightCost({cost:0, note:origin?"Could not estimate — try again":"No origin city set"});
+      if(hotelNum&&!isNaN(hotelNum)) setHotelCost({cost:hotelNum, note:"Est. mid-range hotel per night"});
+      else setHotelCost({cost:0, note:"Could not estimate — try again"});
+    }catch(e){
+      console.error("fetchTravelCostEstimates error",e);
+      setFlightCost({cost:0, note:"Estimate unavailable"});
+      setHotelCost({cost:0, note:"Estimate unavailable"});
     }
     setBudgetLoading(false);
   }
@@ -1695,6 +1740,14 @@ Respond ONLY as JSON, no markdown:
                   </>
                 }
               </div>
+            </div>
+
+            {/* Retry button */}
+            <div style={{display:"flex",justifyContent:"flex-end",marginTop:-16,marginBottom:16}}>
+              <button className="cost-card-editbtn" style={{fontSize:"0.75rem"}}
+                onClick={()=>fetchTravelCostEstimates(city,originCity,numDays)}>
+                🔄 Re-estimate with AI
+              </button>
             </div>
 
             {/* Donut chart */}
