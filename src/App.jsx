@@ -581,7 +581,7 @@ function saveHist(name,h){const u=loadU();if(!u[name])u[name]={created:new Date(
 function getCreated(name){return loadU()[name]?.created||"";}
 
 // ─── PDF EXPORT ───────────────────────────────────────────────
-function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime,cardPriceMap={}){
+function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime){
   const{jsPDF}=window.jspdf||{};
   if(!jsPDF){alert("jsPDF not loaded.");return;}
 
@@ -590,15 +590,14 @@ function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,star
   const H=doc.internal.pageSize.getHeight();
   const MAR=14; const INNER=W-MAR*2;
   const blabel=budget?BUDGETS.find(b=>b.id===budget)?.label:null;
-  // Merge AI itinerary costs with any card-level prices fetched in step 3
-  const mergedCostMap={};
+  // Use AI costs if available, fall back to instant price lookup for PDF
   const allP=dayPlans.flat();
+  const mergedCostMap={};
   allP.forEach(p=>{
     if(costMap&&costMap[p.id]!=null)mergedCostMap[p.id]=costMap[p.id];
-    else if(cardPriceMap&&cardPriceMap[p.id]&&cardPriceMap[p.id]!=="loading"&&cardPriceMap[p.id].cost!=null)
-      mergedCostMap[p.id]=cardPriceMap[p.id];
+    else{const ip=getInstantPrice(p);mergedCostMap[p.id]=ip;}
   });
-  const effectiveCostMap=Object.keys(mergedCostMap).length>0?mergedCostMap:null;
+  const effectiveCostMap=mergedCostMap;
   const tlabel=TRANSPORT.find(t=>t.id===transport)?.name||"Walking";
   const ticon=TRANSPORT.find(t=>t.id===transport)?.icon||"🚶";
   const allPlaces=dayPlans.flat();
@@ -847,6 +846,121 @@ function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,star
   doc.save(`mapistry-${city.replace(/\s+/g,"-").toLowerCase()}.pdf`);
 }
 
+
+// ─── INSTANT PRICE LOOKUP ─────────────────────────────────────
+// Known venues with real prices (USD, per person)
+const KNOWN_PRICES = {
+  // Museums & Art
+  "metropolitan museum of art":30,"met museum":30,"moma":30,"museum of modern art":30,
+  "guggenheim":28,"whitney museum":25,"natural history museum":0,"smithsonian":0,
+  "louvre":22,"musée d'orsay":16,"centre pompidou":15,"british museum":0,
+  "national gallery":0,"tate modern":0,"rijksmuseum":22,"van gogh museum":22,
+  "uffizi":25,"colosseum":18,"vatican museums":20,"sagrada familia":26,
+  "anne frank house":16,"pergamon museum":12,"prado":15,"acropolis museum":10,
+  "national museum of anthropology":5,"palace of fine arts":0,
+  "art institute of chicago":32,"mca chicago":15,"field museum":24,
+  "california academy of sciences":40,"de young museum":15,"sfmoma":25,
+  "getty museum":0,"lacma":25,"broad museum":0,"hammer museum":0,
+  "perez art museum":16,"bass museum":10,"norton museum":18,
+  "museum of flight":26,"space needle":40,"intrepid museum":36,
+  "9/11 memorial museum":33,"ellis island":24,"statue of liberty":24,
+  "national air and space museum":0,"national zoo":0,
+  "dallas museum of art":0,"kimbell art museum":0,
+  "houston museum of natural science":25,"menil collection":0,
+  "seattle art museum":30,"portland art museum":25,
+  "cleveland museum of art":0,"detroit institute of arts":14,
+  "philadelphia museum of art":30,"barnes foundation":30,
+  "museum of science boston":30,"isabella stewart gardner":20,
+  "denver art museum":15,"denver museum of nature and science":18,
+  "minneapolis institute of art":0,"walker art center":15,
+
+  // Landmarks & Attractions
+  "eiffel tower":30,"arc de triomphe":13,"versailles":20,
+  "big ben":0,"tower of london":34,"buckingham palace":30,"windsor castle":28,
+  "stonehenge":22,"edinburgh castle":18,
+  "colosseum":18,"roman forum":12,"trevi fountain":0,"spanish steps":0,
+  "sistine chapel":20,"st peter's basilica":0,
+  "acropolis":20,"parthenon":20,
+  "burj khalifa":40,"palm jumeirah":0,
+  "sydney opera house":43,"sydney harbour bridge climb":174,
+  "central park":0,"high line":0,"brooklyn bridge":0,"times square":0,
+  "statue of liberty":24,"one world observatory":42,
+  "hollywood walk of fame":0,"griffith observatory":0,"getty center":0,
+  "alcatraz":45,"golden gate bridge":0,"fisherman's wharf":0,
+  "navy pier":0,"millennium park":0,"willis tower":35,
+  "freedom trail":0,"fenway park":23,
+  "national mall":0,"lincoln memorial":0,"washington monument":1,
+  "kennedy space center":75,"universal studios":120,"seaworld":110,
+  "disneyland":109,"disney world":109,"six flags":70,
+  "las vegas strip":0,"hoover dam":10,"grand canyon":35,
+  "yellowstone":35,"yosemite":35,"zion national park":35,
+  "niagara falls":0,"mount rushmore":0,
+  "space needle":40,"pike place market":0,
+  "reunion tower":24,"the dallas world aquarium":25,
+  "alamo":0,"river walk":0,
+  "french quarter":0,"bourbon street":0,
+  "graceland":45,"nashville honky tonk highway":0,
+  "bourbon street":0,"garden district":0,
+
+  // Aquariums & Zoos
+  "georgia aquarium":45,"shedd aquarium":40,"monterey bay aquarium":55,
+  "new england aquarium":32,"national aquarium":42,"tennessee aquarium":35,
+  "dallas world aquarium":25,"denver aquarium":25,
+  "san diego zoo":64,"bronx zoo":38,"philadelphia zoo":24,
+  "st louis zoo":0,"lincoln park zoo":0,"houston zoo":18,
+  "los angeles zoo":22,"miami zoo":22,"nashville zoo":20,
+
+  // Restaurants (typical per person)
+  "nobu":120,"spago":95,"the french laundry":350,"per se":350,
+  "eleven madison park":365,"le bernardin":185,"daniel":165,
+  "gordon ramsay":120,"joël robuchon":300,
+  "shake shack":15,"five guys":14,"in-n-out":10,
+  "cheesecake factory":25,"olive garden":20,"applebee's":18,
+  "mcdonalds":10,"starbucks":8,"dunkin":6,
+  "katz's delicatessen":25,"peter luger":80,"joe's pizza":5,
+
+  // Generic fallbacks by type
+  "aquarium":35,"zoo":25,"theme park":100,"amusement park":80,
+  "national park":20,"state park":10,"city park":0,"botanical garden":15,
+  "art museum":20,"history museum":15,"science museum":20,"children's museum":15,
+  "theater":80,"opera":120,"concert hall":90,"comedy club":30,
+  "casino":0,"nightclub":20,"bar":25,"pub":20,
+  "restaurant":35,"cafe":15,"coffee shop":8,"bakery":10,"food market":15,
+  "spa":100,"gym":20,"yoga studio":20,
+  "shopping mall":0,"market":0,"souvenir shop":0,
+  "church":0,"cathedral":0,"mosque":0,"temple":0,"synagogue":0,
+  "library":0,"city hall":0,"palace":15,"castle":18,"fortress":12,
+  "beach":0,"lake":0,"mountain":0,"waterfall":0,"viewpoint":0,
+  "tour":30,"boat tour":40,"bike tour":35,"walking tour":20,
+};
+
+function getInstantPrice(place){
+  const nameLower=place.name.toLowerCase();
+  // Check known venues first (exact or partial match)
+  for(const[key,price] of Object.entries(KNOWN_PRICES)){
+    if(nameLower.includes(key)||key.includes(nameLower)){
+      return{cost:price,note:price===0?"Free entry":"Est. per person"};
+    }
+  }
+  // Fallback: type + priceLevel from Google
+  const typeLower=(place.type||"").toLowerCase();
+  const pl=place.priceLevel??1;
+  // Free types
+  if(["park","beach","lake","monument","landmark","plaza","square","garden","trail",
+      "library","government","church","cathedral","mosque","temple","synagogue",
+      "market","neighborhood","district"].some(t=>typeLower.includes(t))&&pl===0){
+    return{cost:0,note:"Free entry"};
+  }
+  // Price level estimates by type
+  const ranges={
+    0:[0,0],1:[8,20],2:[20,45],3:[50,100],4:[100,200]
+  };
+  const [lo,hi]=ranges[Math.min(pl,4)];
+  const est=lo===0?0:Math.round((lo+hi)/2);
+  const note=est===0?"Free entry":typeLower.includes("restaurant")||typeLower.includes("food")||typeLower.includes("cafe")||typeLower.includes("bar")?"Est. per person meal":"Est. per person";
+  return{cost:est,note};
+}
+
 // ─── MAIN APP ─────────────────────────────────────────────────
 export default function App(){
   const[step,setStep]=useState(1);
@@ -886,7 +1000,6 @@ export default function App(){
   // drag — use refs to avoid stale state in handlers
   const dragInfo=useRef({idx:null,day:null});
   const[editingPlace,setEditingPlace]=useState(null);
-  const[cardPriceMap,setCardPriceMap]=useState({});   // id -> {price,note} or "loading"
 
   const[editTimeVal,setEditTimeVal]=useState("");
   const[editDurVal,setEditDurVal]=useState(60);
@@ -1053,26 +1166,8 @@ export default function App(){
     setLoading(false);
   }
 
-  async function fetchCardPrice(p){
-    if(cardPriceMap[p.id]!==undefined)return;
-    setCardPriceMap(prev=>({...prev,[p.id]:"loading"}));
-    try{
-      const params=new URLSearchParams({name:p.name,type:p.type||"",city});
-      const r=await fetch(`/api/card-price?${params}`);
-      const data=await r.json();
-      if(typeof data.cost==="number"){
-        setCardPriceMap(prev=>({...prev,[p.id]:{cost:data.cost,note:data.note||""}}));
-      }else{
-        setCardPriceMap(prev=>({...prev,[p.id]:{cost:null,note:""}}));
-      }
-    }catch{
-      setCardPriceMap(prev=>({...prev,[p.id]:{cost:null,note:""}}));
-    }
-  }
-
   function focusPlace(p){
     setFocusedId(p.id);
-    fetchCardPrice(p);
     // If pins already exist, keep showing the multi-pin static map — don't switch to single preview
     if(dayPlans.flat().length>0)return;
     // No pins yet — show single place preview
@@ -1416,20 +1511,18 @@ export default function App(){
                   const added=isAdded(p.id);
                   const focused=focusedId===p.id;
                   const img=p.photoRef?purl(p.photoRef):null;
-                  const cp=cardPriceMap[p.id];
-                  const pbLoading=cp==="loading";
-                  const pb=pbLoading?"…"
-                    :cp&&cp.cost!=null?(cp.cost===0?"Free":`~$${cp.cost}`)
-                    :null;
-                  const pbNote=cp&&cp!=="loading"&&cp.cost!=null&&cp.note?cp.note:null;
+                  const ip=getInstantPrice(p);
+                  // If AI itinerary costs are available, prefer those
+                  const costEntry=costMap?.[p.id];
+                  const displayPrice=costEntry!=null?costEntry:ip;
+                  const pb=displayPrice.cost===0?"Free":`~$${displayPrice.cost}`;
+                  const pbNote=displayPrice.note||null;
                   return(
                     <div key={p.id} className={`plcard ${added?"added":""} ${focused&&!added?"focused":""}`} onClick={()=>focusPlace(p)}>
                       <div className="plimg">
                         {img?<img src={img} alt={p.name} onError={e=>{e.target.parentElement.innerHTML=p.emoji;}} loading="lazy"/>:<span>{p.emoji}</span>}
                         {pb&&<div className="pbadge" style={{
-                          opacity:pbLoading?0.6:1,
-                          fontStyle:pbLoading?"italic":"normal",
-                          background:(!pbLoading&&cp&&cp.cost!=null)?"rgba(27,94,138,0.85)":"rgba(26,20,16,0.7)",
+                          background:costMap?.[p.id]!=null?"rgba(27,94,138,0.85)":"rgba(26,20,16,0.7)",
                         }}>{pb}</div>}
                         {added&&<div className="pin-badge">📍 Pinned</div>}
                       </div>
@@ -1517,7 +1610,7 @@ export default function App(){
             </div>
             <div className="iac np">
               <button className="obt" onClick={()=>setStep(3)}>← Edit Places</button>
-              <button className="dbt" onClick={()=>exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime,cardPriceMap)}>⬇ Export PDF</button>
+              <button className="dbt" onClick={()=>exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime)}>⬇ Export PDF</button>
             </div>
           </div>
 
