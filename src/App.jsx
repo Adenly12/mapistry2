@@ -1683,50 +1683,45 @@ export default function App(){
               </div>
             </div>
 
-            {/* CSS Donut chart — only shows when budget is set */}
-            {budgetNum>0&&(
-              <div className="donut-wrap">
-                <div style={{position:"relative",width:160,height:160,flexShrink:0}}>
-                  <div style={{
-                    width:160,height:160,borderRadius:"50%",
-                    background:gradient,
-                    transition:"background 0.5s ease",
-                  }}/>
-                  {/* Inner white circle to create donut hole */}
-                  <div style={{
-                    position:"absolute",top:"50%",left:"50%",
-                    transform:"translate(-50%,-50%)",
-                    width:100,height:100,borderRadius:"50%",
-                    background:"white",
-                    display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-                    boxShadow:"0 2px 8px rgba(26,20,16,0.08)",
-                  }}>
-                    <div style={{fontSize:"0.55rem",letterSpacing:"1px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>Left</div>
-                    <div style={{fontSize:remaining>9999?"0.95rem":"1.15rem",fontWeight:700,color:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1.1}}>${remaining.toLocaleString()}</div>
-                    <div style={{fontSize:"0.55rem",color:"var(--muted2)"}}>of ${budgetNum.toLocaleString()}</div>
+            {/* CSS Donut chart — always visible, placeholder when no budget */}
+            <div className="donut-wrap">
+              <div style={{position:"relative",width:160,height:160,flexShrink:0}}>
+                <div style={{
+                  width:160,height:160,borderRadius:"50%",
+                  background:budgetNum>0?gradient:"var(--sand2)",
+                  transition:"background 0.5s ease",
+                }}/>
+                <div style={{
+                  position:"absolute",top:"50%",left:"50%",
+                  transform:"translate(-50%,-50%)",
+                  width:100,height:100,borderRadius:"50%",
+                  background:"white",
+                  display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                  boxShadow:"0 2px 8px rgba(26,20,16,0.08)",
+                }}>
+                  {budgetNum>0
+                    ?<>
+                      <div style={{fontSize:"0.55rem",letterSpacing:"1px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>Left</div>
+                      <div style={{fontSize:remaining>9999?"0.95rem":"1.15rem",fontWeight:700,color:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1.1}}>${remaining.toLocaleString()}</div>
+                      <div style={{fontSize:"0.55rem",color:"var(--muted2)"}}>of ${budgetNum.toLocaleString()}</div>
+                    </>
+                    :<div style={{fontSize:"0.65rem",color:"var(--muted2)",textAlign:"center",padding:"0 10px",lineHeight:1.4}}>Enter budget above</div>
+                  }
+                </div>
+              </div>
+              <div className="donut-legend">
+                {segments.map(sg=>(
+                  <div key={sg.label} className="donut-legend-item">
+                    <div className="donut-legend-dot" style={{background:budgetNum>0?sg.color:"var(--sand3)"}}/>
+                    <div className="donut-legend-lbl">{sg.label}</div>
+                    <div className="donut-legend-amt" style={{color:budgetNum>0?"var(--ink)":"var(--muted2)"}}>{budgetNum>0&&sg.value>0?`$${sg.value.toLocaleString()}`:"—"}</div>
+                    <div className="donut-legend-pct">{budgetNum>0?`${Math.round(sg.value/budgetNum*100)}%`:""}</div>
                   </div>
-                </div>
-                <div className="donut-legend">
-                  {segments.map(sg=>(
-                    <div key={sg.label} className="donut-legend-item">
-                      <div className="donut-legend-dot" style={{background:sg.color}}/>
-                      <div className="donut-legend-lbl">{sg.label}</div>
-                      <div className="donut-legend-amt">{sg.value>0?`$${sg.value.toLocaleString()}`:"—"}</div>
-                      <div className="donut-legend-pct">{budgetNum>0?`${Math.round(sg.value/budgetNum*100)}%`:""}</div>
-                    </div>
-                  ))}
-                  {over&&(
-                    <div className="donut-over-warn">⚠️ Over budget by ${(totalSpend-budgetNum).toLocaleString()}</div>
-                  )}
-                </div>
+                ))}
+                {over&&<div className="donut-over-warn">⚠️ Over budget by ${(totalSpend-budgetNum).toLocaleString()}</div>}
+                {!budgetNum&&<div style={{fontSize:"0.75rem",color:"var(--muted2)",marginTop:8}}>Add your budget to see the breakdown</div>}
               </div>
-            )}
-
-            {!budgetNum&&(
-              <div style={{textAlign:"center",padding:"32px 0",color:"var(--muted2)",fontSize:"0.84rem"}}>
-                Enter your total budget above to see the breakdown chart
-              </div>
-            )}
+            </div>
 
             <div className="brow"><button className="gobt" onClick={()=>setStep(3)}>Set Preferences →</button></div>
           </div>
