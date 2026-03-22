@@ -142,7 +142,7 @@ export default async function handler(req, res) {
       total: live.rate * nightsNum,
       nights: nightsNum,
       city,
-      note: `~$${live.rate}/night · avg of ${live.count} hotels`,
+      note: `~$${live.rate}/night · median of ${live.count} hotels`,
       source: "live",
       method: "serpapi",
       baseline,

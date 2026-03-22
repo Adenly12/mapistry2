@@ -1041,6 +1041,7 @@ function DonutChart({segments, budgetNum, remaining, over}){
 // ─── MAIN APP ─────────────────────────────────────────────────
 export default function App(){
   const[step,setStep]=useState(1);
+  const[maxStep,setMaxStep]=useState(1);
   const[photoIdx,setPhotoIdx]=useState(0);
   const[city,setCity]=useState("");
   const[cin,setCin]=useState("");
@@ -1383,7 +1384,7 @@ export default function App(){
     const{places:p,nextToken:nt}=await doFetch(c);
     nextToken.current=nt;setAllPlaces(p);setPlaces(p);setVisibleCount(8);
     setDayPlans(Array.from({length:numDays},()=>[]));
-    setStaticMapUrl("");setLoading(false);setStep(4);
+    setStaticMapUrl("");setLoading(false);goStep(4);
   }
 
   async function showMore(){
@@ -1444,7 +1445,7 @@ export default function App(){
       if(costRes){cm={};costRes.forEach(x=>{cm[x.id]={cost:x.cost,note:x.note||""};});}
     }
     setDescMap(dm);setCostMap(cm);
-    setLoading(false);setStep(5);setItinViewDay(0);
+    setLoading(false);goStep(5);setItinViewDay(0);
     saveTrip(city,dayPlans);
     // Fetch real travel times asynchronously after render
     setTravelLoading(true);
@@ -1539,6 +1540,7 @@ export default function App(){
   }
 
   // ── DERIVED ─────────────────────────────────────────────────
+  function goStep(n){ setStep(n); setMaxStep(m=>Math.max(m,n)); }
   const blabel=budget?BUDGETS.find(b=>b.id===budget)?.label:null;
   const tlabel=TRANSPORT.find(t=>t.id===transport)?.name||"Walking";
   const allAdded=dayPlans.flat();
@@ -1563,14 +1565,13 @@ export default function App(){
           {n:5,label:"Itinerary"},
         ];
         function goToStep(n){
-          // Can only jump to steps already reached (step <= current step)
-          if(n>step)return;
+          if(n>maxStep)return;
           setStep(n);
         }
         return(
           <nav className="nav">
             <div className="nav-l">
-              <div className="logo" onClick={()=>{setStep(1);setDayPlans([[]]);setCin("");setCity("");setOriginIn("");setOriginCity("");setDepartDate("");setReturnDate("");setTotalBudget("");setBudgetBreakdown(null);}}>
+              <div className="logo" onClick={()=>{setStep(1);setMaxStep(1);setDayPlans([[]]);setCin("");setCity("");setOriginIn("");setOriginCity("");setDepartDate("");setReturnDate("");setTotalBudget("");setBudgetBreakdown(null);}}>
                 Mapit<em>stry</em>
               </div>
             </div>
@@ -1579,9 +1580,9 @@ export default function App(){
                 <div key={s.n} className="step-nav-item">
                   {i>0&&<div className="step-nav-divider">›</div>}
                   <button
-                    className={`step-nav-btn ${s.n===step?"active":s.n<step?"done":""}`}
+                    className={`step-nav-btn ${s.n===step?"active":s.n<=maxStep?"done":""}`}
                     onClick={()=>goToStep(s.n)}
-                    disabled={s.n>step}
+                    disabled={s.n>maxStep}
                     title={s.n>step?"Complete previous steps first":""}
                   >
                     <div className="step-nav-num">{s.n<step?"✓":s.n}</div>
@@ -1697,7 +1698,7 @@ export default function App(){
                 onClick={()=>{
                   if(!cin.trim()){toast.show("Please enter a destination!");return;}
                   if(!departDate||!returnDate){toast.show("Please add travel dates to continue.");return;}
-                  setShowS(false);setStep(2);
+                  setShowS(false);goStep(2);
                 }}>
                 Plan My Trip →
               </button>
@@ -1855,7 +1856,7 @@ export default function App(){
                       :{label:"🔴 Expensive city for hotels",color:"#c45c26"};
                   }
                   const source=hotelCost.source==="live"
-                    ?`Current listings in ${city} · avg of ${hotelCost.note?.match(/avg of (\d+)/)?.[1]||""} hotels`
+                    ?`Current listings in ${city} · median of ${hotelCost.note?.match(/median of (\d+)/)?.[1]||""} hotels`
                     :hotelCost.method==="country"?"Regional average for this area"
                     :`Mid-range estimate for ${city}`;
                   return(
@@ -1929,7 +1930,7 @@ export default function App(){
               </div>
             </div>
 
-            <div className="brow"><button className="gobt" onClick={()=>setStep(3)}>Set Preferences →</button></div>
+            <div className="brow"><button className="gobt" onClick={()=>goStep(3)}>Set Preferences →</button></div>
           </div>
         );
       })()}
@@ -2137,7 +2138,7 @@ export default function App(){
               {travelLoading&&<div style={{fontSize:"0.75rem",color:"var(--ocean3)",marginTop:6}}>⏱ Calculating real travel times via Google Maps…</div>}
             </div>
             <div className="iac">
-              <button className="obt" onClick={()=>setStep(3)}>← Edit Places</button>
+              <button className="obt" onClick={()=>goStep(3)}>← Edit Places</button>
               <button className="dbt" onClick={()=>{exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime);}}>⬇ Export PDF</button>
             </div>
           </div>
