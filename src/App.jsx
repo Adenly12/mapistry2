@@ -432,14 +432,13 @@ const BUDGETS = [
   {id:"upscale",tier:"$$$",label:"Upscale",range:"$75–$150/person",desc:"Nicer restaurants, private tours & premium venues.",color:"#7c5cbf"},
   {id:"luxury",tier:"$$$$",label:"Luxury",range:"$150+/person",desc:"Fine dining, exclusive experiences & VIP access.",color:"#1b5e8a"},
 ];
-// Transport cost estimates (per trip/segment, USD)
-// multiply: true = cost scales with number of travelers
+// Transport cost per mile — multiply:true = scales with travelers
 const TRANSPORT_COSTS = {
-  walking:  {cost:0,  multiply:false, note:"Free"},
-  transit:  {cost:3,  multiply:true,  note:"Per person fare"},
-  driving:  {cost:10, multiply:false, note:"Fuel per trip"},
-  cycling:  {cost:5,  multiply:true,  note:"Per bike rental"},
-  rideshare:{cost:15, multiply:false, note:"Per ride (shared)"},
+  walking:  {perMile:0,    multiply:false, note:"Free"},
+  transit:  {perMile:0.15, multiply:true,  note:"Per person fare"},
+  driving:  {perMile:0.20, multiply:false, note:"Shared fuel cost"},
+  cycling:  {perMile:0.25, multiply:true,  note:"Per bike rental"},
+  rideshare:{perMile:1.50, multiply:false, note:"Per ride (shared car)"},
 };
 
 const TRANSPORT = [
@@ -610,8 +609,17 @@ async function fetchTravelTime(origin,destination,mode){
     const params=new URLSearchParams({origin:`${origin.lat},${origin.lng}`,destination:`${destination.lat},${destination.lng}`,mode:modeMap[mode]||"walking"});
     const r=await fetch(`/api/directions?${params}`);
     const d=await r.json();
-    return{minutes:d.minutes||15,text:d.text||"~15 min"};
-  }catch{return{minutes:15,text:"~15 min"};}
+    // Parse distance string e.g. "2.3 mi" or "1.2 km" → miles
+    let distanceMiles=1; // default 1 mile if unknown
+    if(d.distance&&d.distance!=="unknown"){
+      const match=d.distance.match(/([\d.]+)\s*(mi|km)/i);
+      if(match){
+        const val=parseFloat(match[1]);
+        distanceMiles=match[2].toLowerCase()==="km"?val*0.621:val;
+      }
+    }
+    return{minutes:d.minutes||15,text:d.text||"~15 min",distanceMiles:Math.round(distanceMiles*10)/10};
+  }catch{return{minutes:15,text:"~15 min",distanceMiles:1};}
 }
 
 // ─── STORAGE ──────────────────────────────────────────────────
@@ -1269,10 +1277,11 @@ export default function App(){
 
   // Fetch weather when entering step 3
   useEffect(()=>{
-    if(step===3&&city&&!weather&&!weatherLoading){
+    if(step===3&&city){
+      setWeather(null);
       fetchWeather(city, numDays);
     }
-  },[step]);
+  },[step,city]);
 
   // ── ACCOUNTS ──────────────────────────────────────────────
   function createUser(){
@@ -1817,10 +1826,10 @@ export default function App(){
         const effFlightTotal=effFlight*travelers;
 
         // Transport — only transit and cycling multiply by travelers
-        const tCost=TRANSPORT_COSTS[transport]||{cost:0,multiply:false};
-        const tripsPerDay=Math.max(1,(dayPlans.flat().length||1));
-        const transportDailyBase=tCost.cost*tripsPerDay;
-        const effTransport=(tCost.multiply?transportDailyBase*travelers:transportDailyBase)*numDays;
+        const tCost=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
+        // Use actual distances from travelMap if available, else estimate 1 mile/segment, 4 segments/day
+        const totalMiles=Object.values(travelMap||{}).reduce((s,t)=>s+(t?.distanceMiles||1),0)||numDays*4;
+        const effTransport=tCost.perMile*(tCost.multiply?travelers:1)*totalMiles;
 
         const totalSpendWithAll=effFlightTotal+effHotel+effActivities+effTransport;
         const remainingWithAll=Math.max(0,budgetNum-totalSpendWithAll);
@@ -1894,6 +1903,11 @@ export default function App(){
                         </span>
                         :flightCost?.note||"Add origin city for live prices"}
                     </div>
+                    {travelers>1&&!flightOverride&&flightCost?.cost>0&&(
+                      <div style={{fontSize:"0.68rem",color:"var(--ocean)",fontWeight:600,marginBottom:4}}>
+                        × {travelers} travelers = ${(flightCost.cost*travelers).toLocaleString()} total
+                      </div>
+                    )}
                     {flightCost?.typicalRange&&!flightOverride&&(
                       <div style={{fontSize:"0.68rem",color:"var(--muted2)",marginBottom:6}}>
                         Typical: ${flightCost.typicalRange[0]}–${flightCost.typicalRange[1]}
@@ -2112,10 +2126,7 @@ export default function App(){
                   {b.tier} {b.label}
                 </div>
               ))}
-              <button className="gobt" style={{padding:"7px 20px",fontSize:"0.82rem",marginLeft:"auto"}}
-                onClick={refreshPlaces}>
-                🔍 Refresh Places
-              </button>
+
             </div>
           </div>
 
@@ -2195,8 +2206,9 @@ export default function App(){
                 const act=allAdded.reduce((s,p)=>{
                   try{const ip=getInstantPrice(p);return s+(ip?.cost||0);}catch{return s;}
                 },0)*(travelers||1);
-                const tCostObj=TRANSPORT_COSTS[transport]||{cost:0,multiply:false};
-                const trans=(tCostObj.multiply?tCostObj.cost*(travelers||1):tCostObj.cost)*Math.max(1,allAdded.length)*numDays;
+                const tCostObj=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
+                const milesTotal=Object.values(travelMap||{}).reduce((s,t)=>s+(t?.distanceMiles||1),0)||numDays*4;
+                const trans=tCostObj.perMile*(tCostObj.multiply?(travelers||1):1)*milesTotal;
                 const spent=flt+hot+act+trans;
                 const rem=Math.max(0,bNum-spent);
                 const over=spent>bNum;
@@ -2206,15 +2218,15 @@ export default function App(){
                 const tp=bNum>0?Math.round(trans/bNum*100):0;
                 const grad=`conic-gradient(#1b5e8a 0% ${fp}%, #4a9fd4 ${fp}% ${fp+hp}%, #4a7c59 ${fp+hp}% ${fp+hp+ap}%, #7c5cbf ${fp+hp+ap}% ${fp+hp+ap+tp}%, ${over?"#e07060":"#c8e6d4"} ${fp+hp+ap+tp}% 100%)`;
                 return(
-                  <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0 12px",borderBottom:"1px solid var(--border)",marginBottom:10}}>
-                    <div style={{position:"relative",width:100,height:100,flexShrink:0}}>
-                      <div style={{width:100,height:100,borderRadius:"50%",background:grad,transition:"background 0.4s ease"}}/>
-                      <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:62,height:62,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-                        <div style={{fontSize:"0.6rem",color:over?"#c45c26":"var(--ocean)",fontWeight:700}}>${rem.toLocaleString()}</div>
-                        <div style={{fontSize:"0.5rem",color:"var(--muted2)"}}>left</div>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10,padding:"12px 0",borderBottom:"1px solid var(--border)",marginBottom:10}}>
+                    <div style={{position:"relative",width:130,height:130,flexShrink:0}}>
+                      <div style={{width:130,height:130,borderRadius:"50%",background:grad,transition:"background 0.4s ease"}}/>
+                      <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:80,height:80,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                        <div style={{fontSize:"0.7rem",color:over?"#c45c26":"var(--ocean)",fontWeight:700}}>${rem.toLocaleString()}</div>
+                        <div style={{fontSize:"0.58rem",color:"var(--muted2)"}}>left</div>
                       </div>
                     </div>
-                    <div style={{flex:1,fontSize:"0.68rem"}}>
+                    <div style={{width:"100%",fontSize:"0.72rem",display:"flex",flexDirection:"column",gap:4}}>
                       {[
                         {label:"Activities",color:"#4a7c59",val:act},
                         {label:"Transport",color:"#7c5cbf",val:trans},
@@ -2229,6 +2241,7 @@ export default function App(){
                       ))}
                       {over&&<div style={{fontSize:"0.65rem",color:"#c45c26",fontWeight:600,marginTop:3}}>⚠️ Over budget</div>}
                       {!over&&<div style={{fontSize:"0.65rem",color:"var(--muted2)",marginTop:3}}>${bNum.toLocaleString()} total budget</div>}
+                      {(travelers||1)>1&&<div style={{fontSize:"0.63rem",color:"var(--ocean)",fontWeight:600,marginTop:2}}>👥 {travelers} travelers</div>}
                     </div>
                   </div>
                 );
@@ -2319,8 +2332,9 @@ export default function App(){
             const hot=hotelCost?.total||0;
             const actCosts=allAdded.map(p=>costMap?.[p.id]?.cost??getInstantPrice(p)?.cost??0);
             const actTotal=actCosts.reduce((s,v)=>s+v,0)*travelers;
-            const tCostObj=TRANSPORT_COSTS[transport]||{cost:0,multiply:false};
-            const transTotal=(tCostObj.multiply?tCostObj.cost*travelers:tCostObj.cost)*Math.max(1,allAdded.length)*numDays;
+            const tCostObj=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
+            const milesSoFar=Object.values(travelMap||{}).reduce((s,t)=>s+(t?.distanceMiles||1),0)||numDays*4;
+            const transTotal=tCostObj.perMile*(tCostObj.multiply?travelers:1)*milesSoFar;
             const grandTotal=flt+hot+actTotal+transTotal;
             const remaining=Math.max(0,bNum-grandTotal);
             const over=bNum>0&&grandTotal>bNum;
