@@ -1493,26 +1493,22 @@ export default function App(){
                 Mapit<em>stry</em>
               </div>
             </div>
-            {(step>1||(step===1&&city))?(
-              <div className="step-nav">
-                {STEPS.map((s,i)=>(
-                  <div key={s.n} className="step-nav-item">
-                    {i>0&&<div className="step-nav-divider">›</div>}
-                    <button
-                      className={`step-nav-btn ${s.n===step?"active":s.n<step?"done":""}`}
-                      onClick={()=>goToStep(s.n)}
-                      disabled={s.n>step}
-                      title={s.n>step?"Complete previous steps first":""}
-                    >
-                      <div className="step-nav-num">{s.n<step?"✓":s.n}</div>
-                      <span className="step-nav-label">{s.label}</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ):(
-              <div style={{flex:1}}/>
-            )}
+            <div className="step-nav">
+              {STEPS.map((s,i)=>(
+                <div key={s.n} className="step-nav-item">
+                  {i>0&&<div className="step-nav-divider">›</div>}
+                  <button
+                    className={`step-nav-btn ${s.n===step?"active":s.n<step?"done":""}`}
+                    onClick={()=>goToStep(s.n)}
+                    disabled={s.n>step}
+                    title={s.n>step?"Complete previous steps first":""}
+                  >
+                    <div className="step-nav-num">{s.n<step?"✓":s.n}</div>
+                    <span className="step-nav-label">{s.label}</span>
+                  </button>
+                </div>
+              ))}
+            </div>
             <div className="nav-r">
               {city&&step>1&&(
                 <div className="nav-city">
