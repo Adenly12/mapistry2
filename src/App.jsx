@@ -649,6 +649,22 @@ Respond ONLY as JSON array with no markdown:
   try{return JSON.parse(txt);}catch{return null;}
 }
 
+async function fetchCardDesc(place, city){
+  const txt=await aiCall(
+    `You are an expert travel writer. Write a vivid, specific, 3–4 sentence description of "${place.name}" (${place.type}) in ${city}.
+
+Include:
+- What makes it uniquely special or memorable
+- Specific details: architecture, atmosphere, signature dishes/items, best time to visit, or insider tips
+- Sensory language that helps the traveler imagine being there
+- Any notable history or cultural significance
+
+Be concrete and specific — avoid generic tourist-brochure language. Write in present tense, second person ("you'll find…", "don't miss…").`,
+    400
+  );
+  return txt||null;
+}
+
 // Travel time via Directions API backend
 async function fetchTravelTime(origin,destination,mode){
   try{
@@ -1141,6 +1157,9 @@ export default function App(){
   const[placeModal,setPlaceModal]=useState(null); // {place, aiDesc, loading}
   const[modalAiDesc,setModalAiDesc]=useState("");
   const[modalLoading,setModalLoading]=useState(false);
+  // Per-card AI descriptions (Step 3 — click desc to expand)
+  const[cardDescMap,setCardDescMap]=useState({});   // {placeId: string}
+  const[cardDescLoading,setCardDescLoading]=useState({}); // {placeId: bool}
   // accounts
   const[activeUser,setActiveUser]=useState(null);
   const[hist,setHist]=useState([]);
@@ -2343,7 +2362,36 @@ export default function App(){
                         <div className="pltype">{p.type}</div>
                         <div className="plname">{p.name}</div>
                         <div className="plrat">★ {p.rating} <span>({p.reviews.toLocaleString()} reviews)</span></div>
-                        <div className="pldesc">{p.desc}</div>
+                        <div className="pldesc"
+                          title={cardDescMap[p.id]?"Click to collapse":"Click for AI-generated details"}
+                          style={{cursor:"pointer",position:"relative",transition:"all 0.2s"}}
+                          onClick={async e=>{
+                            e.stopPropagation();
+                            // Toggle off if already expanded
+                            if(cardDescMap[p.id]){setCardDescMap(m=>({...m,[p.id]:null}));return;}
+                            // Already loading
+                            if(cardDescLoading[p.id])return;
+                            setCardDescLoading(m=>({...m,[p.id]:true}));
+                            const result=await fetchCardDesc(p,city);
+                            setCardDescLoading(m=>({...m,[p.id]:false}));
+                            if(result)setCardDescMap(m=>({...m,[p.id]:result}));
+                          }}>
+                          {cardDescLoading[p.id]
+                            ?<span style={{display:"flex",alignItems:"center",gap:6,color:"var(--ocean)",fontSize:"0.75rem"}}>
+                                <span style={{width:10,height:10,border:"2px solid var(--ocean3)",borderTopColor:"var(--ocean)",borderRadius:"50%",display:"inline-block",animation:"spin 0.7s linear infinite",flexShrink:0}}/>
+                                Generating details…
+                              </span>
+                            :cardDescMap[p.id]
+                              ?<span>
+                                  <span style={{display:"block",marginBottom:4,color:"var(--ocean)",fontSize:"0.7rem",fontWeight:700,letterSpacing:"0.3px"}}>✦ AI Description · click to collapse</span>
+                                  {cardDescMap[p.id]}
+                                </span>
+                              :<span style={{display:"flex",alignItems:"center",gap:5}}>
+                                  <span style={{flex:1}}>{descMap?.[p.id]||p.desc}</span>
+                                  <span style={{flexShrink:0,fontSize:"0.68rem",color:"var(--ocean)",fontWeight:600,whiteSpace:"nowrap",opacity:0.75}}>✦ expand</span>
+                                </span>
+                          }
+                        </div>
                       </div>
                       <div className="plfoot" style={{flexDirection:"column",gap:4,alignItems:"stretch"}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:6}}>
