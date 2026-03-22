@@ -286,23 +286,75 @@ const NAME_OVERRIDES = {
   "moscow":"SVO","shanghai":"PVG","beijing":"PEK",
   "istanbul":"IST","buenos aires":"EZE","sao paulo":"GRU",
   "rio de janeiro":"GIG","seoul":"ICN","bangkok":"BKK",
+  // Virginia / DMV suburbs — all map to DCA or IAD
+  "lorton":"DCA","lorton va":"DCA","lorton virginia":"DCA",
+  "arlington":"DCA","arlington va":"DCA","alexandria":"DCA",
+  "alexandria va":"DCA","fairfax":"IAD","fairfax va":"IAD",
+  "tysons":"IAD","mclean":"IAD","reston":"IAD","herndon":"IAD",
+  "chantilly":"IAD","manassas":"IAD","woodbridge":"DCA",
+  "springfield":"DCA","burke":"DCA","annandale":"DCA",
+  "falls church":"DCA","sterling":"IAD","ashburn":"IAD",
+  "leesburg":"IAD","fredericksburg":"DCA","stafford":"DCA",
+  "woodbridge va":"DCA","prince william":"DCA",
+  // Other common US suburbs/towns → nearest hub
+  "hoboken":"EWR","jersey city":"EWR","staten island":"EWR",
+  "brooklyn":"JFK","queens":"JFK","bronx":"LGA","manhattan":"JFK",
+  "pasadena":"LAX","santa monica":"LAX","long beach":"LAX",
+  "burbank":"BUR","glendale":"BUR","anaheim":"SNA",
+  "evanston":"ORD","naperville":"ORD","oak park":"ORD",
+  "cambridge":"BOS","somerville":"BOS","brookline":"BOS",
+  "bellevue":"SEA","redmond":"SEA","kirkland":"SEA","tacoma":"SEA",
+  "aurora":"DEN","lakewood":"DEN","boulder":"DEN","fort collins":"DEN",
+  "scottsdale":"PHX","mesa":"PHX","tempe":"PHX","chandler":"PHX",
+  "henderson":"LAS","north las vegas":"LAS",
+  "fort worth":"DFW","irving":"DFW","plano":"DFW","garland":"DFW",
+  "sugar land":"IAH","pearland":"IAH","pasadena tx":"IAH",
+  "hialeah":"MIA","coral gables":"MIA","brickell":"MIA",
+  "clearwater":"TPA","st petersburg":"TPA","sarasota":"TPA",
+  "decatur":"ATL","marietta":"ATL","smyrna":"ATL","sandy springs":"ATL",
+  "durham":"RDU","chapel hill":"RDU","cary":"RDU",
+  "belmont":"CLT","concord nc":"CLT","gastonia":"CLT",
 };
 
 function findByName(cityName) {
   const lower = cityName.toLowerCase().trim();
-  // Check overrides first
-  if (NAME_OVERRIDES[lower]) {
-    return AIRPORTS.find(a => a.code === NAME_OVERRIDES[lower]) || null;
+  
+  // Helper to look up a single cleaned string
+  function lookup(str) {
+    if (NAME_OVERRIDES[str]) {
+      return AIRPORTS.find(a => a.code === NAME_OVERRIDES[str]) || null;
+    }
+    for (const airport of AIRPORTS) {
+      const aName = airport.name.toLowerCase();
+      if (aName.includes(str)) return airport;
+      const cityPart = aName.split(" ")[0];
+      if (str.includes(cityPart) && cityPart.length > 3) return airport;
+    }
+    return null;
   }
-  // Match against airport name or city portion
-  for (const airport of AIRPORTS) {
-    const aName = airport.name.toLowerCase();
-    // City name appears in airport name
-    if (aName.includes(lower)) return airport;
-    // Airport name appears in city name (e.g. "Paris CDG" matches "paris")
-    const cityPart = aName.split(" ")[0];
-    if (lower.includes(cityPart) && cityPart.length > 3) return airport;
+
+  // Try full name first
+  let result = lookup(lower);
+  if (result) return result;
+
+  // Strip state abbreviation / country suffix (e.g. "Lorton VA" → "Lorton")
+  const stripped = lower
+    .replace(/,?\s+(va|md|dc|ny|ca|tx|fl|il|wa|co|az|nv|ga|nc|sc|tn|oh|mi|mn|mo|wi|or|ma|pa|nj|ct|ri|nh|vt|me|de|wv|ky|in|ia|ks|ne|sd|nd|mt|id|wy|ut|nm|ak|hi|ok|ar|ms|al|la)/gi, "")
+    .replace(/,?\s+(virginia|maryland|california|texas|florida|illinois|washington|colorado|arizona|nevada|georgia|carolina|tennessee|ohio|michigan|minnesota|missouri|wisconsin|oregon|massachusetts|pennsylvania|new jersey|new york|connecticut)/gi, "")
+    .trim();
+    
+  if (stripped !== lower) {
+    result = lookup(stripped);
+    if (result) return result;
   }
+
+  // Try just the first word if multi-word (e.g. "Lorton" from "Lorton VA")
+  const firstWord = lower.split(/[\s,]+/)[0];
+  if (firstWord.length > 3 && firstWord !== lower) {
+    result = lookup(firstWord);
+    if (result) return result;
+  }
+
   return null;
 }
 
@@ -407,8 +459,15 @@ export default async function handler(req, res) {
     const cheapest = allFlights[0];
     const insights = data.price_insights || null;
 
+    // Serpapi returns total round-trip price per person
+    // Sanity check: log if suspiciously low for debugging
+    const price = cheapest.price;
+    if (price < 50) {
+      console.warn(`Suspiciously low price: $${price} for ${originAirport.code}→${destAirport.code} — may be a data issue`);
+    }
+
     res.status(200).json({
-      price: cheapest.price,
+      price,
       airline: cheapest.flights?.[0]?.airline || null,
       origin_code: originAirport.code,
       dest_code: destAirport.code,
@@ -420,6 +479,7 @@ export default async function handler(req, res) {
       typical_range: insights?.typical_price_range || null,
       total_duration: cheapest.total_duration || null,
       stops: cheapest.flights?.length > 1 ? cheapest.flights.length - 1 : 0,
+      price_note: "Round trip · per person · economy",
     });
 
   } catch (e) {

@@ -83,11 +83,13 @@ async function getLiveHotelRate(city, checkIn, checkOut) {
       .map(p => p.rate_per_night?.extracted_lowest || p.rate_per_night?.lowest)
       .filter(r => typeof r === "number" && r >= 20 && r <= 800);
     if (!rates.length) return null;
+    // Median — immune to outliers like $800 luxury hotels or $15 hostels
     rates.sort((a, b) => a - b);
-    const trim = Math.floor(rates.length * 0.2);
-    const midRates = rates.slice(trim, rates.length - trim);
-    const avg = Math.round(midRates.reduce((s, r) => s + r, 0) / midRates.length);
-    return { rate: avg, count: rates.length };
+    const mid = Math.floor(rates.length / 2);
+    const median = rates.length % 2 !== 0
+      ? rates[mid]
+      : Math.round((rates[mid - 1] + rates[mid]) / 2);
+    return { rate: median, count: rates.length };
   } catch (e) {
     console.error("getLiveHotelRate error:", e);
     return null;

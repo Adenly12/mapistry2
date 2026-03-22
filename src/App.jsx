@@ -1211,7 +1211,7 @@ export default function App(){
       if(fd.price){
         setFlightCost({
           cost:fd.price,
-          note:fd.airline?`${fd.airline} · ${fd.stops===0?"Nonstop":`${fd.stops} stop${fd.stops>1?"s":""}`} · Economy round-trip`:"Economy round-trip",
+          note:fd.airline?`${fd.airline} · ${fd.stops===0?"Nonstop":`${fd.stops} stop${fd.stops>1?"s":""}`} · Round trip per person`:"Round trip · per person · economy",
           priceLevel:fd.price_level,
           typicalRange:fd.typical_range,
           originCode:fd.origin_code||null,
@@ -1820,9 +1820,6 @@ export default function App(){
                       )}
                       {flightOverride!==""&&!editingFlight&&(
                         <button className="cost-card-clear" onClick={()=>setFlightOverride("")} title="Reset to live price">✕</button>
-                      )}
-                      {!flightOverride&&flightCost&&!editingFlight&&(
-                        <button className="cost-card-pencil" style={{marginLeft:"auto"}} onClick={()=>{setFlightCost(null);fetchRealCosts();}} title="Refresh price">🔄</button>
                       )}
                     </div>
                   </>
