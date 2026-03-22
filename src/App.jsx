@@ -1493,7 +1493,7 @@ export default function App(){
                 Mapit<em>stry</em>
               </div>
             </div>
-            {step>1?(
+            {(step>1||(step===1&&city))?(
               <div className="step-nav">
                 {STEPS.map((s,i)=>(
                   <div key={s.n} className="step-nav-item">
@@ -1514,6 +1514,12 @@ export default function App(){
               <div style={{flex:1}}/>
             )}
             <div className="nav-r">
+              {city&&step>1&&(
+                <div className="nav-city">
+                  {originCity&&<span>{originCity} → </span>}
+                  📍 {city}
+                </div>
+              )}
               {activeUser
                 ?<button className="ubtn" onClick={()=>setShowProfile(true)}><div className="uav">{initials}</div>{activeUser}</button>
                 :<button className="ubtn guest" onClick={()=>setShowUserSetup(true)}>👤 Sign In</button>
