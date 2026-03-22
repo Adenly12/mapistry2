@@ -1,6 +1,7 @@
 const GOOGLE_KEY = process.env.REACT_APP_GOOGLE_KEY;
 const SERPAPI_KEY = process.env.SERPAPI_KEY;
 
+// Comprehensive IATA lookup — checked against city name first before Google Places
 const IATA_LOOKUP = {
   "john f kennedy":"JFK","jfk":"JFK","laguardia":"LGA","newark":"EWR",
   "los angeles":"LAX","chicago o'hare":"ORD","ohare":"ORD","midway":"MDW",
@@ -17,35 +18,52 @@ const IATA_LOOKUP = {
   "memphis":"MEM","pittsburgh":"PIT","cleveland":"CLE","indianapolis":"IND",
   "columbus":"CMH","buffalo":"BUF","honolulu":"HNL","maui":"OGG","anchorage":"ANC",
   "toronto pearson":"YYZ","toronto":"YYZ","vancouver":"YVR","montreal":"YUL",
-  "calgary":"YYC","mexico city":"MEX","cancun":"CUN",
+  "calgary":"YYC","mexico city":"MEX","cancun":"CUN","guadalajara":"GDL",
   "heathrow":"LHR","london heathrow":"LHR","gatwick":"LGW","london gatwick":"LGW",
-  "stansted":"STN","luton":"LTN","paris charles de gaulle":"CDG","cdg":"CDG",
-  "orly":"ORY","paris":"CDG","amsterdam schiphol":"AMS","schiphol":"AMS",
-  "amsterdam":"AMS","frankfurt":"FRA","munich":"MUC","berlin":"BER",
-  "berlin brandenburg":"BER","madrid barajas":"MAD","madrid":"MAD","barcelona":"BCN",
-  "rome fiumicino":"FCO","fiumicino":"FCO","rome":"FCO","milan malpensa":"MXP",
-  "malpensa":"MXP","milan":"MXP","zurich":"ZRH","vienna":"VIE","brussels":"BRU",
+  "stansted":"STN","luton":"LTN","london":"LHR",
+  "paris charles de gaulle":"CDG","charles de gaulle":"CDG","cdg":"CDG",
+  "orly":"ORY","paris":"CDG",
+  "amsterdam schiphol":"AMS","schiphol":"AMS","amsterdam":"AMS",
+  "frankfurt":"FRA","munich":"MUC","berlin":"BER","berlin brandenburg":"BER",
+  "madrid barajas":"MAD","madrid":"MAD","barcelona":"BCN",
+  "rome fiumicino":"FCO","fiumicino":"FCO","rome":"FCO","ciampino":"CIA",
+  "milan malpensa":"MXP","malpensa":"MXP","milan":"MXP","linate":"LIN",
+  "zurich":"ZRH","vienna":"VIE","brussels":"BRU",
   "lisbon":"LIS","porto":"OPO","athens":"ATH","istanbul":"IST",
-  "prague":"PRG","warsaw":"WAW","budapest":"BUD","stockholm arlanda":"ARN",
-  "stockholm":"ARN","oslo gardermoen":"OSL","oslo":"OSL","copenhagen":"CPH",
-  "helsinki":"HEL","dublin":"DUB","edinburgh":"EDI","manchester":"MAN",
-  "nice":"NCE","lyon":"LYS","geneva":"GVA",
+  "prague":"PRG","warsaw":"WAW","budapest":"BUD",
+  "stockholm arlanda":"ARN","stockholm":"ARN",
+  "oslo gardermoen":"OSL","oslo":"OSL","copenhagen":"CPH","helsinki":"HEL",
+  "dublin":"DUB","edinburgh":"EDI","manchester":"MAN","birmingham":"BHX",
+  "nice":"NCE","lyon":"LYS","marseille":"MRS","bordeaux":"BOD","toulouse":"TLS",
+  "geneva":"GVA","basel":"BSL",
   "tokyo narita":"NRT","narita":"NRT","haneda":"HND","tokyo":"NRT",
   "osaka kansai":"KIX","kansai":"KIX","osaka":"KIX","kyoto":"KIX",
-  "beijing capital":"PEK","beijing":"PEK","shanghai pudong":"PVG","pudong":"PVG",
-  "shanghai":"PVG","hong kong":"HKG","singapore changi":"SIN","changi":"SIN",
-  "singapore":"SIN","bangkok suvarnabhumi":"BKK","suvarnabhumi":"BKK","bangkok":"BKK",
-  "bali denpasar":"DPS","denpasar":"DPS","bali":"DPS","kuala lumpur":"KUL",
-  "seoul incheon":"ICN","incheon":"ICN","seoul":"ICN","taipei":"TPE",
-  "manila ninoy":"MNL","manila":"MNL","dubai":"DXB","abu dhabi":"AUH","doha":"DOH",
-  "tel aviv":"TLV","ben gurion":"TLV","mumbai":"BOM","delhi":"DEL","bangalore":"BLR",
-  "jakarta":"CGK","ho chi minh":"SGN","hanoi":"HAN",
-  "sydney":"SYD","melbourne":"MEL","brisbane":"BNE","perth":"PER",
-  "auckland":"AKL","christchurch":"CHC",
-  "buenos aires":"EZE","sao paulo":"GRU","rio de janeiro":"GIG",
-  "lima":"LIM","bogota":"BOG","santiago":"SCL",
-  "johannesburg":"JNB","cape town":"CPT","nairobi":"NBO",
-  "cairo":"CAI","casablanca":"CMN","lagos":"LOS","marrakech":"RAK",
+  "beijing capital":"PEK","beijing":"PEK","daxing":"PKX",
+  "shanghai pudong":"PVG","pudong":"PVG","shanghai":"PVG","hongqiao":"SHA",
+  "hong kong":"HKG","singapore changi":"SIN","changi":"SIN","singapore":"SIN",
+  "bangkok suvarnabhumi":"BKK","suvarnabhumi":"BKK","bangkok":"BKK","don mueang":"DMK",
+  "bali denpasar":"DPS","denpasar":"DPS","bali":"DPS",
+  "kuala lumpur":"KUL","klia":"KUL",
+  "seoul incheon":"ICN","incheon":"ICN","seoul":"ICN","gimpo":"GMP",
+  "taipei":"TPE","taoyuan":"TPE",
+  "manila ninoy":"MNL","ninoy aquino":"MNL","manila":"MNL",
+  "dubai":"DXB","abu dhabi":"AUH","doha":"DOH","riyadh":"RUH","jeddah":"JED",
+  "tel aviv":"TLV","ben gurion":"TLV",
+  "mumbai":"BOM","chhatrapati":"BOM","delhi":"DEL","indira gandhi":"DEL","bangalore":"BLR",
+  "jakarta":"CGK","soekarno":"CGK",
+  "ho chi minh":"SGN","tan son nhat":"SGN","hanoi":"HAN","noi bai":"HAN",
+  "sydney":"SYD","kingsford":"SYD","melbourne":"MEL","tullamarine":"MEL",
+  "brisbane":"BNE","perth":"PER",
+  "auckland":"AKL","christchurch":"CHC","queenstown":"ZQN",
+  "buenos aires":"EZE","ezeiza":"EZE","sao paulo":"GRU","guarulhos":"GRU",
+  "rio de janeiro":"GIG","galeao":"GIG",
+  "lima":"LIM","jorge chavez":"LIM","bogota":"BOG","el dorado":"BOG",
+  "santiago":"SCL","arturo merino":"SCL",
+  "johannesburg":"JNB","or tambo":"JNB","cape town":"CPT",
+  "nairobi":"NBO","jomo kenyatta":"NBO",
+  "cairo":"CAI","casablanca":"CMN","mohammed v":"CMN",
+  "lagos":"LOS","murtala":"LOS","marrakech":"RAK","addis ababa":"ADD",
+  "charlottesville":"CHO","richmond":"RIC","norfolk":"ORF","roanoke":"ROA",
 };
 
 function findIataCode(name) {
@@ -57,31 +75,53 @@ function findIataCode(name) {
   return null;
 }
 
-async function getNearestAirport(cityName) {
-  // Step 1: Geocode city
-  const geoRes = await fetch(
-    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cityName)}&key=${GOOGLE_KEY}`
-  );
-  const geoData = await geoRes.json();
-  if (!geoData.results?.length) return null;
-  const { lat, lng } = geoData.results[0].geometry.location;
-
-  // Step 2: Find nearby airports
-  const placesRes = await fetch(
-    `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&rankby=distance&type=airport&key=${GOOGLE_KEY}`
-  );
-  const placesData = await placesRes.json();
-  if (!placesData.results?.length) return null;
-
-  // Try each result for a known IATA code
-  for (const place of placesData.results.slice(0, 8)) {
-    const code = findIataCode(place.name);
-    if (code) return { code, name: place.name };
-  }
-
-  // Fallback: try city name directly
+async function getAirportForCity(cityName) {
+  // Strategy 1: Direct lookup from city name — fastest, no API call
   const directCode = findIataCode(cityName);
-  if (directCode) return { code: directCode, name: cityName };
+  if (directCode) return { code: directCode, name: cityName, method: "direct" };
+
+  if (!GOOGLE_KEY) return null;
+
+  try {
+    // Strategy 2: Geocode the city, then search for nearby airports
+    const geoRes = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(cityName)}&key=${GOOGLE_KEY}`
+    );
+    const geoData = await geoRes.json();
+    if (!geoData.results?.length) return null;
+
+    const { lat, lng } = geoData.results[0].geometry.location;
+
+    // Try with a larger radius (50km) to catch airports near the city
+    const placesRes = await fetch(
+      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=50000&type=airport&key=${GOOGLE_KEY}`
+    );
+    const placesData = await placesRes.json();
+
+    if (placesData.results?.length) {
+      // Try each result for a known IATA code
+      for (const place of placesData.results.slice(0, 10)) {
+        const code = findIataCode(place.name);
+        if (code) return { code, name: place.name, method: "places" };
+      }
+    }
+
+    // Strategy 3: Text search for "airport near [city]"
+    const textRes = await fetch(
+      `https://maps.googleapis.com/maps/api/place/textsearch/json?query=international+airport+near+${encodeURIComponent(cityName)}&key=${GOOGLE_KEY}`
+    );
+    const textData = await textRes.json();
+
+    if (textData.results?.length) {
+      for (const place of textData.results.slice(0, 5)) {
+        const code = findIataCode(place.name);
+        if (code) return { code, name: place.name, method: "textsearch" };
+      }
+    }
+
+  } catch (e) {
+    console.error("getAirportForCity error:", e);
+  }
 
   return null;
 }
@@ -92,23 +132,27 @@ export default async function handler(req, res) {
   if (!destination || !depart_date || !return_date) {
     return res.status(400).json({ error: "Missing required parameters" });
   }
-  if (!GOOGLE_KEY) return res.status(500).json({ error: "Google API key not configured" });
   if (!SERPAPI_KEY) return res.status(500).json({ error: "Serpapi key not configured" });
 
   try {
     const [originAirport, destAirport] = await Promise.all([
-      origin ? getNearestAirport(origin) : Promise.resolve(null),
-      getNearestAirport(destination),
+      origin ? getAirportForCity(origin) : Promise.resolve(null),
+      getAirportForCity(destination),
     ]);
 
     if (!destAirport) {
-      return res.status(200).json({ error: `No airport found near ${destination}`, price: null });
+      return res.status(200).json({ error: `Could not find an airport for ${destination}`, price: null });
     }
     if (origin && !originAirport) {
-      return res.status(200).json({ error: `No airport found near ${origin}`, price: null });
+      return res.status(200).json({ error: `Could not find an airport for ${origin}`, price: null });
     }
     if (!originAirport) {
-      return res.status(200).json({ price: null, error: "No origin city — add one for flight prices", dest_code: destAirport.code, dest_airport: destAirport.name });
+      return res.status(200).json({
+        price: null,
+        error: "Add an origin city to see flight prices",
+        dest_code: destAirport.code,
+        dest_airport: destAirport.name,
+      });
     }
 
     const params = new URLSearchParams({
@@ -128,12 +172,22 @@ export default async function handler(req, res) {
     const data = await flightRes.json();
 
     if (data.error) {
-      return res.status(200).json({ error: data.error, price: null, origin_code: originAirport.code, dest_code: destAirport.code });
+      return res.status(200).json({
+        error: data.error,
+        price: null,
+        origin_code: originAirport.code,
+        dest_code: destAirport.code,
+      });
     }
 
     const allFlights = [...(data.best_flights || []), ...(data.other_flights || [])];
     if (!allFlights.length) {
-      return res.status(200).json({ price: null, error: "No flights found for these dates", origin_code: originAirport.code, dest_code: destAirport.code });
+      return res.status(200).json({
+        price: null,
+        error: "No flights found for these dates",
+        origin_code: originAirport.code,
+        dest_code: destAirport.code,
+      });
     }
 
     allFlights.sort((a, b) => (a.price || 999999) - (b.price || 999999));
