@@ -196,7 +196,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .plgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px,1fr)); gap: 13px; }
 .plcard { background: white; border-radius: var(--r); overflow: hidden; border: 2px solid var(--border); cursor: pointer; transition: all 0.22s; box-shadow: var(--sh); }
 .plcard:hover { border-color: var(--ocean3); transform: translateY(-2px); box-shadow: var(--shm); }
-.plcard.focused { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,130,10,0.12), var(--shm); }
+.plcard.focused { border-color: var(--ocean); box-shadow: 0 0 0 3px rgba(27,94,138,0.12), var(--shm); }
 .plcard.added { border-color: var(--sage); background: rgba(74,124,89,0.03); }
 .plimg { width: 100%; height: 155px; overflow: hidden; background: var(--sand2); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; position: relative; }
 .plimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -486,38 +486,28 @@ async function aiCall(prompt, maxTokens=1200){
   }catch{return null;}
 }
 
-// aiCall with web_search tool — handles multi-turn tool use automatically
+// aiCall with web_search tool — web_search_20250305 is a server-side tool:
+// the API executes the search and returns results inline in the content array.
+// We just make one call; the model searches and responds in a single turn.
 async function aiCallWithSearch(prompt, maxTokens=1024){
   if(!ANTHROPIC_KEY||ANTHROPIC_KEY==="PASTE_YOUR_ANTHROPIC_KEY_HERE")return null;
   try{
-    const messages=[{role:"user",content:prompt}];
-    const tools=[{type:"web_search_20250305",name:"web_search"}];
-    // Loop up to 5 turns to handle tool use
-    for(let i=0;i<5;i++){
-      const r=await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,tools,messages})
-      });
-      const d=await r.json();
-      if(!d.content)return null;
-      // If stopped normally, return text
-      if(d.stop_reason==="end_turn"){
-        return d.content.map(c=>c.type==="text"?c.text:"").join("").replace(/```json|```/g,"").trim();
-      }
-      // If tool use, add assistant turn + tool results and continue
-      if(d.stop_reason==="tool_use"){
-        messages.push({role:"assistant",content:d.content});
-        const toolResults=d.content
-          .filter(c=>c.type==="tool_use")
-          .map(c=>({type:"tool_result",tool_use_id:c.id,content:"Search completed."}));
-        messages.push({role:"user",content:toolResults});
-        continue;
-      }
-      // Any other stop reason — extract text if present
-      return d.content.map(c=>c.type==="text"?c.text:"").join("").replace(/```json|```/g,"").trim()||null;
-    }
-    return null;
+    const r=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:maxTokens,
+        tools:[{type:"web_search_20250305",name:"web_search"}],
+        messages:[{role:"user",content:prompt}]
+      })
+    });
+    const d=await r.json();
+    if(d.error){console.error("aiCallWithSearch API error",d.error);return null;}
+    if(!d.content)return null;
+    // Extract all text blocks — model writes its final answer as text after searching
+    const text=d.content.filter(c=>c.type==="text").map(c=>c.text).join("").replace(/```json|```/g,"").trim();
+    return text||null;
   }catch(e){console.error("aiCallWithSearch error",e);return null;}
 }
 
@@ -572,7 +562,7 @@ function saveHist(name,h){const u=loadU();if(!u[name])u[name]={created:new Date(
 function getCreated(name){return loadU()[name]?.created||"";}
 
 // ─── PDF EXPORT ───────────────────────────────────────────────
-function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime){
+function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime,cardPriceMap={}){
   const{jsPDF}=window.jspdf||{};
   if(!jsPDF){alert("jsPDF not loaded.");return;}
 
@@ -581,11 +571,20 @@ function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,star
   const H=doc.internal.pageSize.getHeight();
   const MAR=14; const INNER=W-MAR*2;
   const blabel=budget?BUDGETS.find(b=>b.id===budget)?.label:null;
+  // Merge AI itinerary costs with any card-level prices fetched in step 3
+  const mergedCostMap={};
+  const allP=dayPlans.flat();
+  allP.forEach(p=>{
+    if(costMap&&costMap[p.id]!=null)mergedCostMap[p.id]=costMap[p.id];
+    else if(cardPriceMap&&cardPriceMap[p.id]&&cardPriceMap[p.id]!=="loading"&&cardPriceMap[p.id].cost!=null)
+      mergedCostMap[p.id]=cardPriceMap[p.id];
+  });
+  const effectiveCostMap=Object.keys(mergedCostMap).length>0?mergedCostMap:null;
   const tlabel=TRANSPORT.find(t=>t.id===transport)?.name||"Walking";
   const ticon=TRANSPORT.find(t=>t.id===transport)?.icon||"🚶";
   const allPlaces=dayPlans.flat();
-  const hasCosts=costMap&&allPlaces.some(p=>costMap[p.id]!=null);
-  const totalCost=hasCosts?allPlaces.reduce((s,p)=>s+((costMap[p.id]?.cost)||0),0):null;
+  const hasCosts=effectiveCostMap&&allPlaces.some(p=>effectiveCostMap[p.id]!=null);
+  const totalCost=hasCosts?allPlaces.reduce((s,p)=>s+((effectiveCostMap[p.id]?.cost)||0),0):null;
   const today=new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"});
 
   // ── PALETTE ──
@@ -706,7 +705,7 @@ function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,star
       const eH=h+Math.floor((m+durMin)/60), eM=(m+durMin)%60;
       const te=ft(eH,eM);
       const desc=(descMap?.[p.id]||p.desc||"").trim();
-      const costEntry=costMap?.[p.id];
+      const costEntry=effectiveCostMap?.[p.id];
       const hasDesc=!!desc;
 
       // Dynamic card height
@@ -1504,7 +1503,7 @@ Do not include any explanation or markdown. Just the JSON object.`;
             </div>
             <div className="iac np">
               <button className="obt" onClick={()=>setStep(3)}>← Edit Places</button>
-              <button className="dbt" onClick={()=>exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime)}>⬇ Export PDF</button>
+              <button className="dbt" onClick={()=>exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime,cardPriceMap)}>⬇ Export PDF</button>
             </div>
           </div>
 
