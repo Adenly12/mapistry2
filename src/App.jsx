@@ -615,7 +615,7 @@ async function aiCall(prompt, maxTokens=1200){
       body:JSON.stringify({model:"claude-haiku-4-5",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
     });
     const d=await r.json();
-    if(d.error){console.error("aiCall error",d.error);return null;}
+    if(d.error){console.error("aiCall error — type:",d.error.type,"message:",d.error.message,"full:",JSON.stringify(d.error));return null;}
     return d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim()||null;
   }catch(e){console.error("aiCall error",e);return null;}
 }
@@ -1146,10 +1146,9 @@ export default function App(){
 
   const[editTimeVal,setEditTimeVal]=useState("");
   const[editDurVal,setEditDurVal]=useState(60);
-  const[placeModal,setPlaceModal]=useState(null);
+  const[placeModal,setPlaceModal]=useState(null); // {place, aiDesc, loading}
   const[modalAiDesc,setModalAiDesc]=useState("");
   const[modalLoading,setModalLoading]=useState(false);
-  // Per-card inline AI descriptions (Step 3)
   const[cardDescMap,setCardDescMap]=useState({});
   const[cardDescLoading,setCardDescLoading]=useState({});
   // accounts
@@ -1480,9 +1479,7 @@ export default function App(){
     setModalAiDesc("");
     setModalLoading(true);
     try{
-      const prompt=`You are an expert travel writer. Write a rich, engaging 3–4 sentence description of "${place.name}" (${place.type}) in ${city}.
-
-Cover: what makes it iconic or unique, the atmosphere and sensory experience, one specific insider tip or best time to visit, and any notable history or cultural significance. Be vivid and specific — avoid generic phrases. Write in second person, present tense ("you'll find…", "don't miss…").`;
+      const prompt=`You are an expert travel writer. Write a rich, engaging 3–4 sentence description of "${place.name}" (${place.type}) in ${city}. Cover: what makes it iconic or unique, the atmosphere and sensory experience, one specific insider tip or best time to visit, and any notable history or cultural significance. Be vivid and specific — avoid generic phrases. Write in second person, present tense.`;
       const txt=await aiCall(prompt, 350);
       setModalAiDesc(txt||place.desc||"");
     }catch{setModalAiDesc(place.desc||"");}
