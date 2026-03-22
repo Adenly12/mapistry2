@@ -486,6 +486,41 @@ async function aiCall(prompt, maxTokens=1200){
   }catch{return null;}
 }
 
+// aiCall with web_search tool — handles multi-turn tool use automatically
+async function aiCallWithSearch(prompt, maxTokens=1024){
+  if(!ANTHROPIC_KEY||ANTHROPIC_KEY==="PASTE_YOUR_ANTHROPIC_KEY_HERE")return null;
+  try{
+    const messages=[{role:"user",content:prompt}];
+    const tools=[{type:"web_search_20250305",name:"web_search"}];
+    // Loop up to 5 turns to handle tool use
+    for(let i=0;i<5;i++){
+      const r=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,tools,messages})
+      });
+      const d=await r.json();
+      if(!d.content)return null;
+      // If stopped normally, return text
+      if(d.stop_reason==="end_turn"){
+        return d.content.map(c=>c.type==="text"?c.text:"").join("").replace(/```json|```/g,"").trim();
+      }
+      // If tool use, add assistant turn + tool results and continue
+      if(d.stop_reason==="tool_use"){
+        messages.push({role:"assistant",content:d.content});
+        const toolResults=d.content
+          .filter(c=>c.type==="tool_use")
+          .map(c=>({type:"tool_result",tool_use_id:c.id,content:"Search completed."}));
+        messages.push({role:"user",content:toolResults});
+        continue;
+      }
+      // Any other stop reason — extract text if present
+      return d.content.map(c=>c.type==="text"?c.text:"").join("").replace(/```json|```/g,"").trim()||null;
+    }
+    return null;
+  }catch(e){console.error("aiCallWithSearch error",e);return null;}
+}
+
 async function fetchAIDescs(places,city,budget,prefs){
   const list=places.map((p,i)=>`${i+1}. ${p.name} (${p.type})`).join("\n");
   const blabel=budget?BUDGETS.find(b=>b.id===budget)?.label:"moderate";
@@ -1001,22 +1036,31 @@ export default function App(){
   }
 
   async function fetchCardPrice(p){
-    // Already fetched or loading
-    if(cardPriceMap[p.id])return;
+    // Already fetched or loading — treat 0 as valid so we don't skip free places
+    if(cardPriceMap[p.id]!==undefined)return;
     setCardPriceMap(prev=>({...prev,[p.id]:"loading"}));
-    const prompt=`You are a travel cost researcher with web search. Find the real current admission price or typical cost for "${p.name}" in ${city} (type: ${p.type}).
-- For museums/attractions: find exact admission price from their official website
-- For restaurants/cafes/bars: find typical cost per person for a meal or drink
-- For free parks/landmarks: return cost 0
-- Be specific to THIS venue, not a generic estimate
-Respond ONLY as JSON with no markdown: {"cost":NUMBER,"note":"brief explanation e.g. Adult admission / Typical meal"}`;
-    const txt=await aiCall(prompt,300);
+    const prompt=`Search the web and find the REAL current price for visiting "${p.name}" in ${city}.
+Type: ${p.type}.
+- Museums/attractions: find the official admission price (e.g. search "${p.name} admission price")
+- Restaurants/bars/cafes: find typical cost per person from their menu
+- Free parks/public spaces: cost is 0
+- Shopping: typical spend per visit
+Use web search to find the current price. Then respond ONLY with this exact JSON and nothing else:
+{"cost":NUMBER,"note":"one short phrase explaining what cost covers"}
+Example: {"cost":25,"note":"Adult general admission"}
+Do not include any explanation or markdown. Just the JSON object.`;
+    const txt=await aiCallWithSearch(prompt,800);
     let result={cost:null,note:""};
     if(txt){
       try{
-        const parsed=JSON.parse(txt.replace(/```json|```/g,"").trim());
-        result={cost:parsed.cost??null,note:parsed.note||""};
-      }catch{}
+        const clean=txt.replace(/```json|```/g,"").trim();
+        // Extract JSON object if surrounded by other text
+        const match=clean.match(/\{[^{}]*"cost"\s*:\s*[\d.]+[^{}]*\}/);
+        const parsed=JSON.parse(match?match[0]:clean);
+        if(typeof parsed.cost==="number"){
+          result={cost:Math.round(parsed.cost),note:parsed.note||""};
+        }
+      }catch(e){console.log("price parse error",e,txt);}
     }
     setCardPriceMap(prev=>({...prev,[p.id]:result}));
   }
@@ -1464,7 +1508,7 @@ Respond ONLY as JSON with no markdown: {"cost":NUMBER,"note":"brief explanation 
             </div>
           </div>
 
-          {costMap&&totalCost!=null&&(
+          {costMap&&Object.keys(costMap).length>0&&(
             <div className="cost-box">
               <div className="cost-ttl">💰 Estimated Cost Per Person{numDays>1?` — All ${numDays} Days`:""}</div>
               {numDays>1&&(
@@ -1554,6 +1598,18 @@ Respond ONLY as JSON with no markdown: {"cost":NUMBER,"note":"brief explanation 
                     </div>
                   );
                 })}
+                {/* Day cost summary strip */}
+                {costMap&&(()=>{
+                  const dayCosts=day.filter(pl=>costMap[pl.id]!=null);
+                  if(!dayCosts.length)return null;
+                  const dayTotal=dayCosts.reduce((s,pl)=>s+(costMap[pl.id]?.cost||0),0);
+                  return(
+                    <div style={{marginTop:16,padding:"12px 16px",background:"rgba(27,94,138,0.05)",borderRadius:10,border:"1px solid rgba(27,94,138,0.15)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontSize:"0.8rem",color:"var(--muted)",fontWeight:600}}>💰 Day {itinViewDay+1} estimated cost</span>
+                      <span style={{fontSize:"1rem",fontWeight:700,color:"var(--ocean)",fontFamily:"'Cormorant Garamond',serif"}}>{dayTotal===0?"Free":`~$${dayTotal} per person`}</span>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })()}
