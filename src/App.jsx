@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import CONFIG from "./config";
 
 const GOOGLE_KEY = CONFIG.GOOGLE_KEY;
-const ANTHROPIC_KEY = CONFIG.ANTHROPIC_KEY;
+const GEMINI_KEY = CONFIG.GEMINI_KEY;
 
 // ─── HERO PHOTOS ──────────────────────────────────────────────
 const HERO_PHOTOS = [
@@ -596,28 +596,25 @@ function buildCityEmbedUrl(tripHistory){
   return "data:text/html;charset=utf-8,"+encodeURIComponent(html);
 }
 
-// ─── AI ───────────────────────────────────────────────────────
-function getAIHeaders(key){
-  return{
-    "Content-Type":"application/json",
-    "x-api-key":key,
-    "anthropic-version":"2023-06-01",
-    "anthropic-dangerous-direct-browser-access":"true",
-  };
-}
-
+// ─── AI (Google Gemini — free tier) ──────────────────────────
 async function aiCall(prompt, maxTokens=1200){
-  if(!ANTHROPIC_KEY||ANTHROPIC_KEY==="PASTE_YOUR_ANTHROPIC_KEY_HERE")return null;
+  if(!GEMINI_KEY||GEMINI_KEY==="PASTE_YOUR_GEMINI_KEY_HERE")return null;
   try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",
-      headers:getAIHeaders(ANTHROPIC_KEY),
-      body:JSON.stringify({model:"claude-haiku-4-5",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
-    });
+    const r=await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          contents:[{parts:[{text:prompt}]}],
+          generationConfig:{maxOutputTokens:maxTokens,temperature:0.7}
+        })
+      }
+    );
     const d=await r.json();
-    if(d.error){console.error("aiCall error — type:",d.error.type,"message:",d.error.message,"full:",JSON.stringify(d.error));return null;}
-    return d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim()||null;
-  }catch(e){console.error("aiCall error",e);return null;}
+    if(d.error){console.error("aiCall error — type:",d.error.code,"message:",d.error.message);return null;}
+    return d.candidates?.[0]?.content?.parts?.[0]?.text?.replace(/```json|```/g,"").trim()||null;
+  }catch(e){console.error("aiCall fetch error",e);return null;}
 }
 
 async function fetchAIDescs(places,city,budget,prefs){
@@ -1540,7 +1537,7 @@ export default function App(){
     if(!all.length){toast.show("Add at least one place!");return;}
     setLmsg("Crafting your itinerary…");setLsub("");setLoading(true);
     let dm=null,cm=null;
-    if(ANTHROPIC_KEY&&ANTHROPIC_KEY!=="PASTE_YOUR_ANTHROPIC_KEY_HERE"){
+    if(GEMINI_KEY&&GEMINI_KEY!=="PASTE_YOUR_GEMINI_KEY_HERE"){
       setLmsg("✨ AI is personalizing your itinerary…");
       setLsub("Researching descriptions and real costs for each place");
       const allP=[...prefs,...cprefs].join(", ");
