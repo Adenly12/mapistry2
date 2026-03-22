@@ -1125,26 +1125,69 @@ export default function App(){
   function addCpref(){const v=cpinput.trim();if(!v)return;if(cprefs.includes(v)){toast.show("Already added!");return;}setCprefs(c=>[...c,v]);setCpinput("");}
 
   // ── FETCH PLACES ──────────────────────────────────────────
+  // Budget → search keywords and price_level filter range
+  const BUDGET_CONFIG={
+    free: {keywords:["free","budget","cheap","affordable"],priceLevels:[0,1],   searchHint:"free and budget-friendly"},
+    mid:  {keywords:["popular","casual","local"],          priceLevels:[1,2],   searchHint:"popular mid-range"},
+    upscale:{keywords:["upscale","popular","best"],        priceLevels:[2,3],   searchHint:"upscale"},
+    luxury:{keywords:["luxury","exclusive","fine dining","premium"],priceLevels:[3,4],searchHint:"luxury exclusive"},
+  };
+
   async function doFetch(c,token=null){
     try{
       const allP=[...prefs,...cprefs];
-      const q=allP.length>0?`${allP.join(" and ")} in ${c}`:`top attractions in ${c}`;
-      const url=token?`/api/places?query=${encodeURIComponent(q)}&pagetoken=${token}`:`/api/places?query=${encodeURIComponent(q)}`;
+      const bc=budget?BUDGET_CONFIG[budget]:null;
+      // Build a richer query that reflects budget + interests
+      let q;
+      if(token){
+        q=null; // pagetoken ignores query
+      } else if(allP.length>0&&bc){
+        q=`${bc.searchHint} ${allP.join(" and ")} in ${c}`;
+      } else if(allP.length>0){
+        q=`${allP.join(" and ")} in ${c}`;
+      } else if(bc){
+        q=`${bc.searchHint} things to do in ${c}`;
+      } else {
+        q=`top attractions in ${c}`;
+      }
+      const url=token
+        ?`/api/places?query=${encodeURIComponent("attractions in "+c)}&pagetoken=${token}`
+        :`/api/places?query=${encodeURIComponent(q)}`;
       const r=await fetch(url);const d=await r.json();
       if(d.results?.length>0){
-        return{
-          places:d.results.map((p,i)=>({
-            id:Date.now()+i,name:p.name,
-            type:(p.types?.[0]||"attraction").replace(/_/g," "),
-            rating:p.rating||4.0,reviews:p.user_ratings_total||0,
-            emoji:"📍",
-            desc:p.editorial_summary?.overview||p.formatted_address||`A great spot in ${c}.`,
-            duration:60,lat:p.geometry.location.lat,lng:p.geometry.location.lng,
-            photoRef:p.photos?.[0]?.photo_reference||null,
-            priceLevel:p.price_level??1,
-          })),
-          nextToken:d.next_page_token||null
-        };
+        let mapped=d.results.map((p,i)=>({
+          id:Date.now()+i,name:p.name,
+          type:(p.types?.[0]||"attraction").replace(/_/g," "),
+          rating:p.rating||4.0,reviews:p.user_ratings_total||0,
+          emoji:"📍",
+          desc:p.editorial_summary?.overview||p.formatted_address||`A great spot in ${c}.`,
+          duration:60,lat:p.geometry.location.lat,lng:p.geometry.location.lng,
+          photoRef:p.photos?.[0]?.photo_reference||null,
+          priceLevel:p.price_level??null,
+        }));
+
+        // Filter & sort by budget if selected
+        if(bc){
+          const allowed=bc.priceLevels;
+          // Separate into matches, unknowns (null priceLevel), and mismatches
+          const matches=mapped.filter(p=>p.priceLevel!=null&&allowed.includes(p.priceLevel));
+          const unknowns=mapped.filter(p=>p.priceLevel==null);
+          const mismatches=mapped.filter(p=>p.priceLevel!=null&&!allowed.includes(p.priceLevel));
+          // Show matches first, then unknowns, then mismatches (softly filtered, not hard removed)
+          mapped=[...matches,...unknowns,...mismatches];
+        }
+
+        // Always sort by rating within each group
+        mapped.sort((a,b)=>{
+          if(bc){
+            const aMatch=bc.priceLevels.includes(a.priceLevel??-1)?0:a.priceLevel==null?1:2;
+            const bMatch=bc.priceLevels.includes(b.priceLevel??-1)?0:b.priceLevel==null?1:2;
+            if(aMatch!==bMatch)return aMatch-bMatch;
+          }
+          return b.rating-a.rating;
+        });
+
+        return{places:mapped,nextToken:d.next_page_token||null};
       }
     }catch(e){console.log(e);}
     return{places:MOCK,nextToken:null};
@@ -1524,13 +1567,16 @@ export default function App(){
                   const displayPrice=costEntry!=null?costEntry:ip;
                   const pb=displayPrice.cost===0?"Free":`~$${displayPrice.cost}`;
                   const pbNote=displayPrice.note||null;
+                  // Budget match indicator
+                  const bc=budget?{free:[0,1],mid:[1,2],upscale:[2,3],luxury:[3,4]}[budget]:null;
+                  const plMatch=!bc||p.priceLevel==null||bc.includes(p.priceLevel);
                   return(
                     <div key={p.id} className={`plcard ${added?"added":""} ${focused&&!added?"focused":""}`} onClick={()=>focusPlace(p)}>
                       <div className="plimg">
                         {img?<img src={img} alt={p.name} onError={e=>{e.target.parentElement.innerHTML=p.emoji;}} loading="lazy"/>:<span>{p.emoji}</span>}
                         {pb&&<div className="pbadge" style={{
-                          background:costMap?.[p.id]!=null?"rgba(27,94,138,0.85)":"rgba(26,20,16,0.7)",
-                        }}>{pb}</div>}
+                          background:costMap?.[p.id]!=null?"rgba(27,94,138,0.85)":plMatch?"rgba(26,20,16,0.7)":"rgba(180,60,60,0.75)",
+                        }} title={plMatch?"":"May not match your budget"}>{pb}</div>}
                         {added&&<div className="pin-badge">📍 Pinned</div>}
                       </div>
                       <div className="plbody">
