@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import CONFIG from "./config";
 
 const GOOGLE_KEY = CONFIG.GOOGLE_KEY;
@@ -438,6 +438,119 @@ function buildCityEmbedUrl(tripHistory, googleKey){
   return `https://www.google.com/maps/embed/v1/search?key=${googleKey}&q=${q}&zoom=2`;
 }
 
+// ─── INTERACTIVE MAP COMPONENT ───────────────────────────────
+// Uses Maps JavaScript API (already enabled). Accepts:
+//   places: [{id, name, lat, lng, emoji}]  — markers to show
+//   preview: {lat, lng, name}              — single preview pin (unfocused)
+//   zoom: number
+function InteractiveMap({ places=[], preview=null, zoom=13, height=300 }){
+  const divRef = React.useRef(null);
+  const mapRef = React.useRef(null);
+  const markersRef = React.useRef([]);
+  const previewMarkerRef = React.useRef(null);
+
+  // Load Maps JS API once
+  useEffect(()=>{
+    if(window.google?.maps) return;
+    if(document.getElementById("gmap-script")) return;
+    const s = document.createElement("script");
+    s.id = "gmap-script";
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_KEY}&callback=__gmapReady`;
+    s.async = true;
+    window.__gmapReady = ()=>{ window._gmapReady=true; window.dispatchEvent(new Event("gmapReady")); };
+    document.head.appendChild(s);
+  },[]);
+
+  // Init map once API is ready
+  useEffect(()=>{
+    function init(){
+      if(!divRef.current||mapRef.current)return;
+      mapRef.current = new window.google.maps.Map(divRef.current,{
+        center:{lat:20,lng:0}, zoom:2,
+        mapTypeControl:false, streetViewControl:false, fullscreenControl:true,
+        styles:[
+          {featureType:"water",elementType:"geometry",stylers:[{color:"#a8d8ea"}]},
+          {featureType:"landscape",elementType:"geometry",stylers:[{color:"#f5f0e8"}]},
+          {featureType:"road",elementType:"geometry",stylers:[{color:"#ffffff"}]},
+          {featureType:"poi",elementType:"labels",stylers:[{visibility:"off"}]},
+        ]
+      });
+    }
+    if(window.google?.maps){ init(); }
+    else { window.addEventListener("gmapReady", init, {once:true}); }
+    return()=>{ window.removeEventListener("gmapReady", init); };
+  },[]);
+
+  // Update markers whenever places or preview changes
+  useEffect(()=>{
+    if(!mapRef.current)return;
+    // Clear old permanent markers
+    markersRef.current.forEach(m=>m.setMap(null));
+    markersRef.current=[];
+    // Clear preview marker
+    if(previewMarkerRef.current){ previewMarkerRef.current.setMap(null); previewMarkerRef.current=null; }
+
+    const bounds = new window.google.maps.LatLngBounds();
+    let hasBounds = false;
+
+    // Show permanent pinned places
+    if(places.length>0){
+      const colors=["#C45C26","#1B5E8A","#4A7C59","#C8820A","#7C5CBF","#CC3355","#1B7A8A"];
+      places.forEach((p,i)=>{
+        if(!p.lat||!p.lng)return;
+        const pos={lat:p.lat,lng:p.lng};
+        const marker = new window.google.maps.Marker({
+          position:pos, map:mapRef.current,
+          title:p.name,
+          label:{text:String(i+1),color:"white",fontWeight:"bold",fontSize:"11px"},
+          icon:{
+            path:window.google.maps.SymbolPath.CIRCLE,
+            scale:14,
+            fillColor:colors[i%colors.length],
+            fillOpacity:1,
+            strokeColor:"white",
+            strokeWeight:2,
+          }
+        });
+        const info = new window.google.maps.InfoWindow({content:`<div style="font-family:DM Sans,sans-serif;padding:4px 2px"><strong>${p.name}</strong><br/><span style="font-size:12px;color:#6b5d52">${p.type||""}</span></div>`});
+        marker.addListener("click",()=>info.open(mapRef.current,marker));
+        markersRef.current.push(marker);
+        bounds.extend(pos); hasBounds=true;
+      });
+      if(hasBounds){
+        if(places.length===1){ mapRef.current.setCenter(bounds.getCenter()); mapRef.current.setZoom(15); }
+        else { mapRef.current.fitBounds(bounds,{padding:60}); }
+      }
+    } else if(preview){
+      // Single preview pin
+      const pos={lat:preview.lat,lng:preview.lng};
+      previewMarkerRef.current = new window.google.maps.Marker({
+        position:pos, map:mapRef.current,
+        title:preview.name,
+        animation:window.google.maps.Animation.DROP,
+        icon:{
+          path:window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+          scale:7, fillColor:"#C8820A", fillOpacity:1,
+          strokeColor:"white", strokeWeight:2,
+        }
+      });
+      mapRef.current.setCenter(pos);
+      mapRef.current.setZoom(15);
+    }
+  },[places, preview]);
+
+  if(!GOOGLE_KEY||GOOGLE_KEY==="PASTE_YOUR_GOOGLE_KEY_HERE"){
+    return(
+      <div style={{width:"100%",height:height,borderRadius:"var(--r)",background:"var(--sand2)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8,color:"var(--muted2)",border:"2px dashed var(--border2)"}}>
+        <span style={{fontSize:"2rem"}}>🗺️</span>
+        <span style={{fontSize:"0.82rem"}}>Add GOOGLE_KEY to config.js to enable the map</span>
+      </div>
+    );
+  }
+
+  return <div ref={divRef} style={{width:"100%",height:height,borderRadius:"var(--r)",overflow:"hidden",border:"2px solid var(--border2)",boxShadow:"var(--shm)"}}/>;
+}
+
 // ─── AI ───────────────────────────────────────────────────────
 async function aiCall(prompt, maxTokens=1200){
   if(!ANTHROPIC_KEY||ANTHROPIC_KEY==="PASTE_YOUR_ANTHROPIC_KEY_HERE")return null;
@@ -571,8 +684,7 @@ export default function App(){
   const[activeSideDay,setActiveSideDay]=useState(0);
   const[itinViewDay,setItinViewDay]=useState(0);
   // map
-  const[previewSrc,setPreviewSrc]=useState("");
-  const[staticMapUrl,setStaticMapUrl]=useState("");
+  const[previewPlace,setPreviewPlace]=useState(null); // {lat,lng,name} for single preview
   // AI results
   const[descMap,setDescMap]=useState(null);
   const[costMap,setCostMap]=useState(null);
@@ -620,16 +732,7 @@ export default function App(){
     setActiveSideDay(d=>Math.min(d,numDays-1));
   },[numDays]);
 
-  // Update static map when itin changes
-  useEffect(()=>{
-    const all=dayPlans.flat();
-    if(all.length>0){
-      const url=buildStaticMapUrl(all);
-      if(url)setStaticMapUrl(url);
-    }else{
-      setStaticMapUrl("");
-    }
-  },[dayPlans]);
+  // Map updates are handled directly by InteractiveMap component via places prop
 
   // City autocomplete
   useEffect(()=>{
@@ -687,7 +790,8 @@ export default function App(){
       stops:all.length,days:dPlans.length,
       img:all[0]?.photoRef?purl(all[0].photoRef):null,
       emoji:all[0]?.emoji||"📍",
-      places:all.map(p=>p.name)
+      places:all.map(p=>p.name),
+      coords:all.filter(p=>p.lat&&p.lng).map(p=>({lat:p.lat,lng:p.lng,name:p.name,type:p.type||"Place"})),
     };
     const nh=[entry,...hist].slice(0,30);
     setHist(nh);saveHist(activeUser,nh);
@@ -724,7 +828,7 @@ export default function App(){
   async function goToResults(){
     const c=cin.trim();if(!c){toast.show("Please enter a city!");return;}
     setCity(c);
-    setPreviewSrc(`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(c)}&zoom=13`);
+    setPreviewPlace(null);
     setLmsg(`Finding the best spots in ${c}…`);setLsub("");setLoading(true);
     const{places:p,nextToken:nt}=await doFetch(c);
     nextToken.current=nt;setAllPlaces(p);setPlaces(p);setVisibleCount(8);
@@ -746,11 +850,7 @@ export default function App(){
 
   function focusPlace(p){
     setFocusedId(p.id);
-    // Only use iframe preview if no places are pinned yet
-    if(dayPlans.flat().length===0){
-      setPreviewSrc(`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(p.name+", "+city)}&zoom=16`);
-      setStaticMapUrl("");
-    }
+    setPreviewPlace({lat:p.lat,lng:p.lng,name:p.name});
   }
 
   function isAdded(id){return dayPlans.some(d=>d.find(p=>p.id===id));}
@@ -893,7 +993,6 @@ export default function App(){
   const initials=activeUser?activeUser.slice(0,2).toUpperCase():"";
   const knownUsers=Object.keys(loadU());
   const visitedCities=[...new Set(hist.map(h=>h.city))];
-  const cityEmbedUrl=buildCityEmbedUrl(hist, GOOGLE_KEY);
 
   return(
     <>
@@ -1066,16 +1165,17 @@ export default function App(){
           <div className="rl">
             <div>
               <div className="map-wrap">
-                <div className="mapbox">
-                  {staticMapUrl&&allAdded.length>0
-                    ?<img src={staticMapUrl} alt="Map with all pinned locations" onError={()=>setStaticMapUrl("")}/>
-                    :<iframe key={previewSrc} title="map" src={previewSrc||`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(city)}&zoom=13`} allowFullScreen/>
-                  }
-                </div>
+                <InteractiveMap
+                  places={allAdded.map((p,i)=>({...p,id:p.id}))}
+                  preview={allAdded.length===0?previewPlace:null}
+                  height={300}
+                />
                 <div className="map-hint">
                   {allAdded.length>0
-                    ?<>📍 {allAdded.length} location{allAdded.length!==1?"s":""} pinned — showing numbered markers on map</>
-                    :<>Click any card to preview its location</>
+                    ?<>📍 {allAdded.length} pinned stop{allAdded.length!==1?"s":""} — numbered markers on map · click any marker for details</>
+                    :previewPlace
+                      ?<>📍 Previewing {previewPlace.name} · Hit Add to pin it permanently</>
+                      :<>Click any card to see it on the map</>
                   }
                 </div>
               </div>
@@ -1298,14 +1398,15 @@ export default function App(){
               <div className="pms"><div className="pms-n">{hist.reduce((s,h)=>s+(h.stops||0),0)}</div><div className="pms-l">Places visited</div></div>
               <div className="pms"><div className="pms-n">{visitedCities.length}</div><div className="pms-l">Cities explored</div></div>
             </div>
-            {visitedCities.length>0&&(
+            {hist.length>0&&(
               <>
-                <div className="pm-sec">🌍 Cities Explored</div>
-                <div className="pm-map">
-                  {cityEmbedUrl
-                    ?<iframe key={cityEmbedUrl} title="cities-map" src={cityEmbedUrl} allowFullScreen loading="lazy"/>
-                    :<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:"var(--muted2)",fontSize:"0.82rem",background:"var(--sand)"}}>Plan your first trip to see it here!</div>
-                  }
+                <div className="pm-sec">🌍 All Your Visited Places</div>
+                <InteractiveMap
+                  places={hist.flatMap(h=>(h.coords||[]).map(c=>({...c,id:c.lat+","+c.lng})))}
+                  height={220}
+                />
+                <div style={{fontSize:"0.72rem",color:"var(--muted2)",marginTop:6,marginBottom:16}}>
+                  {hist.flatMap(h=>h.coords||[]).length} places across {visitedCities.length} cit{visitedCities.length===1?"y":"ies"} — click any pin for details
                 </div>
               </>
             )}
