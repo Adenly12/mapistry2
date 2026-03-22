@@ -438,46 +438,6 @@ function buildCityEmbedUrl(tripHistory, googleKey){
   return `https://www.google.com/maps/embed/v1/search?key=${googleKey}&q=${q}&zoom=2`;
 }
 
-// ─── MAP COMPONENT ────────────────────────────────────────────
-// Builds the correct Google Maps Embed URL depending on what we have:
-//   - 0 places, no preview  → show city overview
-//   - 0 places, has preview → zoom in on that one place  
-//   - 1+ places             → show search results for all of them with pins
-// The Embed API is already enabled and requires no extra setup.
-function MapEmbed({ places=[], preview=null, city="", height=300 }){
-  if(!GOOGLE_KEY||GOOGLE_KEY==="PASTE_YOUR_GOOGLE_KEY_HERE"){
-    return(
-      <div style={{width:"100%",height,borderRadius:"var(--r)",background:"var(--sand2)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8,color:"var(--muted2)",border:"2px dashed var(--border2)"}}>
-        <span style={{fontSize:"2rem"}}>🗺️</span>
-        <span style={{fontSize:"0.82rem"}}>Add GOOGLE_KEY to config.js to enable the map</span>
-      </div>
-    );
-  }
-
-  let src;
-  if(places.length===1){
-    // Single pin — place embed zooms right in
-    src=`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(places[0].name+", "+city)}&zoom=15`;
-  } else if(places.length>1){
-    // Multiple pins — search embed shows a pin for every result
-    const q=places.map(p=>p.name).join(" OR ");
-    src=`https://www.google.com/maps/embed/v1/search?key=${GOOGLE_KEY}&q=${encodeURIComponent(q+" in "+city)}&zoom=13`;
-  } else if(preview){
-    // Preview a single place before adding
-    src=`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(preview.name+", "+city)}&zoom=15`;
-  } else {
-    // Default city view
-    src=`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(city)}&zoom=13`;
-  }
-
-  return(
-    <div style={{width:"100%",height,borderRadius:"var(--r)",overflow:"hidden",border:"2px solid var(--border2)",boxShadow:"var(--shm)"}}>
-      <iframe key={src} title="map" src={src} width="100%" height="100%"
-        style={{border:"none",display:"block"}} allowFullScreen loading="lazy"/>
-    </div>
-  );
-}
-
 // ─── AI ───────────────────────────────────────────────────────
 async function aiCall(prompt, maxTokens=1200){
   if(!ANTHROPIC_KEY||ANTHROPIC_KEY==="PASTE_YOUR_ANTHROPIC_KEY_HERE")return null;
@@ -485,9 +445,7 @@ async function aiCall(prompt, maxTokens=1200){
     const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})});
     const d=await r.json();
-    // Guard: d.content can be undefined if API returns an error object
-    if(!Array.isArray(d.content))return null;
-    return d.content.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim()||null;
+    return d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
   }catch{return null;}
 }
 
@@ -520,23 +478,15 @@ No markdown.`, 600);
   try{return JSON.parse(txt);}catch{return null;}
 }
 
-// Estimate travel time from straight-line distance + transport speed
-// Avoids external API calls that can crash the app
-function estimateTravelTime(origin, destination, mode){
-  if(!origin?.lat||!destination?.lat)return{minutes:15,text:"~15 min"};
-  // Haversine distance in km
-  const R=6371;
-  const dLat=(destination.lat-origin.lat)*Math.PI/180;
-  const dLng=(destination.lng-origin.lng)*Math.PI/180;
-  const a=Math.sin(dLat/2)**2+Math.cos(origin.lat*Math.PI/180)*Math.cos(destination.lat*Math.PI/180)*Math.sin(dLng/2)**2;
-  const distKm=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-  // Speed in km/h per mode, with urban multiplier (streets ≠ straight line)
-  const speeds={walking:4.5,transit:20,driving:30,cycling:12,rideshare:28};
-  const speed=speeds[mode]||4.5;
-  const raw=Math.ceil((distKm/speed)*60*1.4); // 1.4x for real-world routing
-  const mins=Math.max(5,Math.min(raw,90));
-  const text=mins<60?`~${mins} min`:`~${Math.round(mins/10)*10} min`;
-  return{minutes:mins,text};
+// Travel time via Directions API backend
+async function fetchTravelTime(origin,destination,mode){
+  try{
+    const modeMap={walking:"walking",transit:"transit",driving:"driving",cycling:"bicycling",rideshare:"driving"};
+    const params=new URLSearchParams({origin:`${origin.lat},${origin.lng}`,destination:`${destination.lat},${destination.lng}`,mode:modeMap[mode]||"walking"});
+    const r=await fetch(`/api/directions?${params}`);
+    const d=await r.json();
+    return{minutes:d.minutes||15,text:d.text||"~15 min"};
+  }catch{return{minutes:15,text:"~15 min"};}
 }
 
 // ─── STORAGE ──────────────────────────────────────────────────
@@ -621,11 +571,13 @@ export default function App(){
   const[activeSideDay,setActiveSideDay]=useState(0);
   const[itinViewDay,setItinViewDay]=useState(0);
   // map
-  const[previewPlace,setPreviewPlace]=useState(null); // {lat,lng,name} for single preview
+  const[previewSrc,setPreviewSrc]=useState("");
+  const[staticMapUrl,setStaticMapUrl]=useState("");
   // AI results
   const[descMap,setDescMap]=useState(null);
   const[costMap,setCostMap]=useState(null);
   const[travelMap,setTravelMap]=useState({});
+  const[travelLoading,setTravelLoading]=useState(false);
   const[aiUsed,setAiUsed]=useState(false);
   const[loading,setLoading]=useState(false);
   const[lmsg,setLmsg]=useState("");
@@ -668,7 +620,16 @@ export default function App(){
     setActiveSideDay(d=>Math.min(d,numDays-1));
   },[numDays]);
 
-  // Map updates via MapEmbed props — no side effects needed here
+  // Update static map when itin changes
+  useEffect(()=>{
+    const all=dayPlans.flat();
+    if(all.length>0){
+      const url=buildStaticMapUrl(all);
+      if(url)setStaticMapUrl(url);
+    }else{
+      setStaticMapUrl("");
+    }
+  },[dayPlans]);
 
   // City autocomplete
   useEffect(()=>{
@@ -726,8 +687,7 @@ export default function App(){
       stops:all.length,days:dPlans.length,
       img:all[0]?.photoRef?purl(all[0].photoRef):null,
       emoji:all[0]?.emoji||"📍",
-      places:all.map(p=>p.name),
-      coords:all.filter(p=>p.lat&&p.lng).map(p=>({lat:p.lat,lng:p.lng,name:p.name,type:p.type||"Place"})),
+      places:all.map(p=>p.name)
     };
     const nh=[entry,...hist].slice(0,30);
     setHist(nh);saveHist(activeUser,nh);
@@ -764,7 +724,7 @@ export default function App(){
   async function goToResults(){
     const c=cin.trim();if(!c){toast.show("Please enter a city!");return;}
     setCity(c);
-    setPreviewPlace(null);
+    setPreviewSrc(`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(c)}&zoom=13`);
     setLmsg(`Finding the best spots in ${c}…`);setLsub("");setLoading(true);
     const{places:p,nextToken:nt}=await doFetch(c);
     nextToken.current=nt;setAllPlaces(p);setPlaces(p);setVisibleCount(8);
@@ -786,7 +746,11 @@ export default function App(){
 
   function focusPlace(p){
     setFocusedId(p.id);
-    setPreviewPlace({lat:p.lat,lng:p.lng,name:p.name});
+    // Only use iframe preview if no places are pinned yet
+    if(dayPlans.flat().length===0){
+      setPreviewSrc(`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(p.name+", "+city)}&zoom=16`);
+      setStaticMapUrl("");
+    }
   }
 
   function isAdded(id){return dayPlans.some(d=>d.find(p=>p.id===id));}
@@ -826,21 +790,19 @@ export default function App(){
       if(costRes){cm={};costRes.forEach(x=>{cm[x.id]=x.cost;});}
     }
     setDescMap(dm);setCostMap(cm);
-    // Pre-compute travel times synchronously before rendering step 4
+    setLoading(false);setStep(4);setItinViewDay(0);
+    saveTrip(city,dayPlans);
+    // Fetch real travel times asynchronously after render
+    setTravelLoading(true);
     const tm={};
     for(let di=0;di<dayPlans.length;di++){
       const day=dayPlans[di];
       for(let i=0;i<day.length-1;i++){
-        tm[`${di}-${i}`]=estimateTravelTime(
-          {lat:day[i].lat,lng:day[i].lng},
-          {lat:day[i+1].lat,lng:day[i+1].lng},
-          transport
-        );
+        const res=await fetchTravelTime({lat:day[i].lat,lng:day[i].lng},{lat:day[i+1].lat,lng:day[i+1].lng},transport);
+        tm[`${di}-${i}`]=res;
       }
     }
-    setTravelMap(tm);
-    setLoading(false);setStep(4);setItinViewDay(0);
-    saveTrip(city,dayPlans);
+    setTravelMap(tm);setTravelLoading(false);
   }
 
   // ── DRAG & DROP ── use refs so handlers always have fresh values
@@ -931,6 +893,7 @@ export default function App(){
   const initials=activeUser?activeUser.slice(0,2).toUpperCase():"";
   const knownUsers=Object.keys(loadU());
   const visitedCities=[...new Set(hist.map(h=>h.city))];
+  const cityEmbedUrl=buildCityEmbedUrl(hist, GOOGLE_KEY);
 
   return(
     <>
@@ -1103,18 +1066,16 @@ export default function App(){
           <div className="rl">
             <div>
               <div className="map-wrap">
-                <MapEmbed
-                  places={allAdded}
-                  preview={allAdded.length===0?previewPlace:null}
-                  city={city}
-                  height={300}
-                />
+                <div className="mapbox">
+                  {staticMapUrl&&allAdded.length>0
+                    ?<img src={staticMapUrl} alt="Map with all pinned locations" onError={()=>setStaticMapUrl("")}/>
+                    :<iframe key={previewSrc} title="map" src={previewSrc||`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(city)}&zoom=13`} allowFullScreen/>
+                  }
+                </div>
                 <div className="map-hint">
                   {allAdded.length>0
-                    ?<>📍 {allAdded.length} pinned stop{allAdded.length!==1?"s":""} — numbered markers on map · click any marker for details</>
-                    :previewPlace
-                      ?<>📍 Previewing {previewPlace.name} · Hit Add to pin it permanently</>
-                      :<>Click any card to see it on the map</>
+                    ?<>📍 {allAdded.length} location{allAdded.length!==1?"s":""} pinned — showing numbered markers on map</>
+                    :<>Click any card to preview its location</>
                   }
                 </div>
               </div>
@@ -1208,7 +1169,8 @@ export default function App(){
               <h2 className="imt">Your {numDays>1?`${numDays}-day trip to`:"day in"} <em>{city}</em></h2>
               <div className="iml">{[blabel,`by ${tlabel}`].filter(Boolean).join(" · ")}{allAdded.length>0?` · ${allAdded.length} stops`:""}</div>
               {aiUsed&&<div className="aib">✦ AI-personalized descriptions & researched costs</div>}
-                          </div>
+              {travelLoading&&<div style={{fontSize:"0.75rem",color:"var(--ocean3)",marginTop:6}}>⏱ Calculating real travel times via Google Maps…</div>}
+            </div>
             <div className="iac np">
               <button className="obt" onClick={()=>setStep(3)}>← Edit Places</button>
               <button className="dbt" onClick={()=>exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime)}>⬇ Export PDF</button>
@@ -1281,7 +1243,10 @@ export default function App(){
                       </div>
                       {!isLast&&(
                         <div className="trvl"><div/>
-                          <div className="trvli">{TRANSPORT.find(x=>x.id===transport)?.icon||"🚶"} {t.travelText} by {tlabel.toLowerCase()} to next stop</div>
+                          {travelLoading&&!travelMap[`${itinViewDay}-${i}`]
+                            ?<div className="travel-calc">⏱ Calculating travel time…</div>
+                            :<div className="trvli">{TRANSPORT.find(x=>x.id===transport)?.icon||"🚶"} {t.travelText} by {tlabel.toLowerCase()} to next stop</div>
+                          }
                         </div>
                       )}
                     </div>
@@ -1333,16 +1298,14 @@ export default function App(){
               <div className="pms"><div className="pms-n">{hist.reduce((s,h)=>s+(h.stops||0),0)}</div><div className="pms-l">Places visited</div></div>
               <div className="pms"><div className="pms-n">{visitedCities.length}</div><div className="pms-l">Cities explored</div></div>
             </div>
-            {hist.length>0&&(
+            {visitedCities.length>0&&(
               <>
-                <div className="pm-sec">🌍 All Your Visited Places</div>
-                <MapEmbed
-                  places={hist.flatMap(h=>(h.coords||[]).map(c=>({...c,id:c.lat+","+c.lng,name:c.name})))}
-                  city={visitedCities.join(", ")}
-                  height={220}
-                />
-                <div style={{fontSize:"0.72rem",color:"var(--muted2)",marginTop:6,marginBottom:16}}>
-                  {hist.flatMap(h=>h.coords||[]).length} places across {visitedCities.length} cit{visitedCities.length===1?"y":"ies"} — click any pin for details
+                <div className="pm-sec">🌍 Cities Explored</div>
+                <div className="pm-map">
+                  {cityEmbedUrl
+                    ?<iframe key={cityEmbedUrl} title="cities-map" src={cityEmbedUrl} allowFullScreen loading="lazy"/>
+                    :<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:"var(--muted2)",fontSize:"0.82rem",background:"var(--sand)"}}>Plan your first trip to see it here!</div>
+                  }
                 </div>
               </>
             )}
