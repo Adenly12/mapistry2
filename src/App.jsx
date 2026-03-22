@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import CONFIG from "./config";
 
 const GOOGLE_KEY = CONFIG.GOOGLE_KEY;
@@ -438,117 +438,44 @@ function buildCityEmbedUrl(tripHistory, googleKey){
   return `https://www.google.com/maps/embed/v1/search?key=${googleKey}&q=${q}&zoom=2`;
 }
 
-// ─── INTERACTIVE MAP COMPONENT ───────────────────────────────
-// Uses Maps JavaScript API (already enabled). Accepts:
-//   places: [{id, name, lat, lng, emoji}]  — markers to show
-//   preview: {lat, lng, name}              — single preview pin (unfocused)
-//   zoom: number
-function InteractiveMap({ places=[], preview=null, zoom=13, height=300 }){
-  const divRef = React.useRef(null);
-  const mapRef = React.useRef(null);
-  const markersRef = React.useRef([]);
-  const previewMarkerRef = React.useRef(null);
-
-  // Load Maps JS API once
-  useEffect(()=>{
-    if(window.google?.maps) return;
-    if(document.getElementById("gmap-script")) return;
-    const s = document.createElement("script");
-    s.id = "gmap-script";
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_KEY}&callback=__gmapReady`;
-    s.async = true;
-    window.__gmapReady = ()=>{ window._gmapReady=true; window.dispatchEvent(new Event("gmapReady")); };
-    document.head.appendChild(s);
-  },[]);
-
-  // Init map once API is ready
-  useEffect(()=>{
-    function init(){
-      if(!divRef.current||mapRef.current)return;
-      mapRef.current = new window.google.maps.Map(divRef.current,{
-        center:{lat:20,lng:0}, zoom:2,
-        mapTypeControl:false, streetViewControl:false, fullscreenControl:true,
-        styles:[
-          {featureType:"water",elementType:"geometry",stylers:[{color:"#a8d8ea"}]},
-          {featureType:"landscape",elementType:"geometry",stylers:[{color:"#f5f0e8"}]},
-          {featureType:"road",elementType:"geometry",stylers:[{color:"#ffffff"}]},
-          {featureType:"poi",elementType:"labels",stylers:[{visibility:"off"}]},
-        ]
-      });
-    }
-    if(window.google?.maps){ init(); }
-    else { window.addEventListener("gmapReady", init, {once:true}); }
-    return()=>{ window.removeEventListener("gmapReady", init); };
-  },[]);
-
-  // Update markers whenever places or preview changes
-  useEffect(()=>{
-    if(!mapRef.current)return;
-    // Clear old permanent markers
-    markersRef.current.forEach(m=>m.setMap(null));
-    markersRef.current=[];
-    // Clear preview marker
-    if(previewMarkerRef.current){ previewMarkerRef.current.setMap(null); previewMarkerRef.current=null; }
-
-    const bounds = new window.google.maps.LatLngBounds();
-    let hasBounds = false;
-
-    // Show permanent pinned places
-    if(places.length>0){
-      const colors=["#C45C26","#1B5E8A","#4A7C59","#C8820A","#7C5CBF","#CC3355","#1B7A8A"];
-      places.forEach((p,i)=>{
-        if(!p.lat||!p.lng)return;
-        const pos={lat:p.lat,lng:p.lng};
-        const marker = new window.google.maps.Marker({
-          position:pos, map:mapRef.current,
-          title:p.name,
-          label:{text:String(i+1),color:"white",fontWeight:"bold",fontSize:"11px"},
-          icon:{
-            path:window.google.maps.SymbolPath.CIRCLE,
-            scale:14,
-            fillColor:colors[i%colors.length],
-            fillOpacity:1,
-            strokeColor:"white",
-            strokeWeight:2,
-          }
-        });
-        const info = new window.google.maps.InfoWindow({content:`<div style="font-family:DM Sans,sans-serif;padding:4px 2px"><strong>${p.name}</strong><br/><span style="font-size:12px;color:#6b5d52">${p.type||""}</span></div>`});
-        marker.addListener("click",()=>info.open(mapRef.current,marker));
-        markersRef.current.push(marker);
-        bounds.extend(pos); hasBounds=true;
-      });
-      if(hasBounds){
-        if(places.length===1){ mapRef.current.setCenter(bounds.getCenter()); mapRef.current.setZoom(15); }
-        else { mapRef.current.fitBounds(bounds,{padding:60}); }
-      }
-    } else if(preview){
-      // Single preview pin
-      const pos={lat:preview.lat,lng:preview.lng};
-      previewMarkerRef.current = new window.google.maps.Marker({
-        position:pos, map:mapRef.current,
-        title:preview.name,
-        animation:window.google.maps.Animation.DROP,
-        icon:{
-          path:window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-          scale:7, fillColor:"#C8820A", fillOpacity:1,
-          strokeColor:"white", strokeWeight:2,
-        }
-      });
-      mapRef.current.setCenter(pos);
-      mapRef.current.setZoom(15);
-    }
-  },[places, preview]);
-
+// ─── MAP COMPONENT ────────────────────────────────────────────
+// Builds the correct Google Maps Embed URL depending on what we have:
+//   - 0 places, no preview  → show city overview
+//   - 0 places, has preview → zoom in on that one place  
+//   - 1+ places             → show search results for all of them with pins
+// The Embed API is already enabled and requires no extra setup.
+function MapEmbed({ places=[], preview=null, city="", height=300 }){
   if(!GOOGLE_KEY||GOOGLE_KEY==="PASTE_YOUR_GOOGLE_KEY_HERE"){
     return(
-      <div style={{width:"100%",height:height,borderRadius:"var(--r)",background:"var(--sand2)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8,color:"var(--muted2)",border:"2px dashed var(--border2)"}}>
+      <div style={{width:"100%",height,borderRadius:"var(--r)",background:"var(--sand2)",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8,color:"var(--muted2)",border:"2px dashed var(--border2)"}}>
         <span style={{fontSize:"2rem"}}>🗺️</span>
         <span style={{fontSize:"0.82rem"}}>Add GOOGLE_KEY to config.js to enable the map</span>
       </div>
     );
   }
 
-  return <div ref={divRef} style={{width:"100%",height:height,borderRadius:"var(--r)",overflow:"hidden",border:"2px solid var(--border2)",boxShadow:"var(--shm)"}}/>;
+  let src;
+  if(places.length===1){
+    // Single pin — place embed zooms right in
+    src=`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(places[0].name+", "+city)}&zoom=15`;
+  } else if(places.length>1){
+    // Multiple pins — search embed shows a pin for every result
+    const q=places.map(p=>p.name).join(" OR ");
+    src=`https://www.google.com/maps/embed/v1/search?key=${GOOGLE_KEY}&q=${encodeURIComponent(q+" in "+city)}&zoom=13`;
+  } else if(preview){
+    // Preview a single place before adding
+    src=`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(preview.name+", "+city)}&zoom=15`;
+  } else {
+    // Default city view
+    src=`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(city)}&zoom=13`;
+  }
+
+  return(
+    <div style={{width:"100%",height,borderRadius:"var(--r)",overflow:"hidden",border:"2px solid var(--border2)",boxShadow:"var(--shm)"}}>
+      <iframe key={src} title="map" src={src} width="100%" height="100%"
+        style={{border:"none",display:"block"}} allowFullScreen loading="lazy"/>
+    </div>
+  );
 }
 
 // ─── AI ───────────────────────────────────────────────────────
@@ -732,7 +659,7 @@ export default function App(){
     setActiveSideDay(d=>Math.min(d,numDays-1));
   },[numDays]);
 
-  // Map updates are handled directly by InteractiveMap component via places prop
+  // Map updates via MapEmbed props — no side effects needed here
 
   // City autocomplete
   useEffect(()=>{
@@ -1165,9 +1092,10 @@ export default function App(){
           <div className="rl">
             <div>
               <div className="map-wrap">
-                <InteractiveMap
-                  places={allAdded.map((p,i)=>({...p,id:p.id}))}
+                <MapEmbed
+                  places={allAdded}
                   preview={allAdded.length===0?previewPlace:null}
+                  city={city}
                   height={300}
                 />
                 <div className="map-hint">
@@ -1401,8 +1329,9 @@ export default function App(){
             {hist.length>0&&(
               <>
                 <div className="pm-sec">🌍 All Your Visited Places</div>
-                <InteractiveMap
-                  places={hist.flatMap(h=>(h.coords||[]).map(c=>({...c,id:c.lat+","+c.lng})))}
+                <MapEmbed
+                  places={hist.flatMap(h=>(h.coords||[]).map(c=>({...c,id:c.lat+","+c.lng,name:c.name})))}
+                  city={visitedCities.join(", ")}
                   height={220}
                 />
                 <div style={{fontSize:"0.72rem",color:"var(--muted2)",marginTop:6,marginBottom:16}}>
