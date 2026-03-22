@@ -1054,31 +1054,25 @@ export default function App(){
   }
 
   async function fetchCardPrice(p){
-    // Already fetched or loading — treat 0 as valid so we don't skip free places
     if(cardPriceMap[p.id]!==undefined)return;
     setCardPriceMap(prev=>({...prev,[p.id]:"loading"}));
-    const prompt=`Search the web and find the REAL current price for visiting "${p.name}" in ${city}.
-Type: ${p.type}.
-- Museums/attractions: find the official admission price (e.g. search "${p.name} admission price")
-- Restaurants/bars/cafes: find typical cost per person from their menu
-- Free parks/public spaces: cost is 0
-- Shopping: typical spend per visit
-Use web search to find the current price. Then respond ONLY with this exact JSON and nothing else:
-{"cost":NUMBER,"note":"one short phrase explaining what cost covers"}
-Example: {"cost":25,"note":"Adult general admission"}
-Do not include any explanation or markdown. Just the JSON object.`;
-    const txt=await aiCallWithSearch(prompt,800);
+    const prompt=`What is the typical per-person cost to visit "${p.name}" in ${city} (type: ${p.type})?
+- Museums/attractions: standard adult admission price in USD
+- Restaurants/cafes/bars: typical cost per person for a meal or drinks
+- Free parks/public spaces/landmarks: cost is 0
+- Use your training knowledge — give your best estimate
+Respond ONLY with this JSON, nothing else:
+{"cost":NUMBER,"note":"one short phrase e.g. Adult admission or Typical meal"}`;
+    const txt=await aiCall(prompt,300);
     let result={cost:null,note:""};
     if(txt){
       try{
-        const clean=txt.replace(/```json|```/g,"").trim();
-        // Extract JSON object if surrounded by other text
-        const match=clean.match(/\{[^{}]*"cost"\s*:\s*[\d.]+[^{}]*\}/);
-        const parsed=JSON.parse(match?match[0]:clean);
+        const match=txt.match(/\{[^{}]*"cost"\s*:\s*[\d.]+[^{}]*\}/);
+        const parsed=JSON.parse(match?match[0]:txt);
         if(typeof parsed.cost==="number"){
           result={cost:Math.round(parsed.cost),note:parsed.note||""};
         }
-      }catch(e){console.log("price parse error",e,txt);}
+      }catch{}
     }
     setCardPriceMap(prev=>({...prev,[p.id]:result}));
   }
