@@ -431,21 +431,35 @@ function buildStaticMapUrl(places, focusedPlace=null){
   return url;
 }
 
-// Build Embed API search URL showing all visited cities as pins
+// Show visited cities using Embed API directions (lat/lng coords, no name ambiguity)
+// For 1 city: place mode. For 2+: directions mode with coords as origin/waypoints/dest.
 function buildCityEmbedUrl(tripHistory, googleKey){
   if(!googleKey||!tripHistory.length)return null;
   const seen=new Set();
-  const cities=tripHistory.reduce((acc,h)=>{
-    if(!seen.has(h.city)){seen.add(h.city);acc.push(h.city);}
+  const entries=tripHistory.reduce((acc,h)=>{
+    if(!seen.has(h.city)&&h.lat&&h.lng&&!(h.lat===0&&h.lng===0)){
+      seen.add(h.city);
+      acc.push({city:h.city,lat:h.lat,lng:h.lng});
+    }
     return acc;
   },[]);
-  if(!cities.length)return null;
-  if(cities.length===1){
-    return `https://www.google.com/maps/embed/v1/place?key=${googleKey}&q=${encodeURIComponent(cities[0])}&zoom=10`;
+  if(!entries.length){
+    // fallback: no coords stored, use city names with place mode for first city
+    const firstName=tripHistory[0]?.city;
+    return firstName?`https://www.google.com/maps/embed/v1/place?key=${googleKey}&q=${encodeURIComponent(firstName)}&zoom=10`:null;
   }
-  // Join city names with OR so the Embed search API pins all of them
-  const q=cities.join(" OR ");
-  return `https://www.google.com/maps/embed/v1/search?key=${googleKey}&q=${encodeURIComponent(q)}&zoom=2`;
+  if(entries.length===1){
+    return `https://www.google.com/maps/embed/v1/place?key=${googleKey}&q=${entries[0].lat},${entries[0].lng}&zoom=10`;
+  }
+  // Directions mode: each city is a stop — shows a pin at every location simultaneously
+  const origin=`${entries[0].lat},${entries[0].lng}`;
+  const dest=`${entries[entries.length-1].lat},${entries[entries.length-1].lng}`;
+  const middle=entries.slice(1,-1);
+  const waypoints=middle.map(e=>`${e.lat},${e.lng}`).join("|");
+  let url=`https://www.google.com/maps/embed/v1/directions?key=${googleKey}&origin=${origin}&destination=${dest}`;
+  if(waypoints)url+=`&waypoints=${encodeURIComponent(waypoints)}`;
+  url+=`&zoom=2`;
+  return url;
 }
 
 // ─── AI ───────────────────────────────────────────────────────
@@ -900,10 +914,14 @@ export default function App(){
     if(!activeUser)return;
     const all=dPlans.flat();
     if(!all.length)return;
+    // Use centroid of all places so the city coord is more representative
+    const validCoords=all.filter(p=>p.lat&&p.lng);
+    const centerLat=validCoords.length?validCoords.reduce((s,p)=>s+p.lat,0)/validCoords.length:0;
+    const centerLng=validCoords.length?validCoords.reduce((s,p)=>s+p.lng,0)/validCoords.length:0;
     const entry={
       id:Date.now(),city:tripCity,
-      lat:all[0]?.lat||0,
-      lng:all[0]?.lng||0,
+      lat:centerLat,
+      lng:centerLng,
       date:new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}),
       stops:all.length,days:dPlans.length,
       img:all[0]?.photoRef?purl(all[0].photoRef):null,
