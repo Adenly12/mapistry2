@@ -431,35 +431,48 @@ function buildStaticMapUrl(places, focusedPlace=null){
   return url;
 }
 
-// Show visited cities using Embed API directions (lat/lng coords, no name ambiguity)
-// For 1 city: place mode. For 2+: directions mode with coords as origin/waypoints/dest.
-function buildCityEmbedUrl(tripHistory, googleKey){
-  if(!googleKey||!tripHistory.length)return null;
+// Build a self-contained Leaflet HTML map as a data URL — fully pannable/zoomable,
+// shows one labeled pin per visited city using exact lat/lng coords. No API key needed.
+function buildCityEmbedUrl(tripHistory){
+  if(!tripHistory.length)return null;
   const seen=new Set();
   const entries=tripHistory.reduce((acc,h)=>{
     if(!seen.has(h.city)&&h.lat&&h.lng&&!(h.lat===0&&h.lng===0)){
-      seen.add(h.city);
-      acc.push({city:h.city,lat:h.lat,lng:h.lng});
+      seen.add(h.city);acc.push({city:h.city,lat:h.lat,lng:h.lng});
     }
     return acc;
   },[]);
-  if(!entries.length){
-    // fallback: no coords stored, use city names with place mode for first city
-    const firstName=tripHistory[0]?.city;
-    return firstName?`https://www.google.com/maps/embed/v1/place?key=${googleKey}&q=${encodeURIComponent(firstName)}&zoom=10`:null;
-  }
-  if(entries.length===1){
-    return `https://www.google.com/maps/embed/v1/place?key=${googleKey}&q=${entries[0].lat},${entries[0].lng}&zoom=10`;
-  }
-  // Directions mode: each city is a stop — shows a pin at every location simultaneously
-  const origin=`${entries[0].lat},${entries[0].lng}`;
-  const dest=`${entries[entries.length-1].lat},${entries[entries.length-1].lng}`;
-  const middle=entries.slice(1,-1);
-  const waypoints=middle.map(e=>`${e.lat},${e.lng}`).join("|");
-  let url=`https://www.google.com/maps/embed/v1/directions?key=${googleKey}&origin=${origin}&destination=${dest}`;
-  if(waypoints)url+=`&waypoints=${encodeURIComponent(waypoints)}`;
-  url+=`&zoom=2`;
-  return url;
+  if(!entries.length)return null;
+
+  const markers=entries.map((e,i)=>{
+    const colors=["#c45c26","#1b5e8a","#4a7c59","#c8820a","#7c5cbf","#e06b30"];
+    const color=colors[i%colors.length];
+    return `L.circleMarker([${e.lat},${e.lng}],{radius:9,fillColor:"${color}",color:"#fff",weight:2,fillOpacity:0.92})
+      .addTo(map).bindPopup("<b>${e.city.replace(/"/g,"&quot;")}</b>",{closeButton:false});`;
+  }).join("\n    ");
+
+  // Compute bounds center
+  const avgLat=entries.reduce((s,e)=>s+e.lat,0)/entries.length;
+  const avgLng=entries.reduce((s,e)=>s+e.lng,0)/entries.length;
+  const zoom=entries.length===1?9:2;
+
+  const html=`<!DOCTYPE html><html><head>
+<meta charset="utf-8"/>
+<style>*{margin:0;padding:0;}html,body,#map{width:100%;height:100%;}</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head><body>
+<div id="map"></div>
+<script>
+  var map=L.map("map",{zoomControl:true,scrollWheelZoom:true}).setView([${avgLat},${avgLng}],${zoom});
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+    attribution:"© OpenStreetMap contributors",maxZoom:19
+  }).addTo(map);
+  ${markers}
+  ${entries.length>1?`var group=new L.featureGroup([${entries.map((e,i)=>`L.marker([${e.lat},${e.lng}])`).join(",")}]);map.fitBounds(group.getBounds().pad(0.3));`:""}
+</script></body></html>`;
+
+  return "data:text/html;charset=utf-8,"+encodeURIComponent(html);
 }
 
 // ─── AI ───────────────────────────────────────────────────────
@@ -1134,7 +1147,7 @@ export default function App(){
   const initials=activeUser?activeUser.slice(0,2).toUpperCase():"";
   const knownUsers=Object.keys(loadU());
   const visitedCities=[...new Set(hist.map(h=>h.city))];
-  const cityEmbedUrl=buildCityEmbedUrl(hist, GOOGLE_KEY);
+  const cityEmbedUrl=buildCityEmbedUrl(hist);
 
   return(
     <>
