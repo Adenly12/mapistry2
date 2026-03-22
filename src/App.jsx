@@ -1101,12 +1101,6 @@ export default function App(){
     if(a&&loadU()[a]){setActiveUser(a);setHist(getHist(a));}
   },[]);
 
-  // Auto-fetch estimates when entering step 2
-  useEffect(()=>{
-    if(step===2&&city&&!budgetLoading){
-      fetchTravelCostEstimates(city,originCity,numDays);
-    }
-  },[step]);
 
   // Sync dayPlans count when numDays changes
   useEffect(()=>{
@@ -1165,35 +1159,6 @@ export default function App(){
     }
   },[departDate,returnDate]);
 
-  // Fetch flight + hotel estimates from AI
-  async function fetchTravelCostEstimates(dest, origin, nights){
-    if(!dest)return;
-    setBudgetLoading(true);
-    setFlightCost(null);
-    setHotelCost(null);
-    // Simple, separate prompts — one for flights, one for hotel
-    // This avoids complex JSON parsing of a multi-field response
-    try{
-      const flightPrompt=`What is the typical round-trip economy flight cost in USD from ${origin||"a major US city"} to ${dest}? Reply with just a single integer number, nothing else. Example: 650`;
-      const hotelPrompt=`What is the typical nightly cost in USD for a mid-range 3-star hotel in ${dest}? Reply with just a single integer number, nothing else. Example: 120`;
-      const [flightTxt, hotelTxt] = await Promise.all([
-        aiCall(flightPrompt, 50),
-        aiCall(hotelPrompt, 50),
-      ]);
-      console.log("flight raw:", flightTxt, "hotel raw:", hotelTxt);
-      const flightNum = flightTxt ? parseInt(flightTxt.replace(/[^0-9]/g,""), 10) : null;
-      const hotelNum = hotelTxt ? parseInt(hotelTxt.replace(/[^0-9]/g,""), 10) : null;
-      if(flightNum&&!isNaN(flightNum)) setFlightCost({cost:flightNum, note:origin?`Est. economy round-trip from ${origin}`:"Est. economy round-trip"});
-      else setFlightCost({cost:0, note:origin?"Could not estimate — try again":"No origin city set"});
-      if(hotelNum&&!isNaN(hotelNum)) setHotelCost({cost:hotelNum, note:"Est. mid-range hotel per night"});
-      else setHotelCost({cost:0, note:"Could not estimate — try again"});
-    }catch(e){
-      console.error("fetchTravelCostEstimates error",e);
-      setFlightCost({cost:0, note:"Estimate unavailable"});
-      setHotelCost({cost:0, note:"Estimate unavailable"});
-    }
-    setBudgetLoading(false);
-  }
 
 
   // ── ACCOUNTS ──────────────────────────────────────────────
@@ -1603,9 +1568,18 @@ export default function App(){
               </div>
               {/* Explore button */}
               <button className="sbtn" style={{borderRadius:14,padding:"14px",width:"100%",fontSize:"0.95rem"}}
-                onClick={()=>{if(cin.trim()){setShowS(false);setStep(2);}else toast.show("Please enter a destination!")}}>
+                onClick={()=>{
+                  if(!cin.trim()){toast.show("Please enter a destination!");return;}
+                  if(!departDate||!returnDate){toast.show("Please add travel dates to continue.");return;}
+                  setShowS(false);setStep(2);
+                }}>
                 Plan My Trip →
               </button>
+              {(!departDate||!returnDate)&&cin.trim()&&(
+                <div style={{fontSize:"0.73rem",color:"#c45c26",marginTop:6,textAlign:"center"}}>
+                  ✕ Travel dates are required to continue
+                </div>
+              )}
             </div>
             <div className="chips">
               {["🗽 New York","🗼 Paris","🏯 Kyoto","🎸 Nashville","🏛️ Rome","🌊 Bali"].map(c=>(
@@ -1623,52 +1597,25 @@ export default function App(){
 
       {/* STEP 2 — BUDGET */}
       {step===2&&(()=>{
-        // Effective costs: override takes priority over AI estimate
-        const effFlight=flightOverride!==""?Number(flightOverride):(flightCost?.cost??0);
-        const effHotel=(hotelOverride!==""?Number(hotelOverride):(hotelCost?.cost??0))*numDays;
+        const effFlight=flightOverride!==""?Number(flightOverride):0;
+        const effHotel=(hotelOverride!==""?Number(hotelOverride):0)*numDays;
         const budgetNum=Number(totalBudget)||0;
         const remaining=Math.max(0,budgetNum-effFlight-effHotel);
         const totalSpend=effFlight+effHotel;
         const over=budgetNum>0&&totalSpend>budgetNum;
 
-        // Donut chart helper
-        function donutChart(segments,size=160){
-          const r=58,cx=size/2,cy=size/2,stroke=22;
-          const circ=2*Math.PI*r;
-          let offset=0;
-          const total=segments.reduce((s,sg)=>s+sg.value,0)||1;
-          return(
-            <svg width={size} height={size} className="donut-svg" viewBox={`0 0 ${size} ${size}`}>
-              <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--sand2)" strokeWidth={stroke}/>
-              {segments.filter(sg=>sg.value>0).map((sg,i)=>{
-                const pct=sg.value/total;
-                const dash=pct*circ;
-                const el=(
-                  <circle key={i} cx={cx} cy={cy} r={r} fill="none"
-                    stroke={sg.color} strokeWidth={stroke}
-                    strokeDasharray={`${dash} ${circ-dash}`}
-                    strokeDashoffset={circ/4 - offset}
-                    style={{transition:"stroke-dasharray 0.6s ease"}}
-                  />
-                );
-                offset+=dash;
-                return el;
-              })}
-              {budgetNum>0&&(
-                <>
-                  <text x={cx} y={cy-8} textAnchor="middle" style={{fontSize:"0.6rem",fill:"var(--muted2)",fontFamily:"DM Sans,sans-serif",fontWeight:600,letterSpacing:1}}>REMAINING</text>
-                  <text x={cx} y={cy+10} textAnchor="middle" style={{fontSize:remaining>9999?"1rem":"1.3rem",fill:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",fontWeight:700}}>${remaining.toLocaleString()}</text>
-                  <text x={cx} y={cy+24} textAnchor="middle" style={{fontSize:"0.58rem",fill:"var(--muted2)",fontFamily:"DM Sans,sans-serif"}}>of ${budgetNum.toLocaleString()}</text>
-                </>
-              )}
-            </svg>
-          );
-        }
+        // CSS conic-gradient donut — no SVG math needed
+        const flightPct=budgetNum>0?Math.round(effFlight/budgetNum*100):0;
+        const hotelPct=budgetNum>0?Math.round(effHotel/budgetNum*100):0;
+        const remPct=Math.max(0,100-flightPct-hotelPct);
+        const gradient=budgetNum>0
+          ?`conic-gradient(#1b5e8a 0% ${flightPct}%, #4a9fd4 ${flightPct}% ${flightPct+hotelPct}%, ${over?"#e07060":"#c8e6d4"} ${flightPct+hotelPct}% 100%)`
+          :`conic-gradient(var(--sand2) 0% 100%)`;
 
         const segments=[
           {label:"✈️ Flights",color:"#1b5e8a",value:effFlight},
           {label:"🏨 Hotel",color:"#4a9fd4",value:effHotel},
-          {label:"💰 Remaining",color:over?"#e07060":"#e8f4ec",value:remaining},
+          {label:"💰 Remaining",color:over?"#e07060":"#c8e6d4",value:remaining},
         ];
 
         return(
@@ -1676,7 +1623,7 @@ export default function App(){
             <div className="sh">
               <div className="sey">Step 2 of 5</div>
               <h2 className="st">Plan your <span>budget</span></h2>
-              <p className="ss">Set your total budget — we'll estimate your travel and accommodation costs so you know what's left for activities.</p>
+              <p className="ss">Set your total budget then enter your estimated flight and hotel costs. The chart updates as you type.</p>
             </div>
 
             <div className="sec-label">Your Total Trip Budget (per person)</div>
@@ -1687,84 +1634,97 @@ export default function App(){
             <div style={{fontSize:"0.75rem",color:"var(--muted2)",marginBottom:24}}>
               {departDate&&returnDate
                 ?`${numDays} night${numDays!==1?"s":""} · ${new Date(departDate).toLocaleDateString("en-US",{month:"short",day:"numeric"})} → ${new Date(returnDate).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`
-                :"Add travel dates on the previous screen for accurate hotel estimates"}
+                :""}
             </div>
 
-            {/* Cost estimate cards */}
+            {/* Cost input cards */}
             <div className="cost-cards">
               {/* Flight card */}
               <div className="cost-card">
                 <div className="cost-card-icon">✈️</div>
                 <div className="cost-card-label">Round-Trip Flight</div>
-                {budgetLoading&&!flightCost
-                  ?<div className="bbd-loading" style={{padding:"8px 0"}}><div className="bbd-spinner"/>Estimating…</div>
-                  :<>
-                    <div className="cost-card-amount">${flightOverride!==""?Number(flightOverride).toLocaleString():(flightCost?.cost??0).toLocaleString()}</div>
-                    <div className="cost-card-note">{flightOverride!==""?"Your estimate":(flightCost?.note||(!originCity?"No origin city set":"AI estimate"))}</div>
-                    <div className="cost-card-edit">
-                      {editingFlight
-                        ?<><input className="cost-card-override" type="number" min={0} placeholder="Enter your price"
-                            value={flightOverride} onChange={e=>setFlightOverride(e.target.value)}
-                            autoFocus onKeyDown={e=>e.key==="Enter"&&setEditingFlight(false)}/>
-                          <button className="cost-card-editbtn" onClick={()=>setEditingFlight(false)}>Done</button></>
-                        :<button className="cost-card-editbtn" onClick={()=>setEditingFlight(true)}>
-                            {flightOverride!==""?"✎ Edit":"✎ Override"}
-                          </button>
-                      }
-                      {flightOverride!==""&&!editingFlight&&<button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>setFlightOverride("")}>Reset</button>}
-                    </div>
-                  </>
-                }
+                <div className="cost-card-amount" style={{color:"#1b5e8a"}}>${flightOverride!==""?Number(flightOverride).toLocaleString():"—"}</div>
+                <div className="cost-card-note">{flightOverride!==""?"Your estimate":"Enter your flight cost below"}</div>
+                <div className="cost-card-edit">
+                  {editingFlight
+                    ?<><input className="cost-card-override" type="number" min={0} placeholder="Total flight cost"
+                        value={flightOverride} onChange={e=>setFlightOverride(e.target.value)}
+                        autoFocus onKeyDown={e=>e.key==="Enter"&&setEditingFlight(false)}/>
+                      <button className="cost-card-editbtn" onClick={()=>setEditingFlight(false)}>Done</button></>
+                    :<button className="cost-card-editbtn" onClick={()=>setEditingFlight(true)}>
+                        {flightOverride!==""?"✎ Edit price":"+ Add price"}
+                      </button>
+                  }
+                  {flightOverride!==""&&!editingFlight&&(
+                    <button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>setFlightOverride("")}>Clear</button>
+                  )}
+                </div>
               </div>
               {/* Hotel card */}
               <div className="cost-card">
                 <div className="cost-card-icon">🏨</div>
-                <div className="cost-card-label">Hotel ({numDays} night{numDays!==1?"s":""})</div>
-                {budgetLoading&&!hotelCost
-                  ?<div className="bbd-loading" style={{padding:"8px 0"}}><div className="bbd-spinner"/>Estimating…</div>
-                  :<>
-                    <div className="cost-card-amount">${hotelOverride!==""?(Number(hotelOverride)*numDays).toLocaleString():((hotelCost?.cost??0)*numDays).toLocaleString()}</div>
-                    <div className="cost-card-note">{hotelOverride!==""?`$${hotelOverride}/night · your estimate`:(hotelCost?.note||(!departDate?"Set dates for estimate":"AI estimate"))}</div>
-                    <div className="cost-card-edit">
-                      {editingHotel
-                        ?<><input className="cost-card-override" type="number" min={0} placeholder="Per night price"
-                            value={hotelOverride} onChange={e=>setHotelOverride(e.target.value)}
-                            autoFocus onKeyDown={e=>e.key==="Enter"&&setEditingHotel(false)}/>
-                          <button className="cost-card-editbtn" onClick={()=>setEditingHotel(false)}>Done</button></>
-                        :<button className="cost-card-editbtn" onClick={()=>setEditingHotel(true)}>
-                            {hotelOverride!==""?"✎ Edit":"✎ Override"}
-                          </button>
-                      }
-                      {hotelOverride!==""&&!editingHotel&&<button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>setHotelOverride("")}>Reset</button>}
-                    </div>
-                  </>
-                }
+                <div className="cost-card-label">Hotel · {numDays} night{numDays!==1?"s":""}</div>
+                <div className="cost-card-amount" style={{color:"#4a9fd4"}}>{hotelOverride!==""?`$${(Number(hotelOverride)*numDays).toLocaleString()}`:"—"}</div>
+                <div className="cost-card-note">{hotelOverride!==""?`$${hotelOverride}/night`:"Enter nightly rate below"}</div>
+                <div className="cost-card-edit">
+                  {editingHotel
+                    ?<><input className="cost-card-override" type="number" min={0} placeholder="Price per night"
+                        value={hotelOverride} onChange={e=>setHotelOverride(e.target.value)}
+                        autoFocus onKeyDown={e=>e.key==="Enter"&&setEditingHotel(false)}/>
+                      <button className="cost-card-editbtn" onClick={()=>setEditingHotel(false)}>Done</button></>
+                    :<button className="cost-card-editbtn" onClick={()=>setEditingHotel(true)}>
+                        {hotelOverride!==""?"✎ Edit price":"+ Add price"}
+                      </button>
+                  }
+                  {hotelOverride!==""&&!editingHotel&&(
+                    <button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>setHotelOverride("")}>Clear</button>
+                  )}
+                </div>
               </div>
             </div>
 
-            {/* Retry button */}
-            <div style={{display:"flex",justifyContent:"flex-end",marginTop:-16,marginBottom:16}}>
-              <button className="cost-card-editbtn" style={{fontSize:"0.75rem"}}
-                onClick={()=>fetchTravelCostEstimates(city,originCity,numDays)}>
-                🔄 Re-estimate with AI
-              </button>
-            </div>
-
-            {/* Donut chart */}
+            {/* CSS Donut chart — only shows when budget is set */}
             {budgetNum>0&&(
               <div className="donut-wrap">
-                {donutChart(segments)}
+                <div style={{position:"relative",width:160,height:160,flexShrink:0}}>
+                  <div style={{
+                    width:160,height:160,borderRadius:"50%",
+                    background:gradient,
+                    transition:"background 0.5s ease",
+                  }}/>
+                  {/* Inner white circle to create donut hole */}
+                  <div style={{
+                    position:"absolute",top:"50%",left:"50%",
+                    transform:"translate(-50%,-50%)",
+                    width:100,height:100,borderRadius:"50%",
+                    background:"white",
+                    display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                    boxShadow:"0 2px 8px rgba(26,20,16,0.08)",
+                  }}>
+                    <div style={{fontSize:"0.55rem",letterSpacing:"1px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>Left</div>
+                    <div style={{fontSize:remaining>9999?"0.95rem":"1.15rem",fontWeight:700,color:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1.1}}>${remaining.toLocaleString()}</div>
+                    <div style={{fontSize:"0.55rem",color:"var(--muted2)"}}>of ${budgetNum.toLocaleString()}</div>
+                  </div>
+                </div>
                 <div className="donut-legend">
                   {segments.map(sg=>(
                     <div key={sg.label} className="donut-legend-item">
                       <div className="donut-legend-dot" style={{background:sg.color}}/>
                       <div className="donut-legend-lbl">{sg.label}</div>
-                      <div className="donut-legend-amt">${sg.value.toLocaleString()}</div>
-                      <div className="donut-legend-pct">{Math.round(sg.value/Math.max(budgetNum,1)*100)}%</div>
+                      <div className="donut-legend-amt">{sg.value>0?`$${sg.value.toLocaleString()}`:"—"}</div>
+                      <div className="donut-legend-pct">{budgetNum>0?`${Math.round(sg.value/budgetNum*100)}%`:""}</div>
                     </div>
                   ))}
-                  {over&&<div className="donut-over-warn">⚠️ Flights + hotel exceed your budget by ${(totalSpend-budgetNum).toLocaleString()}</div>}
+                  {over&&(
+                    <div className="donut-over-warn">⚠️ Over budget by ${(totalSpend-budgetNum).toLocaleString()}</div>
+                  )}
                 </div>
+              </div>
+            )}
+
+            {!budgetNum&&(
+              <div style={{textAlign:"center",padding:"32px 0",color:"var(--muted2)",fontSize:"0.84rem"}}>
+                Enter your total budget above to see the breakdown chart
               </div>
             )}
 
@@ -1773,7 +1733,7 @@ export default function App(){
         );
       })()}
 
-      {/* STEP 3 — PREFERENCES */}
+            {/* STEP 3 — PREFERENCES */}
       {step===3&&(
         <div className="page">
           <div className="sh">
