@@ -73,7 +73,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 /* ── STEP BREADCRUMB ── */
 .step-nav { display: flex; align-items: center; gap: 0; flex: 1; justify-content: center; padding: 0 16px; overflow: hidden; }
 .step-nav-item { display: flex; align-items: center; gap: 0; }
-.step-nav-btn { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 20px; border: none; background: none; cursor: pointer; font-family: 'DM Sans',sans-serif; font-size: 0.75rem; font-weight: 500; color: var(--muted2); transition: all 0.18s; white-space: nowrap; }
+.step-nav-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 5px 10px; border-radius: 20px; border: none; background: none; cursor: pointer; font-family: 'DM Sans',sans-serif; font-size: 0.75rem; font-weight: 500; color: var(--muted2); transition: background 0.18s, color 0.18s; white-space: nowrap; width: 110px; }
 .step-nav-btn:hover:not(:disabled) { background: var(--sand); color: var(--ink); }
 .step-nav-btn.active { background: var(--ocean); color: white; font-weight: 600; }
 .step-nav-btn.done { color: var(--ocean); }
