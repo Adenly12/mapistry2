@@ -485,7 +485,9 @@ async function aiCall(prompt, maxTokens=1200){
     const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})});
     const d=await r.json();
-    return d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
+    // Guard: d.content can be undefined if API returns an error object
+    if(!Array.isArray(d.content))return null;
+    return d.content.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim()||null;
   }catch{return null;}
 }
 
@@ -518,15 +520,23 @@ No markdown.`, 600);
   try{return JSON.parse(txt);}catch{return null;}
 }
 
-// Travel time via Directions API backend
-async function fetchTravelTime(origin,destination,mode){
-  try{
-    const modeMap={walking:"walking",transit:"transit",driving:"driving",cycling:"bicycling",rideshare:"driving"};
-    const params=new URLSearchParams({origin:`${origin.lat},${origin.lng}`,destination:`${destination.lat},${destination.lng}`,mode:modeMap[mode]||"walking"});
-    const r=await fetch(`/api/directions?${params}`);
-    const d=await r.json();
-    return{minutes:d.minutes||15,text:d.text||"~15 min"};
-  }catch{return{minutes:15,text:"~15 min"};}
+// Estimate travel time from straight-line distance + transport speed
+// Avoids external API calls that can crash the app
+function estimateTravelTime(origin, destination, mode){
+  if(!origin?.lat||!destination?.lat)return{minutes:15,text:"~15 min"};
+  // Haversine distance in km
+  const R=6371;
+  const dLat=(destination.lat-origin.lat)*Math.PI/180;
+  const dLng=(destination.lng-origin.lng)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(origin.lat*Math.PI/180)*Math.cos(destination.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  const distKm=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  // Speed in km/h per mode, with urban multiplier (streets ≠ straight line)
+  const speeds={walking:4.5,transit:20,driving:30,cycling:12,rideshare:28};
+  const speed=speeds[mode]||4.5;
+  const raw=Math.ceil((distKm/speed)*60*1.4); // 1.4x for real-world routing
+  const mins=Math.max(5,Math.min(raw,90));
+  const text=mins<60?`~${mins} min`:`~${Math.round(mins/10)*10} min`;
+  return{minutes:mins,text};
 }
 
 // ─── STORAGE ──────────────────────────────────────────────────
@@ -616,7 +626,6 @@ export default function App(){
   const[descMap,setDescMap]=useState(null);
   const[costMap,setCostMap]=useState(null);
   const[travelMap,setTravelMap]=useState({});
-  const[travelLoading,setTravelLoading]=useState(false);
   const[aiUsed,setAiUsed]=useState(false);
   const[loading,setLoading]=useState(false);
   const[lmsg,setLmsg]=useState("");
@@ -817,19 +826,21 @@ export default function App(){
       if(costRes){cm={};costRes.forEach(x=>{cm[x.id]=x.cost;});}
     }
     setDescMap(dm);setCostMap(cm);
-    setLoading(false);setStep(4);setItinViewDay(0);
-    saveTrip(city,dayPlans);
-    // Fetch real travel times asynchronously after render
-    setTravelLoading(true);
+    // Pre-compute travel times synchronously before rendering step 4
     const tm={};
     for(let di=0;di<dayPlans.length;di++){
       const day=dayPlans[di];
       for(let i=0;i<day.length-1;i++){
-        const res=await fetchTravelTime({lat:day[i].lat,lng:day[i].lng},{lat:day[i+1].lat,lng:day[i+1].lng},transport);
-        tm[`${di}-${i}`]=res;
+        tm[`${di}-${i}`]=estimateTravelTime(
+          {lat:day[i].lat,lng:day[i].lng},
+          {lat:day[i+1].lat,lng:day[i+1].lng},
+          transport
+        );
       }
     }
-    setTravelMap(tm);setTravelLoading(false);
+    setTravelMap(tm);
+    setLoading(false);setStep(4);setItinViewDay(0);
+    saveTrip(city,dayPlans);
   }
 
   // ── DRAG & DROP ── use refs so handlers always have fresh values
@@ -1197,8 +1208,7 @@ export default function App(){
               <h2 className="imt">Your {numDays>1?`${numDays}-day trip to`:"day in"} <em>{city}</em></h2>
               <div className="iml">{[blabel,`by ${tlabel}`].filter(Boolean).join(" · ")}{allAdded.length>0?` · ${allAdded.length} stops`:""}</div>
               {aiUsed&&<div className="aib">✦ AI-personalized descriptions & researched costs</div>}
-              {travelLoading&&<div style={{fontSize:"0.75rem",color:"var(--ocean3)",marginTop:6}}>⏱ Calculating real travel times via Google Maps…</div>}
-            </div>
+                          </div>
             <div className="iac np">
               <button className="obt" onClick={()=>setStep(3)}>← Edit Places</button>
               <button className="dbt" onClick={()=>exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime)}>⬇ Export PDF</button>
@@ -1271,9 +1281,7 @@ export default function App(){
                       </div>
                       {!isLast&&(
                         <div className="trvl"><div/>
-                          {travelLoading&&!travelMap[`${itinViewDay}-${i}`]
-                            ?<div className="travel-calc">⏱ Calculating travel time…</div>
-                            :<div className="trvli">{TRANSPORT.find(x=>x.id===transport)?.icon||"🚶"} {t.travelText} by {tlabel.toLowerCase()} to next stop</div>
+                          <div className="trvli">{TRANSPORT.find(x=>x.id===transport)?.icon||"🚶"} {t.travelText} by {tlabel.toLowerCase()} to next stop</div
                           }
                         </div>
                       )}
