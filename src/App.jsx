@@ -1189,6 +1189,8 @@ export default function App(){
       const hotelParams=new URLSearchParams({
         city,
         nights:String(numDays),
+        ...(departDate?{check_in_date:departDate}:{}),
+        ...(returnDate?{check_out_date:returnDate}:{}),
       });
       const [flightRes, hotelRes] = await Promise.all([
         fetch(`/api/flights?${flightParams}`),
