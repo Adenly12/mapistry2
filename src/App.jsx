@@ -612,7 +612,7 @@ async function aiCall(prompt, maxTokens=1200){
     const r=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
       headers:getAIHeaders(ANTHROPIC_KEY),
-      body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+      body:JSON.stringify({model:"claude-sonnet-4-5-20250929",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
     });
     const d=await r.json();
     if(d.error){console.error("aiCall error",d.error);return null;}
@@ -651,15 +651,7 @@ Respond ONLY as JSON array with no markdown:
 
 async function fetchCardDesc(place, city){
   const txt=await aiCall(
-    `You are an expert travel writer. Write a vivid, specific, 3–4 sentence description of "${place.name}" (${place.type}) in ${city}.
-
-Include:
-- What makes it uniquely special or memorable
-- Specific details: architecture, atmosphere, signature dishes/items, best time to visit, or insider tips
-- Sensory language that helps the traveler imagine being there
-- Any notable history or cultural significance
-
-Be concrete and specific — avoid generic tourist-brochure language. Write in present tense, second person ("you'll find…", "don't miss…").`,
+    `You are an expert travel writer. Write a vivid, specific, 3–4 sentence description of "${place.name}" (${place.type}) in ${city}. Include what makes it uniquely special, specific sensory details, insider tips, and any notable history. Be concrete — avoid generic tourist-brochure language. Write in present tense, second person.`,
     400
   );
   return txt||null;
@@ -1158,8 +1150,8 @@ export default function App(){
   const[modalAiDesc,setModalAiDesc]=useState("");
   const[modalLoading,setModalLoading]=useState(false);
   // Per-card AI descriptions (Step 3 — click desc to expand)
-  const[cardDescMap,setCardDescMap]=useState({});   // {placeId: string}
-  const[cardDescLoading,setCardDescLoading]=useState({}); // {placeId: bool}
+  const[cardDescMap,setCardDescMap]=useState({});
+  const[cardDescLoading,setCardDescLoading]=useState({});
   // accounts
   const[activeUser,setActiveUser]=useState(null);
   const[hist,setHist]=useState([]);
@@ -2364,7 +2356,7 @@ export default function App(){
                         <div className="plrat">★ {p.rating} <span>({p.reviews.toLocaleString()} reviews)</span></div>
                         <div className="pldesc"
                           title={cardDescMap[p.id]?"Click to collapse":"Click for AI-generated details"}
-                          style={{cursor:"pointer",position:"relative",transition:"all 0.2s"}}
+                          style={{cursor:"pointer",transition:"all 0.2s"}}
                           onClick={async e=>{
                             e.stopPropagation();
                             if(cardDescMap[p.id]){setCardDescMap(m=>({...m,[p.id]:null}));return;}
