@@ -2007,7 +2007,7 @@ export default function App(){
                   {budgetNum>0
                     ?<>
                       <div style={{fontSize:"0.55rem",letterSpacing:"1px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>Left</div>
-                      <div style={{fontSize:remainingWithAct>9999?"0.95rem":"1.15rem",fontWeight:700,color:overWithAct?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1.1}}>${remainingWithAll.toLocaleString()}</div>
+                      <div style={{fontSize:remainingWithAll>9999?"0.95rem":"1.15rem",fontWeight:700,color:overWithAct?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1.1}}>${remainingWithAll.toLocaleString()}</div>
                       <div style={{fontSize:"0.55rem",color:"var(--muted2)"}}>of ${budgetNum.toLocaleString()}</div>
                       {travelers>1&&<div style={{fontSize:"0.5rem",color:"var(--ocean)",fontWeight:600}}>{travelers} travelers</div>}
                     </>
