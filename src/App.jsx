@@ -476,25 +476,38 @@ function buildCityEmbedUrl(tripHistory){
 }
 
 // ─── AI ───────────────────────────────────────────────────────
-async function aiCall(prompt, maxTokens=1200){
-  if(!ANTHROPIC_KEY||ANTHROPIC_KEY==="PASTE_YOUR_ANTHROPIC_KEY_HERE")return null;
-  try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})});
-    const d=await r.json();
-    return d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim();
-  }catch{return null;}
-}
+const AI_HEADERS={
+  "Content-Type":"application/json",
+  "x-api-key":typeof CONFIG!=="undefined"?CONFIG.ANTHROPIC_KEY:"",
+  "anthropic-version":"2023-06-01",
+  "anthropic-dangerous-direct-browser-access":"true",
+};
 
-// aiCall with web_search tool — web_search_20250305 is a server-side tool:
-// the API executes the search and returns results inline in the content array.
-// We just make one call; the model searches and responds in a single turn.
-async function aiCallWithSearch(prompt, maxTokens=1024){
+async function aiCall(prompt, maxTokens=1200){
   if(!ANTHROPIC_KEY||ANTHROPIC_KEY==="PASTE_YOUR_ANTHROPIC_KEY_HERE")return null;
   try{
     const r=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
-      headers:{"Content-Type":"application/json"},
+      headers:{...AI_HEADERS,"x-api-key":ANTHROPIC_KEY},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+    });
+    const d=await r.json();
+    if(d.error){console.error("aiCall error",d.error);return null;}
+    return d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim()||null;
+  }catch(e){console.error("aiCall error",e);return null;}
+}
+
+// aiCallWithSearch — uses web_search tool with required beta header
+async function aiCallWithSearch(prompt, maxTokens=1200){
+  if(!ANTHROPIC_KEY||ANTHROPIC_KEY==="PASTE_YOUR_ANTHROPIC_KEY_HERE")return null;
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{
+        ...AI_HEADERS,
+        "x-api-key":ANTHROPIC_KEY,
+        "anthropic-beta":"web-search-2025-03-05",
+      },
       body:JSON.stringify({
         model:"claude-sonnet-4-20250514",
         max_tokens:maxTokens,
@@ -503,12 +516,18 @@ async function aiCallWithSearch(prompt, maxTokens=1024){
       })
     });
     const d=await r.json();
-    if(d.error){console.error("aiCallWithSearch API error",d.error);return null;}
+    if(d.error){
+      console.error("aiCallWithSearch error",d.error);
+      // Fall back to regular aiCall without web search
+      return aiCall(prompt,maxTokens);
+    }
     if(!d.content)return null;
-    // Extract all text blocks — model writes its final answer as text after searching
     const text=d.content.filter(c=>c.type==="text").map(c=>c.text).join("").replace(/```json|```/g,"").trim();
     return text||null;
-  }catch(e){console.error("aiCallWithSearch error",e);return null;}
+  }catch(e){
+    console.error("aiCallWithSearch error",e);
+    return aiCall(prompt,maxTokens);
+  }
 }
 
 async function fetchAIDescs(places,city,budget,prefs){
@@ -1411,15 +1430,20 @@ Do not include any explanation or markdown. Just the JSON object.`;
                   const focused=focusedId===p.id;
                   const img=p.photoRef?purl(p.photoRef):null;
                   const cp=cardPriceMap[p.id];
-                  const pb=cp==="loading"?"…"
+                  const pbLoading=cp==="loading";
+                  const pb=pbLoading?"…"
                     :cp&&cp.cost!=null?(cp.cost===0?"Free":`~$${cp.cost}`)
                     :p.priceLevel===0?"Free":p.priceLevel===1?"$":p.priceLevel===2?"$$":p.priceLevel===3?"$$$":null;
-                  const pbLoading=cp==="loading";
+                  const pbNote=cp&&cp!=="loading"&&cp.cost!=null&&cp.note?cp.note:null;
                   return(
                     <div key={p.id} className={`plcard ${added?"added":""} ${focused&&!added?"focused":""}`} onClick={()=>focusPlace(p)}>
                       <div className="plimg">
                         {img?<img src={img} alt={p.name} onError={e=>{e.target.parentElement.innerHTML=p.emoji;}} loading="lazy"/>:<span>{p.emoji}</span>}
-                        {pb&&<div className="pbadge" style={{opacity:pbLoading?0.6:1,fontStyle:pbLoading?"italic":"normal"}}>{pb}</div>}
+                        {pb&&<div className="pbadge" style={{
+                          opacity:pbLoading?0.6:1,
+                          fontStyle:pbLoading?"italic":"normal",
+                          background:(!pbLoading&&cp&&cp.cost!=null)?"rgba(27,94,138,0.85)":"rgba(26,20,16,0.7)",
+                        }}>{pb}</div>}
                         {added&&<div className="pin-badge">📍 Pinned</div>}
                       </div>
                       <div className="plbody">
@@ -1428,11 +1452,14 @@ Do not include any explanation or markdown. Just the JSON object.`;
                         <div className="plrat">★ {p.rating} <span>({p.reviews.toLocaleString()} reviews)</span></div>
                         <div className="pldesc">{p.desc}</div>
                       </div>
-                      <div className="plfoot">
-                        <div className="pldur">~{p.duration} min</div>
-                        <button className={`addbt ${added?"added":""}`} onClick={e=>{e.stopPropagation();addToDay(p,activeSideDay);}}>
-                          {added?"✓ Pinned":`+ Day ${activeSideDay+1}`}
-                        </button>
+                      <div className="plfoot" style={{flexDirection:"column",gap:4,alignItems:"stretch"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                          <div className="pldur">~{p.duration} min</div>
+                          <button className={`addbt ${added?"added":""}`} onClick={e=>{e.stopPropagation();addToDay(p,activeSideDay);}}>
+                            {added?"✓ Pinned":`+ Day ${activeSideDay+1}`}
+                          </button>
+                        </div>
+                        {pbNote&&<div style={{fontSize:"0.7rem",color:"var(--muted2)",paddingBottom:2}}>{pbNote}</div>}
                       </div>
                     </div>
                   );
