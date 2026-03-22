@@ -1427,7 +1427,7 @@ Respond ONLY with this JSON, nothing else:
                   const pbLoading=cp==="loading";
                   const pb=pbLoading?"…"
                     :cp&&cp.cost!=null?(cp.cost===0?"Free":`~$${cp.cost}`)
-                    :p.priceLevel===0?"Free":p.priceLevel===1?"$":p.priceLevel===2?"$$":p.priceLevel===3?"$$$":null;
+                    :null;
                   const pbNote=cp&&cp!=="loading"&&cp.cost!=null&&cp.note?cp.note:null;
                   return(
                     <div key={p.id} className={`plcard ${added?"added":""} ${focused&&!added?"focused":""}`} onClick={()=>focusPlace(p)}>
