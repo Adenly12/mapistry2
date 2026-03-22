@@ -1376,14 +1376,22 @@ export default function App(){
   }
 
   async function goToResults(){
-    const c=cin.trim();if(!c){toast.show("Please enter a city!");return;}
-    setCity(c);
-    setPreviewSrc(`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(c)}&zoom=13`);
-    setLmsg(`Finding the best spots in ${c}…`);setLsub("");setLoading(true);
-    const{places:p,nextToken:nt}=await doFetch(c);
-    nextToken.current=nt;setAllPlaces(p);setPlaces(p);setVisibleCount(8);
+    const cityVal=cin.trim();if(!cityVal){toast.show("Please enter a city!");return;}
+    setCity(cityVal);
+    setPreviewSrc(`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(cityVal)}&zoom=13`);
+    setLmsg(`Finding the best spots in ${cityVal}…`);setLsub("");setLoading(true);
+    const{places:pp,nextToken:nt}=await doFetch(cityVal);
+    nextToken.current=nt;setAllPlaces(pp);setPlaces(pp);setVisibleCount(8);
     setDayPlans(Array.from({length:numDays},()=>[]));
     setStaticMapUrl("");setLoading(false);goStep(3);
+  }
+
+  async function refreshPlaces(){
+    if(!city)return;
+    setLmsg(`Refreshing places in ${city}…`);setLsub("");setLoading(true);
+    const{places:pp,nextToken:nt}=await doFetch(city);
+    nextToken.current=nt;setAllPlaces(pp);setPlaces(pp);setVisibleCount(8);
+    setLoading(false);
   }
 
   async function showMore(){
@@ -1714,7 +1722,7 @@ export default function App(){
             </div>
             <div className="chips">
               {["🗽 New York","🗼 Paris","🏯 Kyoto","🎸 Nashville","🏛️ Rome","🌊 Bali"].map(c=>(
-                <div key={c} className="chip" onClick={()=>{const v=c.split(" ").slice(1).join(" ");setCin(v);setCity(v);setShowS(false);}}>{c}</div>
+                <div key={c} className="chip" onClick={()=>{const chipCity=c.split(" ").slice(1).join(" ");setCin(chipCity);setCity(chipCity);setShowS(false);}}>{c}</div>
               ))}
             </div>
             <div className="hero-proof">
@@ -2007,10 +2015,7 @@ export default function App(){
                 </div>
               ))}
               <button className="gobt" style={{padding:"7px 20px",fontSize:"0.82rem",marginLeft:"auto"}}
-                onClick={()=>{
-                  setPlaces([]);setAllPlaces([]);setVisibleCount(8);
-                  goToResults();
-                }}>
+                onClick={refreshPlaces}>
                 🔍 Refresh Places
               </button>
             </div>
@@ -2181,11 +2186,11 @@ export default function App(){
               )}
               <div className="cost-rows">
                 {allAdded.map(p=>{
-                  const c=costMap?.[p.id];
-                  return c!=null?(
+                  const costEntry2=costMap?.[p.id];
+                  return costEntry2!=null?(
                     <div key={p.id} className="cost-row">
-                      <span className="cost-lbl">{p.name}{c.note?<span style={{fontSize:"0.72rem",color:"var(--muted2)",marginLeft:6}}>{c.note}</span>:null}</span>
-                      <span className="cost-val">{c.cost===0?"Free":`~$${c.cost}`}</span>
+                      <span className="cost-lbl">{p.name}{costEntry2.note?<span style={{fontSize:"0.72rem",color:"var(--muted2)",marginLeft:6}}>{c.note}</span>:null}</span>
+                      <span className="cost-val">{costEntry2.cost===0?"Free":`~$${costEntry2.cost}`}</span>
                     </div>
                   ):null;
                 })}
