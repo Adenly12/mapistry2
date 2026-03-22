@@ -1431,8 +1431,17 @@ export default function App(){
     try{
       const res = await fetch(`/api/weather?city=${encodeURIComponent(cityName)}&days=${numD||5}`);
       const data = await res.json();
-      if(!data.error) setWeather(data.forecast||null);
-    }catch(e){ console.error("weather fetch error",e); }
+      console.log("Weather response:", data);
+      if(data.forecast&&data.forecast.length>0){
+        setWeather(data.forecast);
+      } else {
+        console.warn("Weather error:", data.error||"No forecast data");
+        setWeather([]);
+      }
+    }catch(e){
+      console.error("weather fetch error",e);
+      setWeather([]);
+    }
     setWeatherLoading(false);
   }
 
@@ -1835,18 +1844,20 @@ export default function App(){
 
         // Transport — only transit and cycling multiply by travelers
         const tCost=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
-        const hasMiles2=Object.values(travelMap||{}).some(t=>t?.distanceMiles);
-        const totalMiles=hasMiles2
-          ?Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0)
-          :(()=>{
-            const allPl=dayPlans.flat();
-            let mi=0;
-            for(let i=0;i<allPl.length-1;i++){
-              if(allPl[i].lat&&allPl[i+1].lat) mi+=haversineMiles(allPl[i].lat,allPl[i].lng,allPl[i+1].lat,allPl[i+1].lng);
-              else mi+=1;
-            }
-            return mi||numDays*4;
-          })();
+        const totalMiles=(()=>{
+          if(Object.values(travelMap||{}).some(t=>t?.distanceMiles)){
+            return Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0);
+          }
+          const allPl=dayPlans.flat();
+          if(allPl.length<2) return 0;
+          let mi=0;
+          for(let idx=0;idx<allPl.length-1;idx++){
+            const pa=allPl[idx], pb=allPl[idx+1];
+            if(pa.lat&&pa.lng&&pb.lat&&pb.lng) mi+=haversineMiles(pa.lat,pa.lng,pb.lat,pb.lng);
+            else mi+=1;
+          }
+          return mi;
+        })();
         const effTransport=tCost.perMile*(tCost.multiply?travelers:1)*totalMiles;
 
         const totalSpendWithAll=effFlightTotal+effHotel+effActivities+effTransport;
@@ -2076,30 +2087,6 @@ export default function App(){
           </div>
 
           {/* ── WEATHER STRIP ── */}
-          {step===3&&(
-            <div style={{display:"flex",gap:8,marginBottom:14,padding:"10px 14px",background:"rgba(255,255,255,0.7)",borderRadius:12,border:"1px solid var(--border)",overflowX:"auto",alignItems:"center",minHeight:64}}>
-              {weatherLoading&&(
-                <div style={{display:"flex",alignItems:"center",gap:8,color:"var(--muted2)",fontSize:"0.78rem"}}>
-                  <div className="bbd-spinner"/>Loading weather for {city}…
-                </div>
-              )}
-              {!weatherLoading&&!weather&&(
-                <div style={{fontSize:"0.75rem",color:"var(--muted2)"}}>🌤 Weather unavailable for {city}</div>
-              )}
-              {weather&&weather.slice(0,numDays).map((day,i)=>{
-                const icon=day.main==="Rain"||day.main==="Drizzle"?"🌧":day.main==="Snow"?"❄️":day.main==="Thunderstorm"?"⛈":day.main==="Clear"?"☀️":day.main==="Clouds"?"⛅":"🌤";
-                return(
-                  <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:68,padding:"6px 10px",borderRadius:8,background:i===0?"rgba(27,94,138,0.06)":"transparent",flexShrink:0}}>
-                    <div style={{fontSize:"0.62rem",color:"var(--muted2)",fontWeight:600,letterSpacing:"0.5px"}}>Day {i+1}</div>
-                    <div style={{fontSize:"1.4rem",lineHeight:1.1}}>{icon}</div>
-                    <div style={{fontSize:"0.85rem",fontWeight:700,color:"var(--ink)"}}>{day.temp}°F</div>
-                    <div style={{fontSize:"0.6rem",color:"var(--muted2)",textAlign:"center",lineHeight:1.3,maxWidth:64}}>{day.description}</div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
           {/* ── FILTER BAR ── */}
           <div style={{marginBottom:18}}>
             {/* Interest chips */}
@@ -2232,18 +2219,20 @@ export default function App(){
                 },0)*(travelers||1);
                 const tCostObj=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
                 // Use real travelMap distances if available, else sum straight-line between pinned places
-                const hasMiles=Object.values(travelMap||{}).some(t=>t?.distanceMiles);
-                const milesTotal=hasMiles
-                  ?Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0)
-                  :(()=>{
-                    const all=dayPlans.flat();
-                    let miles=0;
-                    for(let i=0;i<all.length-1;i++){
-                      if(all[i].lat&&all[i+1].lat) miles+=haversineMiles(all[i].lat,all[i].lng,all[i+1].lat,all[i+1].lng);
-                      else miles+=1; // 1 mile fallback per segment
-                    }
-                    return miles||numDays*4;
-                  })();
+                const milesTotal=(()=>{
+                  if(Object.values(travelMap||{}).some(t=>t?.distanceMiles)){
+                    return Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0);
+                  }
+                  const allP=dayPlans.flat();
+                  if(allP.length<2) return 0;
+                  let miles=0;
+                  for(let idx=0;idx<allP.length-1;idx++){
+                    const pa=allP[idx], pb=allP[idx+1];
+                    if(pa.lat&&pa.lng&&pb.lat&&pb.lng) miles+=haversineMiles(pa.lat,pa.lng,pb.lat,pb.lng);
+                    else miles+=1;
+                  }
+                  return miles;
+                })();
                 const trans=tCostObj.perMile*(tCostObj.multiply?(travelers||1):1)*milesTotal;
                 const spent=flt+hot+act+trans;
                 const rem=Math.max(0,bNum-spent);
@@ -2300,6 +2289,30 @@ export default function App(){
                   </div>
                 ))}
               </div>
+
+              {/* Weather strip near day tabs */}
+              {(weatherLoading||weather)&&(
+                <div style={{marginBottom:12}}>
+                  <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginBottom:6}}>🌤 Weather Forecast</div>
+                  {weatherLoading&&<div style={{fontSize:"0.72rem",color:"var(--muted2)",display:"flex",alignItems:"center",gap:6}}><div className="bbd-spinner"/>Loading…</div>}
+                  {weather&&weather.length===0&&<div style={{fontSize:"0.72rem",color:"var(--muted2)"}}>Unavailable</div>}
+                  {weather&&weather.length>0&&(
+                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                      {weather.slice(0,numDays).map((day,i)=>{
+                        const icon=day.main==="Rain"||day.main==="Drizzle"?"🌧":day.main==="Snow"?"❄️":day.main==="Thunderstorm"?"⛈":day.main==="Clear"?"☀️":day.main==="Clouds"?"⛅":"🌤";
+                        return(
+                          <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 8px",borderRadius:8,background:"var(--sand)",fontSize:"0.73rem"}}>
+                            <span style={{fontSize:"1rem",flexShrink:0}}>{icon}</span>
+                            <span style={{fontWeight:600,color:"var(--muted2)",minWidth:36}}>Day {i+1}</span>
+                            <span style={{fontWeight:700,color:"var(--ink)"}}>{day.temp}°F</span>
+                            <span style={{color:"var(--muted2)",fontSize:"0.65rem",flex:1,textAlign:"right"}}>{day.description}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {numDays>1&&(
                 <>
@@ -2378,12 +2391,6 @@ export default function App(){
             const remaining=Math.max(0,bNum-grandTotal);
             const over=bNum>0&&grandTotal>bNum;
 
-            // Quick stats
-            const allWithCost=allAdded.map(p=>({...p,cost:costMap?.[p.id]?.cost??getInstantPrice(p)?.cost??0}));
-            const mostExpensive=allWithCost.sort((a,b)=>b.cost-a.cost)[0];
-            const bestValue=allWithCost.filter(p=>p.cost===0).length>0
-              ?allWithCost.filter(p=>p.cost===0)[0]
-              :allWithCost.sort((a,b)=>a.cost-b.cost)[0];
             const totalTravelMin=Object.values(travelMap||{}).reduce((s,t)=>s+(t?.minutes||0),0);
 
             // Donut
@@ -2431,36 +2438,50 @@ export default function App(){
                 {/* Divider */}
                 <div style={{width:1,background:"var(--border)",alignSelf:"stretch",margin:"0 4px"}}/>
 
-                {/* Quick stats */}
-                <div style={{flex:1,display:"flex",flexDirection:"column",gap:10,justifyContent:"center",minWidth:180}}>
-                  <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginBottom:2}}>Trip at a glance</div>
-                  <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                {/* Trip stats */}
+                <div style={{flex:1,display:"flex",flexDirection:"column",gap:12,justifyContent:"center",minWidth:180}}>
+                  <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>Trip Summary</div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                     {[
                       {icon:"📍",label:"Stops",val:allAdded.length},
                       {icon:"📅",label:"Days",val:numDays},
                       {icon:"👥",label:"Travelers",val:travelers},
-                      {icon:"⏱",label:"Travel time",val:totalTravelMin>0?`${Math.round(totalTravelMin/60)}h ${totalTravelMin%60}m`:"—"},
+                      {icon:"⏱",label:"In Transit",val:totalTravelMin>0?`${Math.floor(totalTravelMin/60)}h ${totalTravelMin%60}m`:"—"},
                     ].map(stat=>(
-                      <div key={stat.label} style={{padding:"8px 12px",background:"var(--sand)",borderRadius:10,minWidth:70,textAlign:"center"}}>
-                        <div style={{fontSize:"1rem",marginBottom:2}}>{stat.icon}</div>
-                        <div style={{fontSize:"0.88rem",fontWeight:700,color:"var(--ink)"}}>{stat.val}</div>
-                        <div style={{fontSize:"0.6rem",color:"var(--muted2)"}}>{stat.label}</div>
+                      <div key={stat.label} style={{padding:"10px 14px",background:"var(--sand)",borderRadius:12,textAlign:"center",minWidth:72}}>
+                        <div style={{fontSize:"1.1rem",marginBottom:3}}>{stat.icon}</div>
+                        <div style={{fontSize:"0.95rem",fontWeight:700,color:"var(--ink)"}}>{stat.val}</div>
+                        <div style={{fontSize:"0.6rem",color:"var(--muted2)",marginTop:1}}>{stat.label}</div>
                       </div>
                     ))}
                   </div>
-                  {/* Most expensive / best value */}
-                  <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:4}}>
-                    {mostExpensive&&mostExpensive.cost>0&&(
-                      <div style={{fontSize:"0.72rem",padding:"5px 10px",background:"rgba(196,92,38,0.07)",borderRadius:8,color:"var(--ink)"}}>
-                        💸 Priciest: <strong>{mostExpensive.name}</strong> ~${mostExpensive.cost}
-                      </div>
-                    )}
-                    {bestValue&&(
-                      <div style={{fontSize:"0.72rem",padding:"5px 10px",background:"rgba(74,124,89,0.07)",borderRadius:8,color:"var(--ink)"}}>
-                        ✨ Best value: <strong>{bestValue.name}</strong> {bestValue.cost===0?"Free":`~$${bestValue.cost}`}
-                      </div>
-                    )}
+                  {/* Trip dates */}
+                  {departDate&&returnDate&&(
+                    <div style={{fontSize:"0.78rem",color:"var(--muted2)",display:"flex",alignItems:"center",gap:8}}>
+                      <span>📆</span>
+                      <span>{new Date(departDate+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})} — {new Date(returnDate+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</span>
+                    </div>
+                  )}
+                  {/* Transport mode */}
+                  <div style={{fontSize:"0.78rem",color:"var(--muted2)",display:"flex",alignItems:"center",gap:8}}>
+                    <span>{TRANSPORT.find(t=>t.id===transport)?.icon||"🚶"}</span>
+                    <span>Getting around by {TRANSPORT.find(t=>t.id===transport)?.name||"Walking"}</span>
                   </div>
+                  {/* Cost per person vs total */}
+                  {grandTotal>0&&(
+                    <div style={{padding:"10px 14px",background:"rgba(27,94,138,0.06)",borderRadius:12,fontSize:"0.78rem"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                        <span style={{color:"var(--muted2)"}}>Per person</span>
+                        <span style={{fontWeight:700,color:"var(--ocean)"}}>${Math.round(grandTotal/travelers).toLocaleString()}</span>
+                      </div>
+                      {travelers>1&&(
+                        <div style={{display:"flex",justifyContent:"space-between"}}>
+                          <span style={{color:"var(--muted2)"}}>Group total ({travelers})</span>
+                          <span style={{fontWeight:700,color:"var(--ocean)"}}>${grandTotal.toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Day cost breakdown */}
