@@ -1056,25 +1056,18 @@ export default function App(){
   async function fetchCardPrice(p){
     if(cardPriceMap[p.id]!==undefined)return;
     setCardPriceMap(prev=>({...prev,[p.id]:"loading"}));
-    const prompt=`What is the typical per-person cost to visit "${p.name}" in ${city} (type: ${p.type})?
-- Museums/attractions: standard adult admission price in USD
-- Restaurants/cafes/bars: typical cost per person for a meal or drinks
-- Free parks/public spaces/landmarks: cost is 0
-- Use your training knowledge — give your best estimate
-Respond ONLY with this JSON, nothing else:
-{"cost":NUMBER,"note":"one short phrase e.g. Adult admission or Typical meal"}`;
-    const txt=await aiCall(prompt,300);
-    let result={cost:null,note:""};
-    if(txt){
-      try{
-        const match=txt.match(/\{[^{}]*"cost"\s*:\s*[\d.]+[^{}]*\}/);
-        const parsed=JSON.parse(match?match[0]:txt);
-        if(typeof parsed.cost==="number"){
-          result={cost:Math.round(parsed.cost),note:parsed.note||""};
-        }
-      }catch{}
+    try{
+      const params=new URLSearchParams({name:p.name,type:p.type||"",city});
+      const r=await fetch(`/api/card-price?${params}`);
+      const data=await r.json();
+      if(typeof data.cost==="number"){
+        setCardPriceMap(prev=>({...prev,[p.id]:{cost:data.cost,note:data.note||""}}));
+      }else{
+        setCardPriceMap(prev=>({...prev,[p.id]:{cost:null,note:""}}));
+      }
+    }catch{
+      setCardPriceMap(prev=>({...prev,[p.id]:{cost:null,note:""}}));
     }
-    setCardPriceMap(prev=>({...prev,[p.id]:result}));
   }
 
   function focusPlace(p){
