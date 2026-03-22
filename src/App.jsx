@@ -6,11 +6,11 @@ const ANTHROPIC_KEY = CONFIG.ANTHROPIC_KEY;
 
 // ─── HERO PHOTOS ──────────────────────────────────────────────
 const HERO_PHOTOS = [
-  "https://images.unsplash.com/photo-1499856842579-65f4f4d4d3fe?w=1400&q=85", // Paris
+  "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=1400&q=85", // Paris Eiffel
   "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1400&q=85", // Tokyo
-  "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=1400&q=85", // Rome Colosseum
-  "https://images.unsplash.com/photo-1533929736458-ca588d08c8be?w=1400&q=85", // New York
-  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1400&q=85", // Bali
+  "https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=1400&q=85", // Rome
+  "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=1400&q=85", // New York
+  "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1400&q=85", // Bali
 ];
 
 // ─── STYLES ───────────────────────────────────────────────────
@@ -421,11 +421,20 @@ function buildStaticMapUrl(places){
   return`https://maps.googleapis.com/maps/api/staticmap?size=600x300&scale=2${markers}&key=${GOOGLE_KEY}`;
 }
 
-// Profile map with city pins
-function buildCityMapUrl(cities){
-  if(!GOOGLE_KEY||!cities.length)return null;
-  const markers=cities.map(c=>`&markers=color:0xC45C26|${encodeURIComponent(c)}`).join("");
-  return`https://maps.googleapis.com/maps/api/staticmap?size=500x200&scale=2&zoom=2&center=20,10${markers}&key=${GOOGLE_KEY}`;
+// Profile map - uses lat/lng from saved trips for accurate pins
+function buildCityMapUrl(tripHistory){
+  if(!GOOGLE_KEY||!tripHistory.length)return null;
+  const seen=new Set();
+  const unique=tripHistory.filter(h=>{
+    if(!h.lat||!h.lng||seen.has(h.city))return false;
+    seen.add(h.city);return true;
+  });
+  if(!unique.length)return null;
+  const colors=["0xC45C26","0x1B5E8A","0x4A7C59","0xC8820A","0x7C5CBF"];
+  const markers=unique.map((h,i)=>`&markers=color:${colors[i%colors.length]}|label:${i+1}|${h.lat},${h.lng}`).join("");
+  const zoom=unique.length===1?"8":"2";
+  const center=unique.length===1?`${unique[0].lat},${unique[0].lng}`:"20,10";
+  return`https://maps.googleapis.com/maps/api/staticmap?size=500x200&scale=2&zoom=${zoom}&center=${center}${markers}&key=${GOOGLE_KEY}`;
 }
 
 // ─── AI ───────────────────────────────────────────────────────
@@ -671,6 +680,8 @@ export default function App(){
     if(!all.length)return;
     const entry={
       id:Date.now(),city:tripCity,
+      lat:all[0]?.lat||0,
+      lng:all[0]?.lng||0,
       date:new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}),
       stops:all.length,days:dPlans.length,
       img:all[0]?.photoRef?purl(all[0].photoRef):null,
@@ -881,7 +892,7 @@ export default function App(){
   const initials=activeUser?activeUser.slice(0,2).toUpperCase():"";
   const knownUsers=Object.keys(loadU());
   const visitedCities=[...new Set(hist.map(h=>h.city))];
-  const cityMapUrl=buildCityMapUrl(visitedCities);
+  const cityMapUrl=buildCityMapUrl(hist);
 
   return(
     <>
