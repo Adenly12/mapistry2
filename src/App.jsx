@@ -229,8 +229,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .day-tab:not(.active) .cnt { background: var(--sand2); color: var(--muted); }
 /* Drop zone highlighting */
 .day-drop-zone { min-height: 60px; border-radius: var(--rxs); transition: all 0.2s; }
-.day-drop-zone.drag-over { background: rgba(27,94,138,0.06); border: 2px dashed var(--ocean3); }
-.ii { background: var(--sand); border-radius: var(--rxs); padding: 9px 11px; display: flex; align-items: center; justify-content: space-between; font-size: 0.81rem; margin-bottom: 6px; border: 1.5px solid transparent; transition: all 0.15s; }
+.day-drop-zone.ii { background: var(--sand); border-radius: var(--rxs); padding: 9px 11px; display: flex; align-items: center; justify-content: space-between; font-size: 0.81rem; margin-bottom: 6px; border: 1.5px solid transparent; transition: all 0.15s; }
 .ii.dragging { opacity: 0.3; border-style: dashed; border-color: var(--ocean3); }
 .ii-l { display: flex; align-items: center; gap: 8px; }
 .dh { color: var(--muted2); font-size: 0.85rem; cursor: grab; }
@@ -264,7 +263,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .cost-row { display: flex; justify-content: space-between; font-size: 0.84rem; }
 .cost-lbl { color: var(--muted); }
 .cost-val { font-weight: 600; color: var(--ink); }
-.cost-note { font-size: 0.7rem; color: var(--muted2); margin-left: 8px; }
 .cost-total { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1.5px solid rgba(200,130,10,0.2); font-size: 0.95rem; font-weight: 700; }
 .cost-total-val { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--ocean); }
 .tl { display: flex; flex-direction: column; }
@@ -499,35 +497,6 @@ async function aiCall(prompt, maxTokens=1200){
   }catch(e){console.error("aiCall error",e);return null;}
 }
 
-// aiCallWithSearch — uses web_search tool with required beta header
-async function aiCallWithSearch(prompt, maxTokens=1200){
-  if(!ANTHROPIC_KEY||ANTHROPIC_KEY==="PASTE_YOUR_ANTHROPIC_KEY_HERE")return null;
-  try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",
-      headers:{...getAIHeaders(ANTHROPIC_KEY),"anthropic-beta":"web-search-2025-03-05"},
-      body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",
-        max_tokens:maxTokens,
-        tools:[{type:"web_search_20250305",name:"web_search"}],
-        messages:[{role:"user",content:prompt}]
-      })
-    });
-    const d=await r.json();
-    if(d.error){
-      console.error("aiCallWithSearch error",d.error);
-      // Fall back to regular aiCall without web search
-      return aiCall(prompt,maxTokens);
-    }
-    if(!d.content)return null;
-    const text=d.content.filter(c=>c.type==="text").map(c=>c.text).join("").replace(/```json|```/g,"").trim();
-    return text||null;
-  }catch(e){
-    console.error("aiCallWithSearch error",e);
-    return aiCall(prompt,maxTokens);
-  }
-}
-
 async function fetchAIDescs(places,city,budget,prefs){
   const list=places.map((p,i)=>`${i+1}. ${p.name} (${p.type})`).join("\n");
   const blabel=budget?BUDGETS.find(b=>b.id===budget)?.label:"moderate";
@@ -606,7 +575,6 @@ async function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMa
   });
   const effectiveCostMap=mergedCostMap;
   const tlabel=TRANSPORT.find(t=>t.id===transport)?.name||"Walking";
-  const ticon=TRANSPORT.find(t=>t.id===transport)?.icon||"🚶";
   const allPlaces=dayPlans.flat();
   const hasCosts=effectiveCostMap&&allPlaces.some(p=>effectiveCostMap[p.id]!=null);
   const totalCost=hasCosts?allPlaces.reduce((s,p)=>s+((effectiveCostMap[p.id]?.cost)||0),0):null;
@@ -615,7 +583,7 @@ async function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMa
   // ── PALETTE ──
   const TERRA=[27,94,138];
   const TERRA_L=[232,242,251];
-  const OCEAN=[27,94,138]; // kept same
+  const OCEAN=[27,94,138];
   const SAGE=[74,124,89];
   const INK=[26,20,16];
   const INK2=[55,45,38];
@@ -628,14 +596,6 @@ async function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMa
   const BG=[252,249,245];
 
   // ── HELPERS ──
-  function badge(label,x,y,fg,bg,fontSize=6.5){
-    doc.setFont("helvetica","bold"); doc.setFontSize(fontSize);
-    const tw=doc.getTextWidth(label);
-    const ph=5.2, pw=tw+7;
-    doc.setFillColor(...bg); doc.roundedRect(x,y,pw,ph,1.5,1.5,"F");
-    doc.setTextColor(...fg); doc.text(label,x+3.5,y+3.6);
-    return pw;
-  }
   function hRule(y,color=DIVIDER){
     doc.setDrawColor(...color); doc.setLineWidth(0.25); doc.line(MAR,y,W-MAR,y);
   }
@@ -852,7 +812,6 @@ async function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMa
   addFooter();
   doc.save(`mapistry-${city.replace(/\s+/g,"-").toLowerCase()}.pdf`);
 }
-
 
 // ─── INSTANT PRICE LOOKUP ─────────────────────────────────────
 // Known venues with real prices (USD, per person)
@@ -1372,7 +1331,7 @@ export default function App(){
       <style>{STYLES}</style>
 
       {/* NAV */}
-      <nav className="nav np">
+      <nav className="nav">
         <div className="nav-l">
           <div className="logo" onClick={()=>{setStep(1);setDayPlans([[]]); setCin("");setCity("");}}>
             Mapit<em>stry</em>
@@ -1603,7 +1562,7 @@ export default function App(){
             </div>
 
             {/* SIDEBAR */}
-            <div className="sb np">
+            <div className="sb">
               <div className="sbt">Your Itinerary</div>
               <div className="sbs">{allAdded.length} place{allAdded.length!==1?"s":""} across {numDays} day{numDays!==1?"s":""}</div>
               {numDays>1&&(
@@ -1661,7 +1620,7 @@ export default function App(){
               {aiUsed&&<div className="aib">✦ AI-personalized descriptions & researched costs</div>}
               {travelLoading&&<div style={{fontSize:"0.75rem",color:"var(--ocean3)",marginTop:6}}>⏱ Calculating real travel times via Google Maps…</div>}
             </div>
-            <div className="iac np">
+            <div className="iac">
               <button className="obt" onClick={()=>setStep(3)}>← Edit Places</button>
               <button className="dbt" onClick={()=>{exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime);}}>⬇ Export PDF</button>
             </div>
