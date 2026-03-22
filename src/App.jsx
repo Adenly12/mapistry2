@@ -1735,7 +1735,7 @@ export default function App(){
       )}
 
       {/* STEP 2 — BUDGET */}
-      {step===2&&(()=>{try{
+      {step===2&&(()=>{
         const effFlight=Math.max(0,flightOverride!==""?Number(flightOverride)||(flightCost?.cost||0):(flightCost?.cost||0));
         const effHotel=Math.max(0,hotelOverride!==""?(Number(hotelOverride)||0)*numDays:(hotelCost?.total||0));
         const budgetNum=Math.max(0,Number(totalBudget)||0);
@@ -1891,7 +1891,7 @@ export default function App(){
                       <div style={{fontSize:"0.71rem",fontWeight:600,color:indicator.color}}>{indicator.label}</div>
                     </div>
                   );
-                }catch(e){console.error('Step 2 render error',e);return null;}})()}
+                })()}
                 <div className="cost-card-edit-row">
                   <button className={`cost-card-pencil ${editingHotel?"active":""}`}
                     onClick={()=>setEditingHotel(e=>!e)}
