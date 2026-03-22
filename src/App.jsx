@@ -2481,6 +2481,7 @@ export default function App(){
               :`conic-gradient(var(--sand2) 0% 100%)`;
 
             return(
+              <>
               <div style={{marginBottom:28}}>
 
                 {/* ── HERO BANNER ── */}
@@ -2637,13 +2638,8 @@ export default function App(){
                     )}
                   </div>
                 </div>
-                  </div>
-                </div>
               </div>
-            </div>
-            </div>
-            </div>
-            </div>
+              </>
             );
           })()}
 
@@ -2717,6 +2713,7 @@ export default function App(){
                   );
                 })()}
               </div>
+              </>
             );
           })()}
         </div>
