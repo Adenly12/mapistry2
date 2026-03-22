@@ -5,295 +5,342 @@ const GOOGLE_KEY = CONFIG.GOOGLE_KEY;
 const ANTHROPIC_KEY = CONFIG.ANTHROPIC_KEY;
 
 const STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap');
 :root {
-  --night:#0d1117;--night2:#161b22;
-  --cream:#faf8f4;--warm:#f0ebe2;
-  --green:#2d6a4f;--green2:#40916c;--gold:#d4a017;
-  --rust:#bc4749;--muted:#6b7280;--border:#e5e7eb;--card:#ffffff;
-  --sh:0 2px 8px rgba(13,17,23,0.08);--shm:0 8px 28px rgba(13,17,23,0.12);--shl:0 20px 60px rgba(13,17,23,0.18);
+  --bg:#07070f;--bg2:#0d0d1c;--bg3:#121224;
+  --surf:#161628;--surf2:#1c1c34;--surf3:#222240;
+  --cream:#f5f2ee;--warm:#e8e2d8;
+  --vi:#7c5cbf;--vi2:#9b7de0;--vi3:#c4a8f8;
+  --teal:#1aaa8e;--teal2:#22ccaa;--teal3:#88eedd;
+  --amber:#d4920a;--amber2:#f0ac18;--amber3:#ffd060;
+  --rose:#cc3355;--rose2:#ee4466;--rose3:#ff8899;
+  --blue:#2255cc;--blue2:#4488ff;
+  --muted:#525870;--muted2:#7880a0;--muted3:#a0a8c0;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.11);--border3:rgba(255,255,255,0.18);
   --r:16px;--rs:10px;
+  --sh:0 2px 16px rgba(0,0,0,0.4);--shm:0 8px 36px rgba(0,0,0,0.5);--shl:0 24px 72px rgba(0,0,0,0.6);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--cream);color:var(--night);min-height:100vh;}
-::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--warm);}::-webkit-scrollbar-thumb{background:#c5c5c5;border-radius:3px;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--cream);min-height:100vh;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--bg2);}::-webkit-scrollbar-thumb{background:var(--surf3);border-radius:2px;}
 
-/* NAV */
-.nav{display:flex;align-items:center;justify-content:space-between;padding:0 44px;height:62px;background:var(--night);position:sticky;top:0;z-index:200;box-shadow:0 1px 0 rgba(255,255,255,0.06);}
+/* ── NAV ── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 48px;height:62px;background:rgba(7,7,15,0.88);backdrop-filter:blur(24px);position:sticky;top:0;z-index:200;border-bottom:1px solid var(--border);}
+.logo{font-family:'Instrument Serif',serif;font-size:1.65rem;color:var(--cream);cursor:pointer;font-style:italic;letter-spacing:-0.3px;}
+.logo b{font-style:normal;color:var(--amber2);font-weight:400;}
 .nav-l{display:flex;align-items:center;gap:18px;}
-.logo{font-family:'Fraunces',serif;font-size:1.65rem;color:var(--cream);cursor:pointer;letter-spacing:-0.5px;font-style:italic;}
-.logo em{color:var(--gold);font-style:normal;}
-.back{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:rgba(250,248,244,0.7);border-radius:30px;padding:6px 14px;font-size:0.8rem;cursor:pointer;transition:all 0.2s;font-family:'Plus Jakarta Sans',sans-serif;}
-.back:hover{background:rgba(255,255,255,0.14);color:var(--cream);}
+.back{display:flex;align-items:center;gap:5px;background:var(--surf);border:1px solid var(--border2);color:var(--muted3);border-radius:30px;padding:6px 14px;font-size:0.78rem;cursor:pointer;transition:all 0.2s;}
+.back:hover{color:var(--cream);border-color:var(--border3);}
 .nav-r{display:flex;align-items:center;gap:10px;}
-.nav-city{font-size:0.74rem;color:rgba(250,248,244,0.38);letter-spacing:1.5px;text-transform:uppercase;}
-.prog{display:flex;gap:6px;}
-.pd{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.16);transition:all 0.3s;}
-.pd.on{background:var(--gold);width:20px;border-radius:3px;}
-.pd.done{background:var(--green2);}
-.ubtn{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.14);color:var(--cream);border-radius:30px;padding:6px 14px;font-size:0.8rem;cursor:pointer;transition:all 0.2s;font-family:'Plus Jakarta Sans',sans-serif;}
-.ubtn:hover{background:rgba(255,255,255,0.16);}
-.uav{width:26px;height:26px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;color:white;}
+.nav-city{font-size:0.71rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.prog{display:flex;gap:5px;}
+.pd{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:all 0.3s;}
+.pd.on{background:var(--amber2);width:18px;border-radius:3px;}
+.pd.done{background:var(--teal2);}
+.ubtn{display:flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--border2);color:var(--cream);border-radius:30px;padding:6px 14px;font-size:0.78rem;cursor:pointer;transition:all 0.2s;}
+.ubtn:hover{background:var(--surf2);}
+.uav{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--vi),var(--teal));display:flex;align-items:center;justify-content:center;font-size:0.66rem;font-weight:700;color:white;}
 
-/* HERO — full redesign */
-.hero{min-height:calc(100vh - 62px);display:grid;grid-template-columns:1fr 1fr;position:relative;overflow:hidden;}
+/* ── HERO ── */
+.hero{min-height:calc(100vh - 62px);position:relative;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;align-items:center;}
 @media(max-width:900px){.hero{grid-template-columns:1fr;}}
-.hero-left{display:flex;flex-direction:column;justify-content:center;padding:80px 60px 80px 7vw;background:var(--night);position:relative;z-index:2;}
-.hero-left::after{content:'';position:absolute;top:0;right:-60px;bottom:0;width:120px;background:var(--night);transform:skewX(-4deg);z-index:1;}
-.hero-right{position:relative;overflow:hidden;}
-.hero-right-img{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1200&q=85') center/cover;filter:brightness(0.75);}
-.hero-right-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(13,17,23,0.5) 0%,rgba(13,17,23,0.1) 100%);}
-.hero-floating-cards{position:absolute;bottom:40px;left:30px;right:30px;display:flex;flex-direction:column;gap:10px;z-index:2;}
-.hero-float-card{background:rgba(255,255,255,0.12);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;animation:floatup 0.6s ease both;}
-.hero-float-card:nth-child(2){animation-delay:0.1s;}
-.hero-float-card:nth-child(3){animation-delay:0.2s;}
-@keyframes floatup{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
-.hfc-icon{font-size:1.4rem;}
-.hfc-text{color:white;}
-.hfc-name{font-size:0.84rem;font-weight:600;}
-.hfc-sub{font-size:0.72rem;opacity:0.7;margin-top:1px;}
-.hero-tag{font-size:0.68rem;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;opacity:0.9;}
-.hero-h1{font-family:'Fraunces',serif;font-size:clamp(2.6rem,4vw,4.2rem);color:var(--cream);line-height:1.05;margin-bottom:20px;}
-.hero-h1 em{color:var(--gold);font-style:italic;}
-.hero-sub{color:rgba(250,248,244,0.5);font-size:0.97rem;max-width:420px;margin-bottom:36px;font-weight:300;line-height:1.8;}
-.hero-features{display:flex;flex-direction:column;gap:10px;margin-bottom:36px;}
-.hero-feat{display:flex;align-items:center;gap:10px;color:rgba(250,248,244,0.6);font-size:0.83rem;}
-.hero-feat-dot{width:6px;height:6px;border-radius:50%;background:var(--green2);flex-shrink:0;}
+.hero-bg{position:absolute;inset:0;background:var(--bg);}
+.hero-orb1{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,191,0.22) 0%,transparent 65%);top:-200px;right:-100px;pointer-events:none;}
+.hero-orb2{position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(26,170,142,0.14) 0%,transparent 65%);bottom:-150px;left:-50px;pointer-events:none;}
+.hero-orb3{position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(212,146,10,0.1) 0%,transparent 65%);top:40%;left:35%;pointer-events:none;}
+.hero-grid-lines{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.018) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);}
+.hero-left{position:relative;z-index:2;padding:80px 60px 80px 7vw;}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(124,92,191,0.12);border:1px solid rgba(124,92,191,0.28);border-radius:30px;padding:6px 14px;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--vi3);margin-bottom:26px;}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--vi2);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.hero-h1{font-family:'Instrument Serif',serif;font-size:clamp(3rem,5vw,4.8rem);line-height:1.03;margin-bottom:22px;}
+.hero-h1 em{font-style:italic;color:var(--amber2);}
+.hero-h1 span{display:block;color:var(--cream);}
+.hero-sub{color:var(--muted3);font-size:0.97rem;max-width:440px;margin-bottom:36px;line-height:1.8;font-weight:300;}
+.hero-feats{display:flex;flex-direction:column;gap:9px;margin-bottom:40px;}
+.hfeat{display:flex;align-items:center;gap:10px;font-size:0.83rem;color:var(--muted3);}
+.hfeat-icon{width:20px;height:20px;border-radius:50%;background:rgba(26,170,142,0.15);border:1px solid rgba(26,170,142,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;color:var(--teal2);}
 .sc{width:100%;max-width:500px;position:relative;z-index:3;}
-.sw{display:flex;background:var(--card);border-radius:60px;overflow:visible;box-shadow:0 12px 50px rgba(0,0,0,0.45);position:relative;z-index:1;}
+.sw{display:flex;background:var(--surf2);border:1px solid var(--border2);border-radius:60px;box-shadow:0 0 0 1px rgba(255,255,255,0.03),var(--shm);}
 .si-wrap{display:flex;align-items:center;flex:1;overflow:hidden;border-radius:60px 0 0 60px;}
-.sicon{padding:0 0 0 20px;color:var(--muted);font-size:1rem;flex-shrink:0;}
-.si{flex:1;border:none;padding:17px 14px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.93rem;background:transparent;color:var(--night);outline:none;}
-.si::placeholder{color:#aaa;}
-.ssugg{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);border-radius:var(--rs);box-shadow:var(--shl);z-index:100;overflow:hidden;border:1px solid var(--border);}
-.sitem{display:flex;align-items:center;gap:11px;padding:11px 17px;cursor:pointer;transition:background 0.15s;font-size:0.88rem;}
-.sitem:hover{background:var(--warm);}
-.ssub{font-size:0.72rem;color:var(--muted);}
-.sbtn{background:var(--green);color:white;border:none;padding:17px 24px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;transition:background 0.2s;white-space:nowrap;border-radius:0 60px 60px 0;flex-shrink:0;}
-.sbtn:hover{background:var(--green2);}
-.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:18px;}
-.chip{background:rgba(250,248,244,0.07);border:1px solid rgba(250,248,244,0.14);color:rgba(250,248,244,0.55);border-radius:30px;padding:6px 14px;font-size:0.76rem;cursor:pointer;transition:all 0.2s;}
-.chip:hover{background:rgba(45,106,79,0.3);border-color:var(--green2);color:var(--cream);}
+.sicon{padding:0 0 0 18px;color:var(--muted);font-size:0.95rem;flex-shrink:0;}
+.si{flex:1;border:none;padding:16px 13px;font-family:'Inter',sans-serif;font-size:0.91rem;background:transparent;color:var(--cream);outline:none;}
+.si::placeholder{color:var(--muted);}
+.ssugg{position:absolute;top:calc(100%+8px);left:0;right:0;background:var(--surf2);border-radius:var(--rs);box-shadow:var(--shl);z-index:100;overflow:hidden;border:1px solid var(--border2);}
+.sitem{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;transition:background 0.15s;font-size:0.86rem;}
+.sitem:hover{background:var(--surf3);}
+.ssub{font-size:0.7rem;color:var(--muted);}
+.sbtn{background:linear-gradient(135deg,var(--vi) 0%,var(--blue2) 100%);color:white;border:none;padding:16px 24px;font-family:'Syne',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;border-radius:0 60px 60px 0;letter-spacing:0.5px;}
+.sbtn:hover{filter:brightness(1.12);}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px;}
+.chip{background:rgba(255,255,255,0.04);border:1px solid var(--border2);color:var(--muted3);border-radius:30px;padding:5px 13px;font-size:0.74rem;cursor:pointer;transition:all 0.2s;}
+.chip:hover{background:rgba(124,92,191,0.15);border-color:rgba(124,92,191,0.35);color:var(--vi3);}
 
-/* PROFILE MODAL */
-.pov{position:fixed;inset:0;background:rgba(13,17,23,0.75);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
-.pmodal{background:var(--card);border-radius:var(--r);padding:36px;width:100%;max-width:520px;box-shadow:var(--shl);position:relative;max-height:90vh;overflow-y:auto;}
-.pmc{position:absolute;top:13px;right:13px;background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);}
-.pmc:hover{color:var(--night);}
-.pm-header{display:flex;align-items:center;gap:16px;margin-bottom:28px;}
-.pm-av{width:56px;height:56px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:white;font-weight:700;}
-.pm-name{font-family:'Fraunces',serif;font-size:1.6rem;}
-.pm-sub{color:var(--muted);font-size:0.82rem;margin-top:2px;}
-.pm-stats{display:flex;gap:12px;margin-bottom:24px;}
-.pm-stat{background:var(--warm);border-radius:var(--rs);padding:14px 18px;flex:1;text-align:center;}
-.pm-stat-n{font-family:'Fraunces',serif;font-size:1.8rem;color:var(--green);font-weight:700;}
-.pm-stat-l{font-size:0.74rem;color:var(--muted);margin-top:2px;}
-.pm-map{width:100%;height:220px;border-radius:var(--r);overflow:hidden;margin-bottom:20px;border:1px solid var(--border);}
-.pm-map iframe{width:100%;height:100%;border:none;}
-.pm-trips-title{font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:12px;}
-.pm-trips{display:flex;flex-direction:column;gap:8px;}
-.pm-trip{background:var(--warm);border-radius:var(--rs);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;}
-.pm-trip-city{font-weight:600;font-size:0.9rem;}
-.pm-trip-meta{font-size:0.76rem;color:var(--muted);margin-top:2px;}
-.pm-trip-stops{font-size:0.78rem;color:var(--green2);font-weight:600;}
-.pm-empty{color:var(--muted);text-align:center;padding:24px;font-size:0.88rem;}
-.pm-btns{display:flex;gap:10px;margin-top:20px;}
-.pm-logout{flex:1;padding:11px;background:var(--warm);border:none;border-radius:60px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.87rem;cursor:pointer;transition:all 0.2s;}
-.pm-logout:hover{background:#fddede;color:var(--rust);}
+/* HERO RIGHT */
+.hero-right{position:relative;z-index:2;padding:60px 7vw 60px 20px;}
+.dest-stack{display:flex;flex-direction:column;gap:11px;}
+.dest-card{background:var(--surf);border:1px solid var(--border2);border-radius:16px;padding:15px 18px;display:flex;align-items:center;gap:14px;transition:all 0.35s;animation:sfadeIn 0.5s ease both;}
+.dest-card:nth-child(1){animation-delay:0.1s;}
+.dest-card:nth-child(2){animation-delay:0.22s;}
+.dest-card:nth-child(3){animation-delay:0.34s;}
+@keyframes sfadeIn{from{opacity:0;transform:translateX(18px);}to{opacity:1;transform:translateX(0);}}
+.dest-card:hover{background:var(--surf2);transform:translateX(-3px);}
+.dest-emo{width:48px;height:48px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;}
+.dest-info{flex:1;}
+.dest-name{font-family:'Syne',sans-serif;font-size:0.92rem;font-weight:600;margin-bottom:2px;}
+.dest-meta{font-size:0.73rem;color:var(--muted3);}
+.dest-badge{font-size:0.7rem;font-weight:600;border-radius:20px;padding:3px 9px;white-space:nowrap;}
+.dest-badge.green{background:rgba(26,170,142,0.15);color:var(--teal2);}
+.dest-badge.amber{background:rgba(212,146,10,0.15);color:var(--amber2);}
+.dest-badge.rose{background:rgba(204,51,85,0.15);color:var(--rose2);}
+.hero-micro{display:flex;gap:0;margin-top:18px;background:var(--surf);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.micro-stat{flex:1;padding:14px 16px;text-align:center;border-right:1px solid var(--border);}
+.micro-stat:last-child{border-right:none;}
+.micro-n{font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--amber2);}
+.micro-l{font-size:0.69rem;color:var(--muted);margin-top:1px;}
 
-/* USERNAME SETUP */
-.usetup{background:var(--card);border-radius:var(--r);padding:36px;width:100%;max-width:380px;box-shadow:var(--shl);}
-.ust{font-family:'Fraunces',serif;font-size:1.7rem;margin-bottom:6px;}
-.uss{color:var(--muted);font-size:0.86rem;margin-bottom:22px;line-height:1.5;}
-.uinp{width:100%;padding:13px 16px;border:2px solid var(--border);border-radius:var(--rs);font-family:'Plus Jakarta Sans',sans-serif;font-size:1rem;background:var(--cream);color:var(--night);outline:none;transition:border-color 0.2s;margin-bottom:14px;}
-.uinp:focus{border-color:var(--green2);}
-.ubf{width:100%;padding:13px;background:var(--night);color:var(--cream);border:none;border-radius:60px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.93rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
-.ubf:hover{background:var(--green);}
-
-/* STEP */
-.page{padding:42px 5vw 68px;max-width:1360px;margin:0 auto;}
+/* ── STEP PAGES ── */
+.page{padding:44px 5vw 72px;max-width:1380px;margin:0 auto;}
 .sh{margin-bottom:30px;}
-.sey{font-size:0.68rem;letter-spacing:3px;text-transform:uppercase;color:var(--rust);margin-bottom:6px;}
-.st{font-family:'Fraunces',serif;font-size:2.2rem;color:var(--night);line-height:1.1;}
-.st span{color:var(--green);font-style:italic;}
-.ss{color:var(--muted);margin-top:8px;font-weight:300;font-size:0.91rem;}
+.sey{font-size:0.66rem;letter-spacing:3px;text-transform:uppercase;color:var(--rose2);margin-bottom:7px;font-family:'Syne',sans-serif;}
+.st{font-family:'Instrument Serif',serif;font-size:2.3rem;color:var(--cream);line-height:1.1;font-style:italic;}
+.st span{color:var(--teal2);font-style:italic;}
+.ss{color:var(--muted3);margin-top:8px;font-weight:300;font-size:0.9rem;}
 
 /* PREFS */
-.pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin:22px 0;}
-.pc{background:var(--card);border:2px solid transparent;border-radius:var(--r);padding:16px 14px;cursor:pointer;transition:all 0.2s;box-shadow:var(--sh);}
-.pc:hover{border-color:var(--green2);transform:translateY(-2px);box-shadow:var(--shm);}
-.pc.sel{border-color:var(--green);background:#f0f7f3;}
-.pi{font-size:1.6rem;margin-bottom:7px;}
-.pn{font-weight:600;font-size:0.87rem;}
-.pd2{font-size:0.72rem;color:var(--muted);margin-top:2px;}
-.cpw{display:flex;gap:8px;margin-bottom:16px;}
-.cpi{flex:1;padding:11px 17px;border:2px solid var(--border);border-radius:60px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;background:var(--card);color:var(--night);outline:none;transition:border-color 0.2s;}
-.cpi:focus{border-color:var(--green2);}
-.cap{background:var(--night2);color:var(--cream);border:none;border-radius:60px;padding:11px 19px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
-.cap:hover{background:var(--green);}
-.ctags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
-.ctag{background:var(--green);color:white;border-radius:30px;padding:5px 12px;font-size:0.79rem;display:flex;align-items:center;gap:5px;}
-.ctag button{background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;font-size:0.85rem;line-height:1;padding:0;}
+.pg{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:9px;margin:20px 0;}
+.pc{background:var(--surf);border:1.5px solid var(--border);border-radius:var(--r);padding:15px 13px;cursor:pointer;transition:all 0.2s;}
+.pc:hover{border-color:rgba(26,170,142,0.35);background:var(--surf2);}
+.pc.sel{border-color:var(--teal2);background:rgba(26,170,142,0.07);}
+.pi{font-size:1.5rem;margin-bottom:6px;}
+.pn{font-weight:500;font-size:0.85rem;}
+.pd2{font-size:0.71rem;color:var(--muted);margin-top:2px;}
+.cpw{display:flex;gap:8px;margin-bottom:13px;}
+.cpi{flex:1;padding:10px 16px;border:1.5px solid var(--border2);border-radius:60px;font-family:'Inter',sans-serif;font-size:0.88rem;background:var(--surf);color:var(--cream);outline:none;transition:border-color 0.2s;}
+.cpi:focus{border-color:var(--teal2);}
+.cpi::placeholder{color:var(--muted);}
+.cap{background:var(--surf2);color:var(--cream);border:1.5px solid var(--border2);border-radius:60px;padding:10px 18px;font-size:0.82rem;font-weight:500;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.cap:hover{border-color:var(--teal2);color:var(--teal2);}
+.ctags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:13px;}
+.ctag{background:rgba(26,170,142,0.1);color:var(--teal2);border:1px solid rgba(26,170,142,0.25);border-radius:30px;padding:4px 11px;font-size:0.77rem;display:flex;align-items:center;gap:5px;}
+.ctag button{background:none;border:none;color:rgba(26,170,142,0.5);cursor:pointer;font-size:0.82rem;line-height:1;}
+.ctag button:hover{color:var(--rose2);}
 
 /* TRANSPORT */
-.transport-section{margin-bottom:28px;}
-.transport-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;}
-.tc{background:var(--card);border:2px solid transparent;border-radius:var(--r);padding:16px 14px;cursor:pointer;transition:all 0.2s;box-shadow:var(--sh);text-align:center;}
-.tc:hover{border-color:var(--green2);transform:translateY(-2px);}
-.tc.sel{border-color:var(--green);background:#f0f7f3;}
-.tc-icon{font-size:1.8rem;margin-bottom:6px;}
-.tc-name{font-weight:600;font-size:0.85rem;}
-.tc-time{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+.section-label{font-size:0.69rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-family:'Syne',sans-serif;}
+.transport-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:8px;margin-bottom:26px;}
+.tc{background:var(--surf);border:1.5px solid var(--border);border-radius:var(--r);padding:14px 10px;cursor:pointer;transition:all 0.2s;text-align:center;}
+.tc:hover{border-color:rgba(124,92,191,0.35);}
+.tc.sel{border-color:var(--vi2);background:rgba(124,92,191,0.08);}
+.tc-icon{font-size:1.5rem;margin-bottom:5px;}
+.tc-name{font-weight:500;font-size:0.82rem;}
+.tc-time{font-size:0.68rem;color:var(--muted);margin-top:1px;}
 
 /* BUDGET */
-.bsec{margin-bottom:28px;}
-.bt{font-size:0.74rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
-.bg{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;}
-.bc{background:var(--card);border:2px solid transparent;border-radius:var(--r);padding:16px;cursor:pointer;transition:all 0.2s;box-shadow:var(--sh);}
-.bc:hover{border-color:var(--gold);transform:translateY(-2px);}
-.bc.sel{border-color:var(--gold);background:#fdf9ee;}
-.btr{font-size:1.2rem;font-weight:700;margin-bottom:3px;}
-.bl{font-weight:600;font-size:0.88rem;margin-bottom:2px;}
-.br{font-size:0.75rem;font-weight:600;margin-bottom:5px;}
-.bd{font-size:0.72rem;color:var(--muted);line-height:1.4;}
-.conds{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:28px;}
-.cg label{font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:7px;}
-.pills{display:flex;gap:6px;flex-wrap:wrap;}
-.pill{background:var(--warm);border:2px solid transparent;border-radius:30px;padding:6px 13px;font-size:0.8rem;cursor:pointer;transition:all 0.18s;}
-.pill:hover{border-color:var(--green2);}
-.pill.sel{background:var(--green2);color:white;border-color:var(--green2);}
-.time-picker-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:28px;background:var(--card);border-radius:var(--r);padding:20px;box-shadow:var(--sh);}
-.time-picker-group{display:flex;flex-direction:column;gap:6px;}
-.time-picker-label{font-size:0.72rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
-.time-input{padding:10px 16px;border:2px solid var(--border);border-radius:var(--rs);font-family:'Plus Jakarta Sans',sans-serif;font-size:0.95rem;background:var(--cream);color:var(--night);outline:none;transition:border-color 0.2s;}
-.time-input:focus{border-color:var(--green2);}
+.bg{display:grid;grid-template-columns:repeat(auto-fill,minmax(182px,1fr));gap:9px;margin-bottom:26px;}
+.bc{background:var(--surf);border:1.5px solid var(--border);border-radius:var(--r);padding:15px;cursor:pointer;transition:all 0.2s;}
+.bc:hover{border-color:rgba(212,146,10,0.3);}
+.bc.sel{border-color:var(--amber2);background:rgba(212,146,10,0.07);}
+.btr{font-size:1.15rem;font-weight:700;margin-bottom:2px;font-family:'Syne',sans-serif;}
+.bl{font-weight:500;font-size:0.86rem;margin-bottom:2px;}
+.br{font-size:0.72rem;font-weight:600;margin-bottom:4px;}
+.bd{font-size:0.71rem;color:var(--muted);line-height:1.4;}
+.conds{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:26px;}
+.cg label{font-size:0.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;}
+.pills{display:flex;gap:5px;flex-wrap:wrap;}
+.pill{background:var(--surf);border:1.5px solid var(--border);border-radius:30px;padding:5px 12px;font-size:0.78rem;cursor:pointer;transition:all 0.18s;color:var(--muted3);}
+.pill:hover{border-color:var(--border3);color:var(--cream);}
+.pill.sel{background:rgba(124,92,191,0.12);border-color:var(--vi2);color:var(--vi3);}
+.time-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:26px;background:var(--surf);border:1px solid var(--border2);border-radius:var(--r);padding:18px;}
+.tg{display:flex;flex-direction:column;gap:5px;}
+.tg label{font-size:0.68rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.tinput{padding:9px 14px;border:1.5px solid var(--border2);border-radius:var(--rs);font-family:'Inter',sans-serif;font-size:0.9rem;background:var(--bg2);color:var(--cream);outline:none;transition:border-color 0.2s;}
+.tinput:focus{border-color:var(--teal2);}
+.brow{display:flex;justify-content:flex-end;gap:10px;margin-top:10px;}
+.gobt{background:linear-gradient(135deg,var(--vi),var(--blue2));color:white;border:none;border-radius:60px;padding:12px 38px;font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;}
+.gobt:hover{filter:brightness(1.1);}
 
 /* RESULTS */
-.rl{display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start;}
+.rl{display:grid;grid-template-columns:1fr 355px;gap:24px;align-items:start;}
 @media(max-width:960px){.rl{grid-template-columns:1fr;}}
-.mapbox{width:100%;height:280px;border-radius:var(--r);margin-bottom:20px;overflow:hidden;box-shadow:var(--shm);}
-.mapbox iframe{width:100%;height:100%;border:none;border-radius:var(--r);}
-.plgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;}
-.plcard{background:var(--card);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);cursor:pointer;transition:all 0.22s;border:2px solid transparent;}
-.plcard:hover{transform:translateY(-3px);box-shadow:var(--shm);}
-.plcard.added{border-color:var(--green2);}
-.plcard.focused{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,160,23,0.2);}
-.plimg{width:100%;height:158px;overflow:hidden;background:var(--warm);display:flex;align-items:center;justify-content:center;font-size:2.6rem;position:relative;}
+.map-wrap{margin-bottom:18px;}
+.mapbox{width:100%;height:300px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border2);}
+.mapbox iframe{width:100%;height:100%;border:none;}
+.map-hint{font-size:0.75rem;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:5px;}
+.plgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:13px;}
+.plcard{background:var(--surf);border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);cursor:pointer;transition:all 0.22s;}
+.plcard:hover{border-color:var(--border3);transform:translateY(-2px);}
+.plcard.focused{border-color:var(--amber2);box-shadow:0 0 0 2px rgba(212,146,10,0.2);}
+.plcard.added{border-color:var(--teal2);}
+.plimg{width:100%;height:155px;overflow:hidden;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:2.5rem;position:relative;}
 .plimg img{width:100%;height:100%;object-fit:cover;display:block;}
-.pbadge{position:absolute;top:8px;right:8px;background:rgba(13,17,23,0.7);color:var(--gold);border-radius:20px;padding:3px 8px;font-size:0.69rem;font-weight:700;backdrop-filter:blur(4px);}
+.pbadge{position:absolute;top:8px;right:8px;background:rgba(7,7,15,0.8);color:var(--amber2);border-radius:20px;padding:3px 8px;font-size:0.68rem;font-weight:700;backdrop-filter:blur(6px);}
+.pin-badge{position:absolute;top:8px;left:8px;background:rgba(26,170,142,0.9);color:white;border-radius:20px;padding:3px 8px;font-size:0.68rem;font-weight:700;}
 .plbody{padding:12px 14px;}
-.pltype{font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--rust);margin-bottom:3px;}
-.plname{font-family:'Fraunces',serif;font-size:1.05rem;margin-bottom:3px;font-weight:600;}
-.plrat{font-size:0.79rem;color:var(--gold);}
-.plrat span{color:var(--muted);}
-.pldesc{font-size:0.78rem;color:var(--muted);margin-top:6px;line-height:1.5;}
+.pltype{font-size:0.63rem;letter-spacing:2px;text-transform:uppercase;color:var(--rose2);margin-bottom:3px;}
+.plname{font-family:'Instrument Serif',serif;font-size:1.05rem;margin-bottom:3px;font-style:italic;}
+.plrat{font-size:0.78rem;color:var(--amber2);}
+.plrat span{color:var(--muted3);}
+.pldesc{font-size:0.77rem;color:var(--muted3);margin-top:5px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .plfoot{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid var(--border);}
-.pldur{font-size:0.74rem;color:var(--muted);}
-.addbt{background:var(--night);color:var(--cream);border:none;border-radius:30px;padding:6px 15px;font-size:0.78rem;cursor:pointer;transition:all 0.18s;font-family:'Plus Jakarta Sans',sans-serif;font-weight:500;}
-.addbt:hover{background:var(--green2);}
-.addbt.added{background:var(--green2);}
-.show-more-btn{width:100%;margin-top:16px;padding:13px;background:var(--card);border:2px solid var(--border);border-radius:var(--r);font-family:'Plus Jakarta Sans',sans-serif;font-size:0.9rem;font-weight:600;color:var(--night);cursor:pointer;transition:all 0.2s;}
-.show-more-btn:hover{border-color:var(--green2);color:var(--green2);}
-.show-more-btn:disabled{opacity:0.4;cursor:not-allowed;}
+.pldur{font-size:0.73rem;color:var(--muted3);}
+.addbt{background:var(--surf2);color:var(--cream);border:1px solid var(--border2);border-radius:30px;padding:6px 15px;font-size:0.77rem;cursor:pointer;transition:all 0.18s;font-weight:500;}
+.addbt:hover{border-color:var(--teal2);color:var(--teal2);}
+.addbt.added{background:rgba(26,170,142,0.15);border-color:var(--teal2);color:var(--teal2);}
+.show-more{width:100%;margin-top:14px;padding:12px;background:var(--surf);border:1.5px solid var(--border2);border-radius:var(--r);font-size:0.87rem;font-weight:500;color:var(--muted3);cursor:pointer;transition:all 0.2s;}
+.show-more:hover{border-color:var(--teal2);color:var(--teal2);}
+.show-more:disabled{opacity:0.4;cursor:not-allowed;}
 
 /* SIDEBAR */
-.sb{background:var(--night);border-radius:var(--r);padding:22px 18px;position:sticky;top:74px;color:var(--cream);}
-.sbt{font-family:'Fraunces',serif;font-size:1.2rem;margin-bottom:3px;}
-.sbs{font-size:0.74rem;color:rgba(250,248,244,0.36);margin-bottom:15px;}
-.il{list-style:none;min-height:44px;}
-.ii{background:rgba(250,248,244,0.07);border-radius:8px;padding:9px 11px;display:flex;align-items:center;justify-content:space-between;font-size:0.82rem;margin-bottom:6px;cursor:grab;user-select:none;transition:all 0.15s;}
+.sb{background:var(--surf);border:1px solid var(--border2);border-radius:var(--r);padding:20px 17px;position:sticky;top:74px;}
+.sbt{font-family:'Instrument Serif',serif;font-size:1.2rem;font-style:italic;margin-bottom:2px;}
+.sbs{font-size:0.73rem;color:var(--muted);margin-bottom:14px;}
+.il{list-style:none;}
+.ii{background:var(--surf2);border-radius:9px;padding:9px 11px;display:flex;align-items:center;justify-content:space-between;font-size:0.81rem;margin-bottom:6px;cursor:grab;user-select:none;transition:all 0.15s;border:1px solid transparent;}
 .ii:active{cursor:grabbing;}
-.ii.dragging{opacity:0.4;}
-.ii-left{display:flex;align-items:center;gap:8px;}
-.drag-handle{color:rgba(250,248,244,0.25);font-size:0.85rem;cursor:grab;}
-.iis{font-size:0.68rem;color:rgba(250,248,244,0.34);margin-top:2px;}
-.rmbt{background:none;border:none;color:rgba(250,248,244,0.26);cursor:pointer;font-size:0.9rem;transition:color 0.15s;}
-.rmbt:hover{color:var(--rust);}
-.em{text-align:center;padding:18px 0;font-size:0.8rem;color:rgba(250,248,244,0.24);}
-.finbt{width:100%;margin-top:13px;background:var(--gold);color:var(--night);border:none;border-radius:60px;padding:13px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.2s;}
-.finbt:hover:not(:disabled){background:#e8b420;}
-.finbt:disabled{opacity:0.3;cursor:not-allowed;}
+.ii.dragging{opacity:0.35;}
+.ii.drag-over{border-color:var(--teal2);}
+.ii-l{display:flex;align-items:center;gap:8px;}
+.dh{color:var(--muted);font-size:0.82rem;cursor:grab;}
+.iis{font-size:0.67rem;color:var(--muted);margin-top:1px;}
+.rmbt{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.88rem;transition:color 0.15s;}
+.rmbt:hover{color:var(--rose2);}
+.em{text-align:center;padding:18px 0;font-size:0.79rem;color:var(--muted);}
+.finbt{width:100%;margin-top:12px;background:linear-gradient(135deg,var(--vi),var(--blue2));color:white;border:none;border-radius:60px;padding:13px;font-family:'Syne',sans-serif;font-weight:600;font-size:0.88rem;cursor:pointer;transition:all 0.2s;letter-spacing:0.3px;}
+.finbt:hover:not(:disabled){filter:brightness(1.1);}
+.finbt:disabled{opacity:0.28;cursor:not-allowed;}
 
-/* ITINERARY */
-.ih{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:42px;flex-wrap:wrap;gap:16px;}
-.imt{font-family:'Fraunces',serif;font-size:clamp(1.9rem,5vw,2.9rem);line-height:1.1;}
-.imt em{color:var(--rust);font-style:italic;}
-.iml{color:var(--muted);font-size:0.85rem;margin-top:8px;}
+/* ITINERARY PAGE */
+.ih{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:40px;flex-wrap:wrap;gap:14px;}
+.imt{font-family:'Instrument Serif',serif;font-size:clamp(1.9rem,4.5vw,2.9rem);line-height:1.1;font-style:italic;}
+.imt em{color:var(--rose2);}
+.iml{color:var(--muted3);font-size:0.84rem;margin-top:8px;}
 .iac{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-.obt{background:transparent;border:2px solid var(--night);color:var(--night);border-radius:60px;padding:9px 21px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.84rem;cursor:pointer;transition:all 0.2s;}
-.obt:hover{background:var(--night);color:var(--cream);}
-.dbt{background:var(--night);color:var(--cream);border:none;border-radius:60px;padding:9px 21px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.84rem;cursor:pointer;transition:all 0.2s;}
-.dbt:hover{background:var(--green);}
-.aib{display:inline-flex;align-items:center;gap:5px;background:#edf7f1;color:var(--green);border-radius:20px;padding:4px 10px;font-size:0.71rem;font-weight:600;margin-top:8px;}
-.cost-summary{background:var(--card);border-radius:var(--r);padding:20px 24px;margin-bottom:32px;box-shadow:var(--sh);border-left:4px solid var(--gold);}
-.cost-title{font-family:'Fraunces',serif;font-size:1.2rem;margin-bottom:12px;}
-.cost-rows{display:flex;flex-direction:column;gap:6px;}
-.cost-row{display:flex;justify-content:space-between;align-items:center;font-size:0.86rem;}
-.cost-label{color:var(--muted);}
-.cost-val{font-weight:600;}
-.cost-total{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:2px solid var(--border);font-size:1rem;font-weight:700;}
-.cost-total-val{color:var(--gold);font-family:'Fraunces',serif;font-size:1.3rem;}
+.obt{background:transparent;border:1.5px solid var(--border3);color:var(--cream);border-radius:60px;padding:9px 20px;font-size:0.83rem;cursor:pointer;transition:all 0.2s;}
+.obt:hover{background:var(--surf);}
+.dbt{background:var(--surf2);color:var(--cream);border:1px solid var(--border2);border-radius:60px;padding:9px 20px;font-size:0.83rem;cursor:pointer;transition:all 0.2s;}
+.dbt:hover{border-color:var(--teal2);color:var(--teal2);}
+.aib{display:inline-flex;align-items:center;gap:5px;background:rgba(26,170,142,0.1);color:var(--teal2);border:1px solid rgba(26,170,142,0.2);border-radius:20px;padding:4px 10px;font-size:0.7rem;font-weight:600;margin-top:8px;}
+
+/* COST SUMMARY */
+.cost-box{background:var(--surf);border:1px solid rgba(212,146,10,0.25);border-radius:var(--r);padding:20px 22px;margin-bottom:30px;border-left:3px solid var(--amber2);}
+.cost-ttl{font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--amber2);margin-bottom:12px;}
+.cost-rows{display:flex;flex-direction:column;gap:5px;}
+.cost-row{display:flex;justify-content:space-between;font-size:0.84rem;}
+.cost-lbl{color:var(--muted3);}
+.cost-val{font-weight:500;}
+.cost-total{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2);font-size:0.95rem;font-weight:600;}
+.cost-total-val{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--amber2);}
+
+/* TIMELINE */
 .tl{display:flex;flex-direction:column;}
-.tlb{display:grid;grid-template-columns:90px 1fr;gap:0 18px;}
-.ttc{text-align:right;padding-top:18px;position:relative;}
-.ttime{font-size:0.79rem;font-weight:600;color:var(--rust);white-space:nowrap;cursor:pointer;border-bottom:1px dashed rgba(188,71,73,0.3);display:inline-block;}
-.ttime:hover{color:var(--green);}
-.tdur{font-size:0.66rem;color:var(--muted);margin-top:1px;}
-.tline{position:absolute;right:-10px;top:24px;bottom:-24px;width:2px;background:var(--border);}
-.tdot{position:absolute;right:-16px;top:18px;width:12px;height:12px;border-radius:50%;background:var(--rust);border:3px solid var(--cream);box-shadow:0 0 0 2px var(--rust);z-index:1;}
-.tcc{padding:12px 0 22px;}
-.tcard{background:var(--card);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);display:flex;}
-.tcimg{width:115px;min-width:115px;height:120px;overflow:hidden;background:var(--warm);display:flex;align-items:center;justify-content:center;font-size:1.8rem;}
+.tlb{display:grid;grid-template-columns:84px 1fr;gap:0 16px;}
+.ttc{text-align:right;padding-top:17px;position:relative;}
+.ttime{font-size:0.78rem;font-weight:500;color:var(--rose2);white-space:nowrap;cursor:pointer;border-bottom:1px dashed rgba(204,51,85,0.3);display:inline-block;transition:color 0.15s;}
+.ttime:hover{color:var(--teal2);}
+.tdur{font-size:0.64rem;color:var(--muted);margin-top:1px;}
+.tline{position:absolute;right:-9px;top:22px;bottom:-22px;width:1.5px;background:var(--border2);}
+.tdot{position:absolute;right:-15px;top:17px;width:11px;height:11px;border-radius:50%;background:var(--rose2);border:2.5px solid var(--bg);box-shadow:0 0 0 2px var(--rose2);z-index:1;}
+.tcc{padding:11px 0 20px;}
+.tcard{background:var(--surf);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;display:flex;transition:border-color 0.2s;}
+.tcard:hover{border-color:var(--border3);}
+.tcimg{width:108px;min-width:108px;height:112px;overflow:hidden;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:1.8rem;}
 .tcimg img{width:100%;height:100%;object-fit:cover;display:block;}
-.tcb{padding:14px;flex:1;}
-.tctype{font-size:0.64rem;letter-spacing:2px;text-transform:uppercase;color:var(--rust);margin-bottom:2px;}
-.tcname{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:600;margin-bottom:5px;}
-.tcdesc{font-size:0.8rem;color:var(--muted);line-height:1.55;}
-.tcmeta{font-size:0.75rem;color:var(--gold);margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.cost-badge{background:#fdf9ee;color:var(--gold);border-radius:20px;padding:2px 9px;font-size:0.72rem;font-weight:600;border:1px solid rgba(212,160,23,0.3);}
-.trvl{display:grid;grid-template-columns:90px 1fr;gap:0 18px;}
-.trvli{font-size:0.74rem;color:var(--muted);display:flex;align-items:center;gap:6px;background:rgba(64,145,108,0.07);border-radius:6px;padding:5px 10px;margin:2px 0;}
+.tcb{padding:13px;flex:1;}
+.tctype{font-size:0.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--rose2);margin-bottom:2px;}
+.tcname{font-family:'Instrument Serif',serif;font-size:1.05rem;font-style:italic;margin-bottom:4px;}
+.tcdesc{font-size:0.79rem;color:var(--muted3);line-height:1.55;}
+.tcmeta{font-size:0.73rem;color:var(--amber2);margin-top:7px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.cbadge{background:rgba(212,146,10,0.12);color:var(--amber2);border:1px solid rgba(212,146,10,0.25);border-radius:20px;padding:2px 8px;font-size:0.7rem;font-weight:600;}
+.edit-link{font-size:0.69rem;color:var(--teal2);cursor:pointer;opacity:0.7;}
+.edit-link:hover{opacity:1;}
+.trvl{display:grid;grid-template-columns:84px 1fr;gap:0 16px;}
+.trvli{font-size:0.73rem;color:var(--muted3);display:flex;align-items:center;gap:6px;background:rgba(26,170,142,0.05);border-radius:6px;padding:5px 10px;margin:2px 0;}
+
+/* PROFILE MODAL */
+.pov{position:fixed;inset:0;background:rgba(7,7,15,0.8);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);}
+.pmodal{background:var(--surf);border:1px solid var(--border2);border-radius:var(--r);padding:32px;width:100%;max-width:520px;box-shadow:var(--shl);max-height:90vh;overflow-y:auto;position:relative;}
+.pmc{position:absolute;top:12px;right:12px;background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);}
+.pmc:hover{color:var(--cream);}
+.pm-hdr{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+.pm-av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--vi),var(--teal));display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;}
+.pm-name{font-family:'Instrument Serif',serif;font-size:1.6rem;font-style:italic;}
+.pm-sub{font-size:0.79rem;color:var(--muted3);margin-top:2px;}
+.pm-stats{display:flex;gap:10px;margin-bottom:22px;}
+.pms{background:var(--surf2);border-radius:var(--rs);padding:13px 16px;flex:1;text-align:center;border:1px solid var(--border);}
+.pms-n{font-family:'Instrument Serif',serif;font-size:1.7rem;color:var(--amber2);}
+.pms-l{font-size:0.7rem;color:var(--muted);margin-top:1px;}
+.pm-sec{font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.pm-map{width:100%;height:200px;border-radius:var(--rs);overflow:hidden;margin-bottom:18px;border:1px solid var(--border2);}
+.pm-map iframe{width:100%;height:100%;border:none;}
+.pm-trips{display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto;}
+.pm-trip{background:var(--surf2);border-radius:var(--rs);padding:11px 13px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);}
+.pm-trip-city{font-family:'Instrument Serif',serif;font-size:0.95rem;font-style:italic;}
+.pm-trip-meta{font-size:0.72rem;color:var(--muted3);margin-top:1px;}
+.pm-trip-stops{font-size:0.75rem;color:var(--teal2);font-weight:600;}
+.pm-empty{color:var(--muted);text-align:center;padding:20px;font-size:0.85rem;}
+.pm-btns{display:flex;gap:9px;margin-top:18px;}
+.pm-logout{flex:1;padding:10px;background:var(--surf2);border:1px solid var(--border2);border-radius:60px;font-size:0.84rem;cursor:pointer;color:var(--muted3);transition:all 0.2s;}
+.pm-logout:hover{color:var(--rose2);border-color:rgba(204,51,85,0.3);}
+.pm-switch{flex:1;padding:10px;background:var(--surf2);border:1px solid var(--border2);border-radius:60px;font-size:0.84rem;cursor:pointer;color:var(--muted3);transition:all 0.2s;}
+.pm-switch:hover{color:var(--teal2);border-color:rgba(26,170,142,0.3);}
+
+/* USERNAME SETUP */
+.usetup{background:var(--surf);border:1px solid var(--border2);border-radius:var(--r);padding:36px;width:100%;max-width:380px;box-shadow:var(--shl);}
+.ust{font-family:'Instrument Serif',serif;font-size:1.8rem;font-style:italic;margin-bottom:5px;}
+.uss{color:var(--muted3);font-size:0.85rem;margin-bottom:22px;line-height:1.6;}
+.uinp{width:100%;padding:12px 15px;border:1.5px solid var(--border2);border-radius:var(--rs);font-family:'Inter',sans-serif;font-size:0.95rem;background:var(--bg2);color:var(--cream);outline:none;transition:border-color 0.2s;margin-bottom:12px;}
+.uinp:focus{border-color:var(--teal2);}
+.uinp::placeholder{color:var(--muted);}
+.ubf{width:100%;padding:13px;background:linear-gradient(135deg,var(--vi),var(--blue2));color:white;border:none;border-radius:60px;font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;letter-spacing:0.3px;}
+.ubf:hover{filter:brightness(1.1);}
+.user-list{display:flex;flex-direction:column;gap:7px;margin-top:16px;}
+.user-item{display:flex;align-items:center;gap:11px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 13px;cursor:pointer;transition:all 0.2s;}
+.user-item:hover{border-color:var(--teal2);}
+.user-item-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--vi),var(--teal));display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:700;flex-shrink:0;}
+.user-item-name{font-weight:500;font-size:0.87rem;}
+.user-item-meta{font-size:0.71rem;color:var(--muted);}
+.user-item-del{background:none;border:none;color:var(--muted);cursor:pointer;margin-left:auto;font-size:0.85rem;padding:4px;}
+.user-item-del:hover{color:var(--rose2);}
+.divider-or{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:0.78rem;}
+.divider-or::before,.divider-or::after{content:'';flex:1;height:1px;background:var(--border2);}
 
 /* TIME EDIT MODAL */
-.teov{position:fixed;inset:0;background:rgba(13,17,23,0.6);z-index:400;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-.temod{background:var(--card);border-radius:var(--r);padding:28px;width:100%;max-width:320px;box-shadow:var(--shl);}
-.temt{font-family:'Fraunces',serif;font-size:1.4rem;margin-bottom:4px;}
-.tems{color:var(--muted);font-size:0.82rem;margin-bottom:18px;}
-.temr{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
-.teml{font-size:0.73rem;font-weight:600;letter-spacing:0.5px;color:var(--night2);}
-.temi{padding:10px 13px;border:2px solid var(--border);border-radius:var(--rs);font-family:'Plus Jakarta Sans',sans-serif;font-size:0.95rem;background:var(--cream);color:var(--night);outline:none;width:100%;transition:border-color 0.2s;}
-.temi:focus{border-color:var(--green2);}
-.tembtns{display:flex;gap:10px;margin-top:16px;}
-.tem-cancel{flex:1;padding:10px;background:var(--warm);border:none;border-radius:60px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.86rem;cursor:pointer;}
-.tem-save{flex:1;padding:10px;background:var(--night);color:var(--cream);border:none;border-radius:60px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
-.tem-save:hover{background:var(--green);}
+.teov{position:fixed;inset:0;background:rgba(7,7,15,0.7);z-index:400;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+.temod{background:var(--surf);border:1px solid var(--border2);border-radius:var(--r);padding:26px;width:100%;max-width:310px;box-shadow:var(--shl);}
+.temt{font-family:'Instrument Serif',serif;font-size:1.35rem;font-style:italic;margin-bottom:4px;}
+.tems{color:var(--muted3);font-size:0.8rem;margin-bottom:16px;}
+.temr{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.teml{font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+.temi{padding:9px 13px;border:1.5px solid var(--border2);border-radius:var(--rs);font-family:'Inter',sans-serif;font-size:0.92rem;background:var(--bg2);color:var(--cream);outline:none;width:100%;transition:border-color 0.2s;}
+.temi:focus{border-color:var(--teal2);}
+.tembtns{display:flex;gap:9px;margin-top:14px;}
+.tem-c{flex:1;padding:9px;background:var(--surf2);border:1px solid var(--border2);border-radius:60px;font-size:0.83rem;cursor:pointer;color:var(--muted3);}
+.tem-s{flex:1;padding:9px;background:linear-gradient(135deg,var(--vi),var(--blue2));color:white;border:none;border-radius:60px;font-size:0.83rem;font-weight:600;cursor:pointer;}
 
 /* LOADING */
-.ls{position:fixed;inset:0;background:rgba(13,17,23,0.9);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;backdrop-filter:blur(5px);}
-.spin{width:38px;height:38px;border:3px solid rgba(250,248,244,0.1);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite;}
+.ls{position:fixed;inset:0;background:rgba(7,7,15,0.92);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;backdrop-filter:blur(8px);}
+.spin{width:36px;height:36px;border:2.5px solid rgba(255,255,255,0.08);border-top-color:var(--amber2);border-radius:50%;animation:spin 0.7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-.lt{color:var(--cream);font-size:0.9rem;font-weight:300;}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--night);color:var(--cream);padding:10px 20px;border-radius:60px;font-size:0.84rem;z-index:600;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
-.brow{display:flex;justify-content:flex-end;gap:10px;margin-top:10px;}
-.gobt{background:var(--night);color:var(--cream);border:none;border-radius:60px;padding:12px 36px;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
-.gobt:hover{background:var(--green);}
+.lt{color:var(--muted3);font-size:0.88rem;font-weight:300;}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--surf2);border:1px solid var(--border2);color:var(--cream);padding:9px 20px;border-radius:60px;font-size:0.83rem;z-index:600;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
 @media print{.np{display:none !important;}}
 `;
 
 const BUDGETS=[
-  {id:"free",tier:"$",label:"Free & Budget",range:"$0–$25/person",desc:"Parks, free museums, street food & local gems.",color:"#2d6a4f",avg:15},
-  {id:"mid",tier:"$$",label:"Mid-Range",range:"$25–$75/person",desc:"Casual dining, paid attractions & comfortable experiences.",color:"#d4a017",avg:45},
-  {id:"upscale",tier:"$$$",label:"Upscale",range:"$75–$150/person",desc:"Nicer restaurants, private tours & premium venues.",color:"#7b5ea7",avg:110},
-  {id:"luxury",tier:"$$$$",label:"Luxury",range:"$150+/person",desc:"Fine dining, exclusive experiences & VIP access.",color:"#bc4749",avg:200},
+  {id:"free",tier:"$",label:"Free & Budget",range:"$0–$25/person",desc:"Parks, free museums, street food & local gems.",color:"#1aaa8e",avg:12},
+  {id:"mid",tier:"$$",label:"Mid-Range",range:"$25–$75/person",desc:"Casual dining, paid attractions & comfortable experiences.",color:"#d4920a",avg:45},
+  {id:"upscale",tier:"$$$",label:"Upscale",range:"$75–$150/person",desc:"Nicer restaurants, private tours & premium venues.",color:"#9b7de0",avg:110},
+  {id:"luxury",tier:"$$$$",label:"Luxury",range:"$150+/person",desc:"Fine dining, exclusive experiences & VIP access.",color:"#cc3355",avg:220},
 ];
 
 const TRANSPORT=[
-  {id:"walking",icon:"🚶",name:"Walking",mult:1.0,travelMin:15,label:"~15 min between stops"},
-  {id:"transit",icon:"🚌",name:"Transit",mult:0.85,travelMin:10,label:"~10 min between stops"},
-  {id:"driving",icon:"🚗",name:"Driving",mult:0.7,travelMin:8,label:"~8 min between stops"},
-  {id:"cycling",icon:"🚴",name:"Cycling",mult:0.9,travelMin:12,label:"~12 min between stops"},
-  {id:"rideshare",icon:"🚕",name:"Rideshare",mult:0.75,travelMin:9,label:"~9 min + wait"},
+  {id:"walking",icon:"🚶",name:"Walking",travelMin:18,label:"~18 min avg"},
+  {id:"transit",icon:"🚌",name:"Transit",travelMin:12,label:"~12 min avg"},
+  {id:"driving",icon:"🚗",name:"Driving",travelMin:8,label:"~8 min avg"},
+  {id:"cycling",icon:"🚴",name:"Cycling",travelMin:14,label:"~14 min avg"},
+  {id:"rideshare",icon:"🚕",name:"Rideshare",travelMin:10,label:"~10 min avg"},
 ];
 
 const PREFS=[
@@ -321,70 +368,136 @@ const CITIES=[
 ];
 
 const MOCK=[
-  {id:1,name:"Central Park",type:"Park",rating:4.8,reviews:42300,emoji:"🌳",desc:"An iconic 843-acre urban oasis with meadows, lakes, and skyline views. One of the most visited urban parks in the world, perfect for a morning stroll.",duration:90,lat:40.7851,lng:-73.9683,priceLevel:0},
-  {id:2,name:"Metropolitan Museum of Art",type:"Museum",rating:4.9,reviews:31000,emoji:"🎨",desc:"One of the world's great art museums, spanning 5,000 years of civilizations from every corner of the globe. Home to over 2 million works.",duration:120,lat:40.7794,lng:-73.9632,priceLevel:1},
-  {id:3,name:"Brooklyn Bridge",type:"Landmark",rating:4.8,reviews:55000,emoji:"🌉",desc:"Walk this iconic 1883 suspension bridge connecting Manhattan and Brooklyn for sweeping views of the city skyline and East River.",duration:45,lat:40.7061,lng:-73.9969,priceLevel:0},
-  {id:4,name:"Katz's Delicatessen",type:"Restaurant",rating:4.5,reviews:12000,emoji:"🥪",desc:"A legendary New York institution since 1888. Famous for its world-class pastrami and corned beef sandwiches, piled impossibly high.",duration:60,lat:40.7223,lng:-73.9874,priceLevel:2},
-  {id:5,name:"Times Square",type:"Landmark",rating:4.5,reviews:98000,emoji:"🌆",desc:"The neon-lit, electric heart of Manhattan buzzing 24/7. Overwhelming, loud, and utterly unforgettable — the city at its most intense.",duration:45,lat:40.758,lng:-73.9855,priceLevel:0},
-  {id:6,name:"The High Line",type:"Park",rating:4.7,reviews:29000,emoji:"🌿",desc:"A 1.45-mile elevated park built on a former freight rail line, winding through the West Side with curated gardens and Hudson River views.",duration:75,lat:40.748,lng:-74.0048,priceLevel:0},
-  {id:7,name:"Museum of Modern Art",type:"Museum",rating:4.7,reviews:22000,emoji:"🖼️",desc:"MoMA houses an extraordinary collection of modern and contemporary art, from Picasso's Les Demoiselles to Warhol's Campbell's Soup Cans.",duration:120,lat:40.7614,lng:-73.9776,priceLevel:2},
-  {id:8,name:"Smorgasburg",type:"Food Market",rating:4.6,reviews:8900,emoji:"🍜",desc:"Brooklyn's beloved open-air food market with 100+ local vendors every weekend. A paradise of creative, independent NYC food makers.",duration:90,lat:40.7223,lng:-73.9592,priceLevel:1},
+  {id:1,name:"Central Park",type:"Park",rating:4.8,reviews:42300,emoji:"🌳",desc:"An iconic 843-acre urban oasis with meadows, lakes, and world-famous skyline views. Perfect for a morning stroll or lazy afternoon.",duration:90,lat:40.7851,lng:-73.9683,priceLevel:0},
+  {id:2,name:"Metropolitan Museum of Art",type:"Museum",rating:4.9,reviews:31000,emoji:"🎨",desc:"One of the world's great art museums, spanning 5,000 years of civilizations. Home to over 2 million remarkable works.",duration:120,lat:40.7794,lng:-73.9632,priceLevel:2},
+  {id:3,name:"Brooklyn Bridge",type:"Landmark",rating:4.8,reviews:55000,emoji:"🌉",desc:"Walk this iconic 1883 suspension bridge connecting Manhattan and Brooklyn for breathtaking city skyline views.",duration:45,lat:40.7061,lng:-73.9969,priceLevel:0},
+  {id:4,name:"Katz's Delicatessen",type:"Restaurant",rating:4.5,reviews:12000,emoji:"🥪",desc:"A legendary NYC institution since 1888 — famous for its towering pastrami sandwiches that defined New York deli culture.",duration:60,lat:40.7223,lng:-73.9874,priceLevel:2},
+  {id:5,name:"Times Square",type:"Landmark",rating:4.5,reviews:98000,emoji:"🌆",desc:"The neon-lit, electric heart of Manhattan — overwhelming, loud, and utterly unforgettable at any hour.",duration:45,lat:40.758,lng:-73.9855,priceLevel:0},
+  {id:6,name:"The High Line",type:"Park",rating:4.7,reviews:29000,emoji:"🌿",desc:"A 1.45-mile elevated park on a former freight rail line with curated gardens and stunning Hudson River views.",duration:75,lat:40.748,lng:-74.0048,priceLevel:0},
+  {id:7,name:"Museum of Modern Art",type:"Museum",rating:4.7,reviews:22000,emoji:"🖼️",desc:"MoMA houses an extraordinary collection from Picasso's Les Demoiselles to Warhol's Campbell's Soup Cans.",duration:120,lat:40.7614,lng:-73.9776,priceLevel:2},
+  {id:8,name:"Smorgasburg",type:"Food Market",rating:4.6,reviews:8900,emoji:"🍜",desc:"Brooklyn's beloved open-air food market with 100+ independent local vendors — a paradise for food lovers.",duration:90,lat:40.7223,lng:-73.9592,priceLevel:1},
 ];
 
 function purl(ref){if(!ref||!GOOGLE_KEY||GOOGLE_KEY==="PASTE_YOUR_GOOGLE_KEY_HERE")return null;return`https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photoreference=${ref}&key=${GOOGLE_KEY}`;}
 function ft(h,m){const ap=h>=12?"PM":"AM";const hh=h>12?h-12:h===0?12:h;return`${hh}:${String(m).padStart(2,"0")} ${ap}`;}
 function useToast(){const[msg,setMsg]=useState("");const[vis,setVis]=useState(false);const t=useRef();const show=m=>{setMsg(m);setVis(true);clearTimeout(t.current);t.current=setTimeout(()=>setVis(false),2500);};return{msg,vis,show};}
-function estCost(place,budget){const b=BUDGETS.find(b=>b.id===budget);if(!b)return null;const pl=place.priceLevel??1;const base=b.avg;if(pl===0)return Math.round(base*0.1);if(pl===1)return Math.round(base*0.5);if(pl===2)return Math.round(base*1.0);if(pl===3)return Math.round(base*1.8);return Math.round(base);}
 
-async function fetchAIDescs(places,city,budget,prefs){
-  if(!ANTHROPIC_KEY||ANTHROPIC_KEY==="PASTE_YOUR_ANTHROPIC_KEY_HERE")return null;
-  const list=places.map((p,i)=>`${i+1}. ${p.name} (${p.type})`).join("\n");
-  try{
-    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500,messages:[{role:"user",content:`Write vivid, specific 2-sentence travel descriptions for each place in ${city}. Budget: ${budget||"moderate"}. Interests: ${prefs||"general"}. Be specific about what makes each place special.\n${list}\nRespond ONLY as JSON: [{"id":1,"desc":"..."}]`}]})});
-    const d=await r.json();
+// ── AI COST ESTIMATION ─────────────────────────────────────────
+async function fetchAICosts(places, city, budget) {
+  if (!ANTHROPIC_KEY || ANTHROPIC_KEY === "PASTE_YOUR_ANTHROPIC_KEY_HERE") return null;
+  const list = places.map((p,i) => `${i+1}. ${p.name} (${p.type}, price_level: ${p.priceLevel})`).join("\n");
+  const blabel = budget ? BUDGETS.find(b=>b.id===budget)?.label : "mid-range";
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514", max_tokens:800,
+        messages:[{role:"user",content:`Estimate realistic per-person costs in USD for visiting each place in ${city} for a ${blabel} traveler. Consider entry fees, typical spending, meals if restaurant. Be specific and realistic — not all the same price.\n${list}\nRespond ONLY as JSON: [{"id":1,"cost":25,"note":"Entry fee"}]\nNo markdown.`}]
+      })
+    });
+    const d = await r.json();
     return JSON.parse(d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim());
-  }catch{return null;}
+  } catch { return null; }
 }
 
-function exportPDF(city,itin,budget,transport,startTime,descMap){
+// ── AI DESCRIPTIONS ────────────────────────────────────────────
+async function fetchAIDescs(places, city, budget, prefs) {
+  if (!ANTHROPIC_KEY || ANTHROPIC_KEY === "PASTE_YOUR_ANTHROPIC_KEY_HERE") return null;
+  const list = places.map((p,i)=>`${i+1}. ${p.name} (${p.type})`).join("\n");
+  const blabel = budget ? BUDGETS.find(b=>b.id===budget)?.label : "moderate";
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514", max_tokens:1200,
+        messages:[{role:"user",content:`Write vivid, specific 2-sentence travel descriptions for each place in ${city}. Budget: ${blabel}. Interests: ${prefs||"general"}. Be specific about what makes each place uniquely worth visiting.\n${list}\nRespond ONLY as JSON: [{"id":1,"desc":"..."}]\nNo markdown.`}]
+      })
+    });
+    const d = await r.json();
+    return JSON.parse(d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim());
+  } catch { return null; }
+}
+
+// ── AI TRAVEL TIMES ────────────────────────────────────────────
+async function fetchAITravelTimes(itin, transport) {
+  if (!ANTHROPIC_KEY || ANTHROPIC_KEY === "PASTE_YOUR_ANTHROPIC_KEY_HERE") return null;
+  if (itin.length < 2) return null;
+  const pairs = itin.slice(0,-1).map((p,i)=>`${i+1}. ${p.name} → ${itin[i+1].name}`).join("\n");
+  const mode = TRANSPORT.find(t=>t.id===transport)?.name || "walking";
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514", max_tokens:400,
+        messages:[{role:"user",content:`Estimate realistic travel times in minutes between these location pairs by ${mode}. Consider actual distances — they are NOT all the same.\n${pairs}\nRespond ONLY as JSON: [{"index":1,"minutes":12}]\nNo markdown.`}]
+      })
+    });
+    const d = await r.json();
+    return JSON.parse(d.content?.map(c=>c.text||"").join("").replace(/```json|```/g,"").trim());
+  } catch { return null; }
+}
+
+function exportPDF(city, itin, budget, transport, startTime, descMap, costMap) {
   const{jsPDF}=window.jspdf||{};
   if(!jsPDF){alert("jsPDF not loaded.");return;}
   const doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
   const W=doc.internal.pageSize.getWidth();
-  doc.setFillColor(13,17,23);doc.rect(0,0,W,36,"F");
-  doc.setFont("times","italic");doc.setFontSize(22);doc.setTextColor(250,248,244);doc.text("Mapistry",14,20);
-  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(180,170,155);doc.text("Your personal travel planner",14,28);
-  doc.setFont("times","bold");doc.setFontSize(18);doc.setTextColor(13,17,23);doc.text(`A Day in ${city}`,14,50);
+  doc.setFillColor(7,7,15);doc.rect(0,0,W,36,"F");
+  doc.setFont("times","italic");doc.setFontSize(22);doc.setTextColor(245,242,238);doc.text("Mapistry",14,20);
+  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(160,160,180);doc.text("Your personal travel planner",14,28);
+  doc.setFont("times","bold");doc.setFontSize(18);doc.setTextColor(7,7,15);doc.text(`A Day in ${city}`,14,50);
   const blabel=budget?BUDGETS.find(b=>b.id===budget)?.label:null;
   const tlabel=transport?TRANSPORT.find(t=>t.id===transport)?.name:null;
-  let meta=[blabel,tlabel].filter(Boolean).join(" · ");
+  const meta=[blabel,tlabel].filter(Boolean).join(" · ");
   if(meta){doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(107,114,128);doc.text(meta,14,58);}
   const tr=TRANSPORT.find(t=>t.id===transport)||TRANSPORT[0];
-  let y=66;
-  const[sh,sm]=startTime.split(":").map(Number);
-  let h=sh,m=sm;
+  let y=66;const[sh,sm]=startTime.split(":").map(Number);let h=sh,m=sm;
   itin.forEach((p,i)=>{
     if(y>250){doc.addPage();y=20;}
-    const customT=p.customTime;let ts,te;
-    if(customT){const[ch,cm]=customT.split(":").map(Number);ts=ft(ch,cm);const eH=ch+Math.floor((cm+p.duration)/60);const eM=(cm+p.duration)%60;te=ft(eH,eM);}
-    else{ts=ft(h,m);const eH=h+Math.floor((m+p.duration)/60);const eM=(m+p.duration)%60;te=ft(eH,eM);if(i<itin.length-1){const tv=tr.travelMin;h=eH+Math.floor((eM+tv)/60);m=(eM+tv)%60;}}
-    doc.setFillColor(188,71,73);doc.roundedRect(14,y-4,38,8,4,4,"F");
+    const ts=ft(h,m),eH=h+Math.floor((m+p.duration)/60),eM=(m+p.duration)%60,te=ft(eH,eM);
+    doc.setFillColor(204,51,85);doc.roundedRect(14,y-4,36,8,4,4,"F");
     doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(255,255,255);doc.text(`${ts}–${te}`,16,y+1.5);
-    const cost=estCost(p,budget);
-    if(cost){doc.setFillColor(212,160,23);doc.roundedRect(54,y-4,22,8,4,4,"F");doc.setTextColor(13,17,23);doc.text(`~$${cost}`,57,y+1.5);}
-    y+=10;doc.setFont("times","bold");doc.setFontSize(13);doc.setTextColor(13,17,23);doc.text(p.name,14,y);y+=6;
+    const cost=costMap?.[p.id];
+    if(cost!=null){doc.setFillColor(212,146,10);doc.roundedRect(52,y-4,20,8,4,4,"F");doc.setTextColor(7,7,15);doc.text(`$${cost}`,54,y+1.5);}
+    y+=10;doc.setFont("times","bold");doc.setFontSize(13);doc.setTextColor(7,7,15);doc.text(p.name,14,y);y+=6;
     doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(107,114,128);doc.text(`${p.type} · ★ ${p.rating} · ~${p.duration} min`,14,y);y+=6;
     const desc=descMap?.[p.id]||p.desc;
-    doc.setFontSize(9);doc.setTextColor(60,60,60);const lines=doc.splitTextToSize(desc,W-28);doc.text(lines,14,y);y+=lines.length*5+4;
-    if(i<itin.length-1){doc.setFont("helvetica","italic");doc.setFontSize(8);doc.setTextColor(64,145,108);doc.text(`  ${tr.icon||"→"} ~${tr.travelMin} min ${tr.name} to next stop`,14,y);y+=7;}
-    doc.setDrawColor(229,231,235);doc.line(14,y,W-14,y);y+=7;
+    doc.setFontSize(9);doc.setTextColor(50,50,60);const lines=doc.splitTextToSize(desc,W-28);doc.text(lines,14,y);y+=lines.length*5+4;
+    if(i<itin.length-1){const tv=tr.travelMin;doc.setFont("helvetica","italic");doc.setFontSize(8);doc.setTextColor(26,170,142);doc.text(`  ~${tv} min ${tr.name.toLowerCase()} to next stop`,14,y);y+=7;h=eH+Math.floor((eM+tv)/60);m=(eM+tv)%60;}
+    doc.setDrawColor(220,220,230);doc.line(14,y,W-14,y);y+=7;
   });
   const pg=doc.internal.getNumberOfPages();
   for(let i=1;i<=pg;i++){doc.setPage(i);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(107,114,128);doc.text(`Mapistry · Page ${i} of ${pg}`,W/2,290,{align:"center"});}
   doc.save(`mapistry-${city.replace(/\s+/g,"-").toLowerCase()}.pdf`);
 }
 
-export default function App(){
+// ── STORAGE HELPERS — per-user isolated storage ──────────────
+const USERS_KEY = "mapistry_users";
+const ACTIVE_KEY = "mapistry_active_user";
+
+function loadUsers() {
+  try { return JSON.parse(localStorage.getItem(USERS_KEY)||"{}"); } catch { return {}; }
+}
+function saveUsers(users) { localStorage.setItem(USERS_KEY, JSON.stringify(users)); }
+function loadActiveUser() { return localStorage.getItem(ACTIVE_KEY)||null; }
+function saveActiveUser(name) { localStorage.setItem(ACTIVE_KEY, name); }
+
+function getUserHistory(username) {
+  const users = loadUsers();
+  return users[username]?.history || [];
+}
+function saveUserHistory(username, history) {
+  const users = loadUsers();
+  if (!users[username]) users[username] = { created: new Date().toLocaleDateString() };
+  users[username].history = history;
+  saveUsers(users);
+}
+function getUserCreated(username) {
+  const users = loadUsers();
+  return users[username]?.created || "";
+}
+
+export default function App() {
   const[step,setStep]=useState(1);
   const[city,setCity]=useState("");
   const[cin,setCin]=useState("");
@@ -401,10 +514,12 @@ export default function App(){
   const[places,setPlaces]=useState(MOCK);
   const[allPlaces,setAllPlaces]=useState(MOCK);
   const[visibleCount,setVisibleCount]=useState(8);
-  const[focusedPlace,setFocusedPlace]=useState(null);
   const[mapQuery,setMapQuery]=useState("");
+  const[focusedId,setFocusedId]=useState(null);
   const[itin,setItin]=useState([]);
   const[descMap,setDescMap]=useState(null);
+  const[costMap,setCostMap]=useState(null);
+  const[travelTimes,setTravelTimes]=useState(null);
   const[aiUsed,setAiUsed]=useState(false);
   const[loading,setLoading]=useState(false);
   const[lmsg,setLmsg]=useState("");
@@ -412,22 +527,29 @@ export default function App(){
   const[editingPlace,setEditingPlace]=useState(null);
   const[editTimeVal,setEditTimeVal]=useState("");
   const[editDurVal,setEditDurVal]=useState(60);
-  const[user,setUser]=useState(null);
+  // accounts
+  const[activeUser,setActiveUser]=useState(null);
+  const[hist,setHist]=useState([]);
   const[showProfile,setShowProfile]=useState(false);
   const[showUserSetup,setShowUserSetup]=useState(false);
   const[usernameInput,setUsernameInput]=useState("");
-  const[hist,setHist]=useState([]);
+  const[allUsers,setAllUsers]=useState({});
   const toast=useToast();
   const sref=useRef();
   const nextToken=useRef(null);
 
+  // Load state on mount
   useEffect(()=>{
-    const u=localStorage.getItem("mapistry_user");
-    const h=localStorage.getItem("mapistry_hist");
-    if(u)setUser(JSON.parse(u));
-    if(h)setHist(JSON.parse(h));
+    const users=loadUsers();
+    setAllUsers(users);
+    const active=loadActiveUser();
+    if(active&&users[active]){
+      setActiveUser(active);
+      setHist(users[active]?.history||[]);
+    }
   },[]);
 
+  // City autocomplete
   useEffect(()=>{
     if(cin.length<2){setSugg([]);return;}
     const q=cin.toLowerCase();
@@ -443,19 +565,72 @@ export default function App(){
 
   function selCity(c){setCin(c);setCity(c);setShowS(false);}
 
+  // ── ACCOUNT FUNCTIONS ──────────────────────────────────────
   function createUser(){
     const name=usernameInput.trim();
     if(!name){toast.show("Please enter a name!");return;}
-    const u={name,created:new Date().toLocaleDateString()};
-    setUser(u);localStorage.setItem("mapistry_user",JSON.stringify(u));
-    setShowUserSetup(false);toast.show(`Welcome, ${name}! 👋`);
+    const users=loadUsers();
+    if(!users[name]) users[name]={created:new Date().toLocaleDateString(),history:[]};
+    saveUsers(users);
+    saveActiveUser(name);
+    setAllUsers({...users});
+    setActiveUser(name);
+    setHist(users[name].history||[]);
+    setShowUserSetup(false);
+    setUsernameInput("");
+    toast.show(`Welcome, ${name}! 👋`);
   }
 
-  function logout(){setUser(null);localStorage.removeItem("mapistry_user");setShowProfile(false);toast.show("Logged out");}
+  function switchUser(name){
+    saveActiveUser(name);
+    setActiveUser(name);
+    const h=getUserHistory(name);
+    setHist(h);
+    setShowUserSetup(false);
+    setShowProfile(false);
+    toast.show(`Switched to ${name}`);
+  }
+
+  function deleteUser(name, e){
+    e.stopPropagation();
+    const users=loadUsers();
+    delete users[name];
+    saveUsers(users);
+    setAllUsers({...users});
+    if(activeUser===name){
+      setActiveUser(null);setHist([]);
+      localStorage.removeItem(ACTIVE_KEY);
+    }
+    toast.show(`Deleted ${name}`);
+  }
+
+  function logout(){
+    setActiveUser(null);setHist([]);
+    localStorage.removeItem(ACTIVE_KEY);
+    setShowProfile(false);
+    toast.show("Logged out");
+  }
+
+  function saveTrip(tripCity,tripItin,tripPlaces){
+    if(!activeUser)return;
+    const entry={
+      id:Date.now(),city:tripCity,
+      lat:tripPlaces[0]?.lat||0,lng:tripPlaces[0]?.lng||0,
+      date:new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}),
+      stops:tripItin.length,
+      img:tripItin[0]?.photoRef?purl(tripItin[0].photoRef):null,
+      emoji:tripItin[0]?.emoji||"📍",
+      places:tripItin.map(p=>p.name)
+    };
+    const newHist=[entry,...hist].slice(0,30);
+    setHist(newHist);
+    saveUserHistory(activeUser,newHist);
+  }
 
   function addCpref(){const v=cpinput.trim();if(!v)return;if(cprefs.includes(v)){toast.show("Already added!");return;}setCprefs(c=>[...c,v]);setCpinput("");}
 
-  async function doFetch(c,token=null){
+  // ── FETCH PLACES ──────────────────────────────────────────
+  async function doFetch(c, token=null){
     try{
       const allP=[...prefs,...cprefs];
       const q=allP.length>0?`${allP.join(" and ")} in ${c}`:`top attractions in ${c}`;
@@ -468,7 +643,8 @@ export default function App(){
             id:Date.now()+i,name:p.name,
             type:(p.types?.[0]||"attraction").replace(/_/g," "),
             rating:p.rating||4.0,reviews:p.user_ratings_total||0,
-            emoji:"📍",desc:p.editorial_summary?.overview||p.formatted_address||"A must-visit spot in "+c+".",
+            emoji:"📍",
+            desc:p.editorial_summary?.overview||p.formatted_address||`A notable spot in ${c}.`,
             duration:60,lat:p.geometry.location.lat,lng:p.geometry.location.lng,
             photoRef:p.photos?.[0]?.photo_reference||null,
             priceLevel:p.price_level??1,
@@ -481,10 +657,11 @@ export default function App(){
   }
 
   async function goToResults(){
-    const c=cin.trim();if(!c){toast.show("Please enter a city or town!");return;}
+    const c=cin.trim();if(!c){toast.show("Please enter a city!");return;}
     setCity(c);setMapQuery(c);setLmsg(`Finding the best spots in ${c}…`);setLoading(true);
     const{places:p,nextToken:nt}=await doFetch(c);
-    nextToken.current=nt;setAllPlaces(p);setPlaces(p);setVisibleCount(8);setLoading(false);setStep(3);
+    nextToken.current=nt;setAllPlaces(p);setPlaces(p);setVisibleCount(8);
+    setItin([]);setFocusedId(null);setLoading(false);setStep(3);
   }
 
   async function showMore(){
@@ -499,100 +676,132 @@ export default function App(){
     setLoading(false);
   }
 
+  // Click card → show on map (preview only, doesn't persist pin)
   function focusPlace(p){
-    setFocusedPlace(p.id);
-    setMapQuery(`${p.name} ${city}`);
+    setFocusedId(p.id);
+    setMapQuery(`${p.name}, ${city}`);
+  }
+
+  // Build map query showing ALL pinned (added) places
+  function getMapSrc(){
+    if(itin.length>0){
+      // show all added places as a search query
+      const q=itin.map(p=>`${p.name} ${city}`).join("|");
+      return`https://www.google.com/maps/embed/v1/search?key=${GOOGLE_KEY}&q=${encodeURIComponent(itin.map(p=>p.name).join(" OR ")+" in "+city)}&zoom=13`;
+    }
+    if(mapQuery){
+      return`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(mapQuery)}&zoom=15`;
+    }
+    return`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(city)}&zoom=13`;
   }
 
   async function goToItinerary(){
     if(itin.length===0){toast.show("Add at least one place first!");return;}
     setLmsg("Crafting your perfect day…");setLoading(true);
-    let dm=null;
+    let dm=null, cm=null, tt=null;
     if(ANTHROPIC_KEY&&ANTHROPIC_KEY!=="PASTE_YOUR_ANTHROPIC_KEY_HERE"){
-      setLmsg("✨ AI is writing your itinerary…");
+      setLmsg("✨ AI is personalizing your itinerary…");
       const allP=[...prefs,...cprefs].join(", ");
-      const result=await fetchAIDescs(itin,city,budget?BUDGETS.find(b=>b.id===budget)?.label:null,allP);
-      if(result){dm={};result.forEach(x=>{dm[x.id]=x.desc;});setDescMap(dm);setAiUsed(true);}
+      const blabel=budget?BUDGETS.find(b=>b.id===budget)?.label:null;
+      // Run all three AI calls in parallel
+      const[descRes,costRes,ttRes]=await Promise.all([
+        fetchAIDescs(itin,city,budget,allP),
+        fetchAICosts(itin,city,budget),
+        fetchAITravelTimes(itin,transport),
+      ]);
+      if(descRes){dm={};descRes.forEach(x=>{dm[x.id]=x.desc;});setAiUsed(true);}
+      if(costRes){cm={};costRes.forEach(x=>{cm[x.id]=x.cost;});}
+      if(ttRes){tt={};ttRes.forEach(x=>{tt[x.index]=x.minutes;});}
     }
-    await new Promise(r=>setTimeout(r,400));setLoading(false);setStep(4);
-    if(user){
-      const entry={id:Date.now(),city,lat:places[0]?.lat||0,lng:places[0]?.lng||0,date:new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}),stops:itin.length,img:itin[0]?.photoRef?purl(itin[0].photoRef):null,emoji:itin[0]?.emoji||"📍",places:itin.map(p=>p.name)};
-      const nh=[entry,...hist].slice(0,30);setHist(nh);localStorage.setItem("mapistry_hist",JSON.stringify(nh));
-    }
+    setDescMap(dm);setCostMap(cm);setTravelTimes(tt);
+    await new Promise(r=>setTimeout(r,300));
+    setLoading(false);setStep(4);
+    saveTrip(city,itin,places);
   }
 
-  // drag and drop
+  // ── DRAG & DROP ──────────────────────────────────────────
   function onDragStart(i){setDragIdx(i);}
   function onDragOver(e,i){e.preventDefault();if(dragIdx===null||dragIdx===i)return;const a=[...itin];const[it]=a.splice(dragIdx,1);a.splice(i,0,it);setItin(a);setDragIdx(i);}
   function onDragEnd(){setDragIdx(null);}
 
-  // time editing
+  // ── TIME EDITING ─────────────────────────────────────────
   function openEdit(p){setEditingPlace(p);setEditTimeVal(p.customTime||"");setEditDurVal(p.duration||60);}
   function saveEdit(){setItin(it=>it.map(p=>p.id===editingPlace.id?{...p,customTime:editTimeVal||undefined,duration:editDurVal}:p));setEditingPlace(null);toast.show("Updated!");}
 
-  // compute timeline
+  // ── COMPUTE TIMELINE ─────────────────────────────────────
   function computeTimes(){
     const[sh,sm]=startTime.split(":").map(Number);
     let h=sh,m=sm;
     const tr=TRANSPORT.find(t=>t.id===transport)||TRANSPORT[0];
     return itin.map((place,i)=>{
+      const travelMin=travelTimes?.[i+1]||tr.travelMin;
       if(place.customTime){
-        const[ch,cm]=place.customTime.split(":").map(Number);
-        const eH=ch+Math.floor((cm+place.duration)/60),eM=(cm+place.duration)%60;
-        if(i<itin.length-1){h=eH+Math.floor((eM+tr.travelMin)/60);m=(eM+tr.travelMin)%60;}
-        return{start:ft(ch,cm),end:ft(eH,eM),travel:tr.travelMin,mode:tr};
+        const[ch,cm2]=place.customTime.split(":").map(Number);
+        const eH=ch+Math.floor((cm2+place.duration)/60),eM=(cm2+place.duration)%60;
+        if(i<itin.length-1){h=eH+Math.floor((eM+travelMin)/60);m=(eM+travelMin)%60;}
+        return{start:ft(ch,cm2),end:ft(eH,eM),travel:travelMin,mode:tr};
       }
       const ts=ft(h,m);
       const eH=h+Math.floor((m+place.duration)/60),eM=(m+place.duration)%60;
-      if(i<itin.length-1){h=eH+Math.floor((eM+tr.travelMin)/60);m=(eM+tr.travelMin)%60;}
-      return{start:ts,end:ft(eH,eM),travel:tr.travelMin,mode:tr};
+      if(i<itin.length-1){h=eH+Math.floor((eM+travelMin)/60);m=(eM+travelMin)%60;}
+      return{start:ts,end:ft(eH,eM),travel:travelMin,mode:tr};
     });
   }
 
   const blabel=budget?BUDGETS.find(b=>b.id===budget)?.label:null;
   const tlabel=transport?TRANSPORT.find(t=>t.id===transport)?.name:null;
   const times=step===4?computeTimes():[];
-  const totalCost=budget?itin.reduce((s,p)=>s+(estCost(p,budget)||0),0):null;
+  const totalCost=costMap?itin.reduce((s,p)=>s+(costMap[p.id]??0),0):null;
   const visiblePlaces=places.slice(0,visibleCount);
-  const initials=user?user.name.slice(0,2).toUpperCase():"";
+  const initials=activeUser?activeUser.slice(0,2).toUpperCase():"";
 
-  // build visited cities map src
+  // visited cities map — markers for each unique city
   const visitedCities=[...new Set(hist.map(h=>h.city))];
-  const mapCenterCity=visitedCities[0]||"World";
   const profileMapSrc=visitedCities.length>0
-    ?`https://www.google.com/maps/embed/v1/search?key=${GOOGLE_KEY}&q=${encodeURIComponent(visitedCities.slice(0,5).join("|"))}&zoom=2`
-    :`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=World&zoom=2`;
+    ?`https://www.google.com/maps/embed/v1/search?key=${GOOGLE_KEY}&q=${encodeURIComponent(visitedCities.join("|"))}&zoom=2`
+    :`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=world&zoom=2`;
+
+  const knownUsers=Object.keys(loadUsers());
 
   return(
     <>
       <style>{STYLES}</style>
 
-      {/* NAV */}
+      {/* ── NAV ── */}
       <nav className="nav np">
         <div className="nav-l">
-          <div className="logo" onClick={()=>{setStep(1);setItin([]);setCin("");setCity("");}}>Mapit<em>stry</em></div>
+          <div className="logo" onClick={()=>{setStep(1);setItin([]);setCin("");setCity("");}}>
+            Mapit<b>stry</b>
+          </div>
           {step>1&&<button className="back" onClick={()=>setStep(step-1)}>← Back</button>}
         </div>
         <div className="nav-r">
           {city&&step>1&&<div className="nav-city">📍 {city}</div>}
           {step>1&&<div className="prog">{[1,2,3,4].map(s=><div key={s} className={`pd ${s===step?"on":s<step?"done":""}`}/>)}</div>}
-          {user
-            ?<button className="ubtn" onClick={()=>setShowProfile(true)}><div className="uav">{initials}</div>{user.name}</button>
+          {activeUser
+            ?<button className="ubtn" onClick={()=>setShowProfile(true)}><div className="uav">{initials}</div>{activeUser}</button>
             :<button className="ubtn" onClick={()=>setShowUserSetup(true)}>👤 Sign In</button>
           }
         </div>
       </nav>
 
-      {/* STEP 1 — NEW HERO */}
+      {/* ── HERO (STEP 1) ── */}
       {step===1&&(
         <div className="hero">
+          <div className="hero-bg"/>
+          <div className="hero-orb1"/><div className="hero-orb2"/><div className="hero-orb3"/>
+          <div className="hero-grid-lines"/>
           <div className="hero-left">
-            <div className="hero-tag">✦ Your personal travel planner</div>
-            <h1 className="hero-h1">Plan your<br/><em>perfect day</em>,<br/>anywhere.</h1>
-            <p className="hero-sub">Enter any city or town — get a real, personalized itinerary with actual photos, cost estimates, and hour-by-hour scheduling.</p>
-            <div className="hero-features">
-              {["Real photos from Google Places","AI-personalized descriptions","Hour-by-hour scheduling","Cost estimates per stop"].map(f=>(
-                <div key={f} className="hero-feat"><div className="hero-feat-dot"/>{f}</div>
+            <div className="hero-badge"><div className="badge-dot"/>Your personal travel planner</div>
+            <h1 className="hero-h1">
+              <span>Plan your</span>
+              <em>perfect day,</em>
+              <span>anywhere.</span>
+            </h1>
+            <p className="hero-sub">Enter any city or town — get a real, personalized itinerary with actual photos, AI cost estimates, and hour-by-hour scheduling.</p>
+            <div className="hero-feats">
+              {["Real photos from Google Places","AI-written descriptions & cost estimates","Accurate travel times between stops","Hour-by-hour scheduling with your transport"].map(f=>(
+                <div key={f} className="hfeat"><div className="hfeat-icon">✓</div>{f}</div>
               ))}
             </div>
             <div className="sc" ref={sref}>
@@ -618,37 +827,44 @@ export default function App(){
               )}
             </div>
             <div className="chips">
-              {["🗽 New York City","🗼 Paris","🏯 Kyoto","🎸 Nashville","🏛️ Rome"].map(c=>(
+              {["🗽 New York City","🗼 Paris","🏯 Kyoto","🎸 Nashville","🏛️ Rome","🌊 Bali"].map(c=>(
                 <div key={c} className="chip" onClick={()=>{const v=c.split(" ").slice(1).join(" ");setCin(v);setCity(v);setShowS(false);}}>{c}</div>
               ))}
             </div>
           </div>
           <div className="hero-right">
-            <div className="hero-right-img"/>
-            <div className="hero-right-overlay"/>
-            <div className="hero-floating-cards">
+            <div className="dest-stack">
               {[
-                {icon:"🗼",name:"Eiffel Tower",sub:"Paris, France · ★ 4.7"},
-                {icon:"🏛️",name:"Colosseum",sub:"Rome, Italy · ★ 4.8"},
-                {icon:"🌸",name:"Fushimi Inari",sub:"Kyoto, Japan · ★ 4.9"},
-              ].map(c=>(
-                <div key={c.name} className="hero-float-card">
-                  <div className="hfc-icon">{c.icon}</div>
-                  <div className="hfc-text"><div className="hfc-name">{c.name}</div><div className="hfc-sub">{c.sub}</div></div>
+                {emo:"🗼",name:"Eiffel Tower",meta:"Paris · ★ 4.7 · Landmark",badge:"Free entry",badgeClass:"green"},
+                {emo:"🏯",name:"Fushimi Inari",meta:"Kyoto · ★ 4.9 · Temple",badge:"~2 hrs",badgeClass:"amber"},
+                {emo:"🎨",name:"Uffizi Gallery",meta:"Florence · ★ 4.6 · Museum",badge:"~$20",badgeClass:"rose"},
+              ].map(d=>(
+                <div key={d.name} className="dest-card">
+                  <div className="dest-emo">{d.emo}</div>
+                  <div className="dest-info">
+                    <div className="dest-name">{d.name}</div>
+                    <div className="dest-meta">{d.meta}</div>
+                  </div>
+                  <div className={`dest-badge ${d.badgeClass}`}>{d.badge}</div>
                 </div>
               ))}
+            </div>
+            <div className="hero-micro">
+              <div className="micro-stat"><div className="micro-n">50+</div><div className="micro-l">Cities</div></div>
+              <div className="micro-stat"><div className="micro-n">AI</div><div className="micro-l">Powered</div></div>
+              <div className="micro-stat"><div className="micro-n">Free</div><div className="micro-l">Always</div></div>
             </div>
           </div>
         </div>
       )}
 
-      {/* STEP 2 */}
+      {/* ── STEP 2: PREFERENCES ── */}
       {step===2&&(
         <div className="page">
           <div className="sh">
             <div className="sey">Step 2 of 4</div>
             <h2 className="st">What's your vibe in <span>{city}</span>?</h2>
-            <p className="ss">Pick categories or type your own. Set your transport, budget, and trip times.</p>
+            <p className="ss">Pick your interests, transport, budget and trip times. The more you pick, the better your results.</p>
           </div>
           <div className="pg">
             {PREFS.map(p=>(
@@ -663,48 +879,34 @@ export default function App(){
           </div>
           {cprefs.length>0&&<div className="ctags">{cprefs.map(t=><div key={t} className="ctag">{t}<button onClick={()=>setCprefs(c=>c.filter(x=>x!==t))}>✕</button></div>)}</div>}
 
-          {/* TRANSPORT */}
-          <div className="transport-section">
-            <div className="bt">Getting Around</div>
-            <div className="transport-grid">
-              {TRANSPORT.map(t=>(
-                <div key={t.id} className={`tc ${transport===t.id?"sel":""}`} onClick={()=>setTransport(t.id)}>
-                  <div className="tc-icon">{t.icon}</div>
-                  <div className="tc-name">{t.name}</div>
-                  <div className="tc-time">{t.label}</div>
-                </div>
-              ))}
-            </div>
+          <div className="section-label">Getting Around</div>
+          <div className="transport-grid">
+            {TRANSPORT.map(t=>(
+              <div key={t.id} className={`tc ${transport===t.id?"sel":""}`} onClick={()=>setTransport(t.id)}>
+                <div className="tc-icon">{t.icon}</div>
+                <div className="tc-name">{t.name}</div>
+                <div className="tc-time">{t.label}</div>
+              </div>
+            ))}
           </div>
 
-          {/* TRIP TIMES */}
-          <div style={{marginBottom:8,fontSize:"0.74rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted)"}}>Trip Times</div>
-          <div className="time-picker-row">
-            <div className="time-picker-group">
-              <div className="time-picker-label">Start Time</div>
-              <input type="time" className="time-input" value={startTime} onChange={e=>setStartTime(e.target.value)}/>
-            </div>
-            <div className="time-picker-group">
-              <div className="time-picker-label">End Time</div>
-              <input type="time" className="time-input" value={endTime} onChange={e=>setEndTime(e.target.value)}/>
-            </div>
-            <div style={{display:"flex",alignItems:"flex-end",paddingBottom:4,color:"var(--muted)",fontSize:"0.82rem"}}>
-              Schedule will fit within these times
-            </div>
+          <div className="section-label" style={{marginTop:4}}>Trip Times</div>
+          <div className="time-row">
+            <div className="tg"><label>Start Time</label><input type="time" className="tinput" value={startTime} onChange={e=>setStartTime(e.target.value)}/></div>
+            <div className="tg"><label>End Time</label><input type="time" className="tinput" value={endTime} onChange={e=>setEndTime(e.target.value)}/></div>
+            <div style={{display:"flex",alignItems:"flex-end",paddingBottom:4,color:"var(--muted)",fontSize:"0.8rem"}}>Schedule fits between these times</div>
           </div>
 
-          <div className="bsec">
-            <div className="bt">Budget (per person)</div>
-            <div className="bg">
-              {BUDGETS.map(b=>(
-                <div key={b.id} className={`bc ${budget===b.id?"sel":""}`} onClick={()=>setBudget(budget===b.id?null:b.id)}>
-                  <div className="btr" style={{color:b.color}}>{b.tier}</div>
-                  <div className="bl">{b.label}</div>
-                  <div className="br" style={{color:b.color}}>{b.range}</div>
-                  <div className="bd">{b.desc}</div>
-                </div>
-              ))}
-            </div>
+          <div className="section-label">Budget (per person)</div>
+          <div className="bg">
+            {BUDGETS.map(b=>(
+              <div key={b.id} className={`bc ${budget===b.id?"sel":""}`} onClick={()=>setBudget(budget===b.id?null:b.id)}>
+                <div className="btr" style={{color:b.color}}>{b.tier}</div>
+                <div className="bl">{b.label}</div>
+                <div className="br" style={{color:b.color}}>{b.range}</div>
+                <div className="bd">{b.desc}</div>
+              </div>
+            ))}
           </div>
           <div className="conds">
             {[
@@ -722,33 +924,42 @@ export default function App(){
         </div>
       )}
 
-      {/* STEP 3 */}
+      {/* ── STEP 3: RESULTS ── */}
       {step===3&&(
         <div className="page">
           <div className="sh">
             <div className="sey">Step 3 of 4</div>
             <h2 className="st">Best spots in <span>{city}</span></h2>
-            <p className="ss">Click a card to see it on the map. Hit <strong>Add</strong> to build your itinerary. Drag to reorder in the sidebar.</p>
+            <p className="ss">Click a card to preview it on the map. Hit Add to pin it permanently and build your itinerary.</p>
           </div>
           <div className="rl">
             <div>
-              <div className="mapbox">
-                <iframe key={mapQuery} title="map"
-                  src={`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${encodeURIComponent(mapQuery||city)}&zoom=15`}
-                  allowFullScreen/>
+              <div className="map-wrap">
+                <div className="mapbox">
+                  <iframe key={mapQuery+itin.length} title="map"
+                    src={getMapSrc()}
+                    allowFullScreen/>
+                </div>
+                <div className="map-hint">
+                  {itin.length>0
+                    ?<>📍 Showing all {itin.length} pinned location{itin.length!==1?"s":""} · Click a card to preview others</>
+                    :<>Click any card to see it on the map</>
+                  }
+                </div>
               </div>
               <div className="plgrid">
                 {visiblePlaces.map(p=>{
                   const added=!!itin.find(x=>x.id===p.id);
-                  const focused=focusedPlace===p.id;
+                  const focused=focusedId===p.id;
                   const img=p.photoRef?purl(p.photoRef):null;
                   const pb=p.priceLevel===0?"Free":p.priceLevel===1?"$":p.priceLevel===2?"$$":p.priceLevel===3?"$$$":null;
-                  const cost=estCost(p,budget);
                   return(
-                    <div key={p.id} className={`plcard ${added?"added":""} ${focused?"focused":""}`} onClick={()=>focusPlace(p)}>
+                    <div key={p.id} className={`plcard ${added?"added":""} ${focused&&!added?"focused":""}`}
+                      onClick={()=>focusPlace(p)}>
                       <div className="plimg">
                         {img?<img src={img} alt={p.name} onError={e=>{e.target.parentElement.innerHTML=p.emoji;}} loading="lazy"/>:<span>{p.emoji}</span>}
-                        {pb&&<div className="pbadge">{pb}{cost?` · ~$${cost}`:""}</div>}
+                        {pb&&<div className="pbadge">{pb}</div>}
+                        {added&&<div className="pin-badge">📍 Pinned</div>}
                       </div>
                       <div className="plbody">
                         <div className="pltype">{p.type}</div>
@@ -758,25 +969,37 @@ export default function App(){
                       </div>
                       <div className="plfoot">
                         <div className="pldur">~{p.duration} min</div>
-                        <button className={`addbt ${added?"added":""}`} onClick={e=>{e.stopPropagation();setItin(it=>it.find(x=>x.id===p.id)?it.filter(x=>x.id!==p.id):[...it,p]);if(!added)toast.show(`"${p.name}" added!`);}}>{added?"✓ Added":"+ Add"}</button>
+                        <button className={`addbt ${added?"added":""}`} onClick={e=>{
+                          e.stopPropagation();
+                          setItin(it=>{
+                            if(it.find(x=>x.id===p.id)){
+                              const updated=it.filter(x=>x.id!==p.id);
+                              return updated;
+                            }
+                            toast.show(`"${p.name}" pinned to map!`);
+                            return [...it,p];
+                          });
+                        }}>{added?"✓ Pinned":"+ Add"}</button>
                       </div>
                     </div>
                   );
                 })}
               </div>
-              {places.length>visibleCount&&<button className="show-more-btn" onClick={showMore}>+ Show More Places</button>}
-              {places.length<=visibleCount&&allPlaces.length>=8&&<button className="show-more-btn" onClick={showMore} disabled={!nextToken.current}>{nextToken.current?"+ Load More from Google":"✓ All places loaded"}</button>}
+              {places.length>visibleCount&&<button className="show-more" onClick={showMore}>+ Show More Places</button>}
+              {places.length<=visibleCount&&allPlaces.length>=8&&<button className="show-more" onClick={showMore} disabled={!nextToken.current}>{nextToken.current?"+ Load More from Google":"✓ All places loaded"}</button>}
             </div>
+            {/* SIDEBAR */}
             <div className="sb np">
               <div className="sbt">Your Itinerary</div>
-              <div className="sbs">{itin.length} place{itin.length!==1?"s":""} · drag to reorder</div>
+              <div className="sbs">{itin.length} place{itin.length!==1?"s":""} pinned · drag to reorder</div>
               <ul className="il">
                 {itin.length===0
                   ?<div className="em">Add places to get started →</div>
                   :itin.map((p,i)=>(
-                    <li key={p.id} className={`ii ${dragIdx===i?"dragging":""}`} draggable onDragStart={()=>onDragStart(i)} onDragOver={e=>onDragOver(e,i)} onDragEnd={onDragEnd}>
-                      <div className="ii-left">
-                        <span className="drag-handle">⠿</span>
+                    <li key={p.id} className={`ii ${dragIdx===i?"dragging":""}`} draggable
+                      onDragStart={()=>onDragStart(i)} onDragOver={e=>onDragOver(e,i)} onDragEnd={onDragEnd}>
+                      <div className="ii-l">
+                        <span className="dh">⠿</span>
                         <div><div>{p.emoji} {p.name}</div><div className="iis">{p.type} · ~{p.duration} min</div></div>
                       </div>
                       <button className="rmbt" onClick={()=>setItin(it=>it.filter(x=>x.id!==p.id))}>✕</button>
@@ -790,27 +1013,30 @@ export default function App(){
         </div>
       )}
 
-      {/* STEP 4 */}
+      {/* ── STEP 4: ITINERARY ── */}
       {step===4&&(
         <div className="page">
           <div className="ih">
             <div>
-              <h2 className="imt">Your day in<br/><em>{city}</em></h2>
+              <h2 className="imt">Your day in <em>{city}</em></h2>
               <div className="iml">{[blabel,tlabel,conds.group,conds.day].filter(Boolean).join(" · ")}{itin.length>0?` · ${itin.length} stops`:""}</div>
-              {aiUsed&&<div className="aib">✦ AI-personalized descriptions</div>}
+              {aiUsed&&<div className="aib">✦ AI-personalized descriptions, costs & travel times</div>}
             </div>
             <div className="iac np">
               <button className="obt" onClick={()=>setStep(3)}>← Edit Places</button>
-              <button className="dbt" onClick={()=>exportPDF(city,itin,budget,transport,startTime,descMap)}>⬇ Export PDF</button>
+              <button className="dbt" onClick={()=>exportPDF(city,itin,budget,transport,startTime,descMap,costMap)}>⬇ Export PDF</button>
             </div>
           </div>
-          {budget&&totalCost>0&&(
-            <div className="cost-summary">
-              <div className="cost-title">💰 Estimated Trip Cost</div>
+          {totalCost!=null&&(
+            <div className="cost-box">
+              <div className="cost-ttl">💰 Estimated Trip Cost</div>
               <div className="cost-rows">
-                {itin.map(p=>{const c=estCost(p,budget);return c?(<div key={p.id} className="cost-row"><span className="cost-label">{p.name}</span><span className="cost-val">~${c}</span></div>):null;})}
+                {itin.map(p=>{
+                  const c=costMap?.[p.id];
+                  return c!=null?(<div key={p.id} className="cost-row"><span className="cost-lbl">{p.name}</span><span className="cost-val">~${c}</span></div>):null;
+                })}
               </div>
-              <div className="cost-total"><span>Total estimate</span><span className="cost-total-val">~${totalCost} per person</span></div>
+              <div className="cost-total"><span>Total per person</span><span className="cost-total-val">~${totalCost}</span></div>
             </div>
           )}
           <div className="tl">
@@ -818,7 +1044,7 @@ export default function App(){
               const t=times[i]||{start:"9:00 AM",end:"10:00 AM",travel:15,mode:TRANSPORT[0]};
               const img=place.photoRef?purl(place.photoRef):null;
               const isLast=i===itin.length-1;
-              const cost=estCost(place,budget);
+              const cost=costMap?.[place.id];
               const desc=descMap?.[place.id]||place.desc;
               return(
                 <div key={place.id}>
@@ -838,8 +1064,8 @@ export default function App(){
                           <div className="tcmeta">
                             <span>★ {place.rating}</span>
                             <span>~{place.duration} min</span>
-                            {cost&&<span className="cost-badge">~${cost}</span>}
-                            <span style={{fontSize:"0.7rem",color:"var(--green2)",cursor:"pointer"}} onClick={()=>openEdit(place)}>✏️ Edit time</span>
+                            {cost!=null&&<span className="cbadge">~${cost}</span>}
+                            <span className="edit-link" onClick={()=>openEdit(place)}>✏️ edit time</span>
                           </div>
                         </div>
                       </div>
@@ -847,7 +1073,7 @@ export default function App(){
                   </div>
                   {!isLast&&(
                     <div className="trvl"><div/>
-                      <div className="trvli">{t.mode?.icon||"🚶"} ~{t.travel} min by {t.mode?.name||"foot"} to next stop</div>
+                      <div className="trvli">{t.mode?.icon||"🚶"} ~{t.travel} min by {t.mode?.name?.toLowerCase()||"foot"} to next stop</div>
                     </div>
                   )}
                 </div>
@@ -857,41 +1083,63 @@ export default function App(){
         </div>
       )}
 
-      {/* USERNAME SETUP */}
+      {/* ── USER SETUP MODAL ── */}
       {showUserSetup&&(
         <div className="pov" onClick={e=>e.target===e.currentTarget&&setShowUserSetup(false)}>
           <div className="usetup">
-            <div className="ust">Create your profile</div>
-            <div className="uss">Pick a name to save your trips and see where you've been. No password needed — everything stays on this device.</div>
-            <input className="uinp" placeholder="Your name…" value={usernameInput} onChange={e=>setUsernameInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&createUser()} autoFocus/>
-            <button className="ubf" onClick={createUser}>Get Started →</button>
+            <div className="ust">Your profile</div>
+            <div className="uss">Pick a name to save trips and track where you've been. No password needed — everything stays on this device.</div>
+            <input className="uinp" placeholder="Enter a username…" value={usernameInput}
+              onChange={e=>setUsernameInput(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&createUser()} autoFocus/>
+            <button className="ubf" onClick={createUser}>Create Profile →</button>
+            {knownUsers.length>0&&(
+              <>
+                <div className="divider-or">or switch to existing</div>
+                <div className="user-list">
+                  {knownUsers.map(name=>(
+                    <div key={name} className="user-item" onClick={()=>switchUser(name)}>
+                      <div className="user-item-av">{name.slice(0,2).toUpperCase()}</div>
+                      <div>
+                        <div className="user-item-name">{name}</div>
+                        <div className="user-item-meta">{getUserHistory(name).length} trips · since {getUserCreated(name)}</div>
+                      </div>
+                      <button className="user-item-del" onClick={e=>deleteUser(name,e)}>🗑</button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
 
-      {/* PROFILE MODAL */}
-      {showProfile&&user&&(
+      {/* ── PROFILE MODAL ── */}
+      {showProfile&&activeUser&&(
         <div className="pov" onClick={e=>e.target===e.currentTarget&&setShowProfile(false)}>
           <div className="pmodal">
             <button className="pmc" onClick={()=>setShowProfile(false)}>✕</button>
-            <div className="pm-header">
+            <div className="pm-hdr">
               <div className="pm-av">{initials}</div>
-              <div><div className="pm-name">{user.name}</div><div className="pm-sub">Member since {user.created}</div></div>
+              <div>
+                <div className="pm-name">{activeUser}</div>
+                <div className="pm-sub">Member since {getUserCreated(activeUser)}</div>
+              </div>
             </div>
             <div className="pm-stats">
-              <div className="pm-stat"><div className="pm-stat-n">{hist.length}</div><div className="pm-stat-l">Trips</div></div>
-              <div className="pm-stat"><div className="pm-stat-n">{hist.reduce((s,h)=>s+h.stops,0)}</div><div className="pm-stat-l">Places visited</div></div>
-              <div className="pm-stat"><div className="pm-stat-n">{visitedCities.length}</div><div className="pm-stat-l">Cities</div></div>
+              <div className="pms"><div className="pms-n">{hist.length}</div><div className="pms-l">Trips</div></div>
+              <div className="pms"><div className="pms-n">{hist.reduce((s,h)=>s+h.stops,0)}</div><div className="pms-l">Places</div></div>
+              <div className="pms"><div className="pms-n">{visitedCities.length}</div><div className="pms-l">Cities</div></div>
             </div>
             {visitedCities.length>0&&(
               <>
-                <div className="pm-trips-title">🌍 Cities You've Explored</div>
+                <div className="pm-sec">🌍 Cities Explored</div>
                 <div className="pm-map">
-                  <iframe key={profileMapSrc} title="visited" src={profileMapSrc} allowFullScreen/>
+                  <iframe key={profileMapSrc} title="visited-map" src={profileMapSrc} allowFullScreen/>
                 </div>
               </>
             )}
-            <div className="pm-trips-title">🧳 Past Trips</div>
+            <div className="pm-sec">🧳 Past Trips</div>
             {hist.length===0
               ?<div className="pm-empty">No trips yet — go plan one! ✈️</div>
               :<div className="pm-trips">
@@ -899,21 +1147,22 @@ export default function App(){
                   <div key={h.id} className="pm-trip">
                     <div>
                       <div className="pm-trip-city">{h.emoji} {h.city}</div>
-                      <div className="pm-trip-meta">{h.date}</div>
+                      <div className="pm-trip-meta">{h.date} · {h.places?.slice(0,2).join(", ")}{h.stops>2?` +${h.stops-2} more`:""}</div>
                     </div>
-                    <div className="pm-trip-stops">📍 {h.stops} stops</div>
+                    <div className="pm-trip-stops">📍 {h.stops}</div>
                   </div>
                 ))}
               </div>
             }
             <div className="pm-btns">
+              <button className="pm-switch" onClick={()=>{setShowProfile(false);setShowUserSetup(true);}}>Switch User</button>
               <button className="pm-logout" onClick={logout}>Sign Out</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* TIME EDIT */}
+      {/* ── TIME EDIT MODAL ── */}
       {editingPlace&&(
         <div className="teov" onClick={e=>e.target===e.currentTarget&&setEditingPlace(null)}>
           <div className="temod">
@@ -921,7 +1170,7 @@ export default function App(){
             <div className="tems">{editingPlace.name}</div>
             <div className="temr"><div className="teml">Start Time</div><input type="time" className="temi" value={editTimeVal} onChange={e=>setEditTimeVal(e.target.value)}/></div>
             <div className="temr"><div className="teml">Duration (minutes)</div><input type="number" className="temi" value={editDurVal} min={15} max={480} step={15} onChange={e=>setEditDurVal(Number(e.target.value))}/></div>
-            <div className="tembtns"><button className="tem-cancel" onClick={()=>setEditingPlace(null)}>Cancel</button><button className="tem-save" onClick={saveEdit}>Save</button></div>
+            <div className="tembtns"><button className="tem-c" onClick={()=>setEditingPlace(null)}>Cancel</button><button className="tem-s" onClick={saveEdit}>Save</button></div>
           </div>
         </div>
       )}
