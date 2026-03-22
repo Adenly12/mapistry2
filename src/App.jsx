@@ -298,12 +298,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .pmc { position: absolute; top: 12px; right: 12px; background: var(--sand); border: none; font-size: 1.1rem; cursor: pointer; color: var(--muted); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .pmc:hover { background: var(--sand2); color: var(--ink); }
 .pm-hdr { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
-.pm-av { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--terra), var(--gold2)); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; color: white; }
+.pm-av { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, var(--ocean), var(--ocean2)); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; color: white; }
 .pm-name { font-family: 'Cormorant Garamond', serif; font-size: 1.7rem; font-weight: 600; color: var(--ink); }
 .pm-sub { font-size: 0.78rem; color: var(--muted2); margin-top: 2px; }
 .pm-stats { display: flex; gap: 10px; margin-bottom: 22px; }
 .pms { background: var(--sand); border-radius: var(--rs); padding: 14px 16px; flex: 1; text-align: center; border: 1px solid var(--border); }
-.pms-n { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; color: var(--terra); font-weight: 600; }
+.pms-n { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; color: var(--ocean); font-weight: 600; }
 .pms-l { font-size: 0.7rem; color: var(--muted2); margin-top: 1px; }
 .pm-sec { font-size: 0.69rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-weight: 600; }
 .pm-map { width: 100%; height: 200px; border-radius: var(--rs); overflow: hidden; margin-bottom: 18px; border: 2px solid var(--border2); }
@@ -318,7 +318,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .pm-btns { display: flex; gap: 9px; margin-top: 18px; }
 .pm-btn { flex: 1; padding: 10px; background: var(--sand); border: 2px solid var(--border2); border-radius: 60px; font-size: 0.83rem; cursor: pointer; color: var(--muted); transition: all 0.2s; }
 .pm-btn:hover { color: var(--ink); border-color: var(--border2); }
-.pm-btn.danger:hover { color: var(--terra); border-color: rgba(196,92,38,0.3); }
+.pm-btn.danger:hover { color: var(--ocean); border-color: rgba(27,94,138,0.3); }
 .usetup { background: white; border-radius: var(--r); padding: 36px; width: 100%; max-width: 400px; box-shadow: var(--shl); border: 2px solid var(--border2); }
 .ust { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; font-weight: 600; margin-bottom: 5px; color: var(--ink); }
 .uss { color: var(--muted); font-size: 0.84rem; margin-bottom: 22px; line-height: 1.6; }
@@ -1571,17 +1571,32 @@ export default function App(){
             <div className="pm-sec">🧳 Your Trips</div>
             {hist.length===0
               ?<div className="pm-empty">No trips yet — go plan one! ✈️</div>
-              :<div className="pm-trips">
-                {hist.map(h=>(
-                  <div key={h.id} className="pm-trip">
-                    <div>
-                      <div className="pm-trip-city">{h.emoji} {h.city}</div>
-                      <div className="pm-trip-meta">{h.date}{h.days>1?` · ${h.days} days`:""} · {h.places?.slice(0,2).join(", ")}{h.stops>2?` +${h.stops-2} more`:""}</div>
-                    </div>
-                    <div className="pm-trip-stops">📍 {h.stops}</div>
+              :{(()=>{
+                const MAP_COLORS=["#c45c26","#1b5e8a","#4a7c59","#c8820a","#7c5cbf","#e06b30"];
+                // dedupe cities in same order as the map markers
+                const seen=new Set();const cityOrder=[];
+                hist.forEach(h=>{if(!seen.has(h.city)&&h.lat&&h.lng&&!(h.lat===0&&h.lng===0)){seen.add(h.city);cityOrder.push(h.city);}});
+                return(
+                  <div className="pm-trips">
+                    {hist.map(h=>{
+                      const ci=cityOrder.indexOf(h.city);
+                      const dot=ci>=0?MAP_COLORS[ci%MAP_COLORS.length]:"var(--muted2)";
+                      return(
+                        <div key={h.id} className="pm-trip">
+                          <div style={{display:"flex",alignItems:"center",gap:10}}>
+                            <div style={{width:11,height:11,borderRadius:"50%",background:dot,flexShrink:0,boxShadow:`0 0 0 2px white, 0 0 0 3px ${dot}`}}/>
+                            <div>
+                              <div className="pm-trip-city">{h.city}</div>
+                              <div className="pm-trip-meta">{h.date}{h.days>1?` · ${h.days} days`:""} · {h.places?.slice(0,2).join(", ")}{h.stops>2?` +${h.stops-2} more`:""}</div>
+                            </div>
+                          </div>
+                          <div className="pm-trip-stops" style={{color:dot}}>📍 {h.stops}</div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
             }
             <div className="pm-btns">
               <button className="pm-btn" onClick={()=>{setShowProfile(false);setShowUserSetup(true);}}>Switch Profile</button>
