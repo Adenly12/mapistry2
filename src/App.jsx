@@ -421,20 +421,21 @@ function buildStaticMapUrl(places){
   return`https://maps.googleapis.com/maps/api/staticmap?size=600x300&scale=2${markers}&key=${GOOGLE_KEY}`;
 }
 
-// Profile map - uses lat/lng from saved trips for accurate pins
-function buildCityMapUrl(tripHistory){
-  if(!GOOGLE_KEY||!tripHistory.length)return null;
+// Build embed URL for visited cities map using Embed API (already enabled)
+function buildCityEmbedUrl(tripHistory, googleKey){
+  if(!googleKey||!tripHistory.length)return null;
   const seen=new Set();
-  const unique=tripHistory.filter(h=>{
-    if(!h.lat||!h.lng||seen.has(h.city))return false;
-    seen.add(h.city);return true;
-  });
-  if(!unique.length)return null;
-  const colors=["0xC45C26","0x1B5E8A","0x4A7C59","0xC8820A","0x7C5CBF"];
-  const markers=unique.map((h,i)=>`&markers=color:${colors[i%colors.length]}|label:${i+1}|${h.lat},${h.lng}`).join("");
-  const zoom=unique.length===1?"8":"2";
-  const center=unique.length===1?`${unique[0].lat},${unique[0].lng}`:"20,10";
-  return`https://maps.googleapis.com/maps/api/staticmap?size=500x200&scale=2&zoom=${zoom}&center=${center}${markers}&key=${GOOGLE_KEY}`;
+  const cities=tripHistory.reduce((acc,h)=>{
+    if(!seen.has(h.city)){seen.add(h.city);acc.push(h.city);}
+    return acc;
+  },[]);
+  if(!cities.length)return null;
+  if(cities.length===1){
+    return `https://www.google.com/maps/embed/v1/place?key=${googleKey}&q=${encodeURIComponent(cities[0])}&zoom=10`;
+  }
+  // Use search with all cities joined — Embed API search shows pins for each match
+  const q=cities.map(c=>encodeURIComponent(c)).join("|");
+  return `https://www.google.com/maps/embed/v1/search?key=${googleKey}&q=${q}&zoom=2`;
 }
 
 // ─── AI ───────────────────────────────────────────────────────
@@ -892,7 +893,7 @@ export default function App(){
   const initials=activeUser?activeUser.slice(0,2).toUpperCase():"";
   const knownUsers=Object.keys(loadU());
   const visitedCities=[...new Set(hist.map(h=>h.city))];
-  const cityMapUrl=buildCityMapUrl(hist);
+  const cityEmbedUrl=buildCityEmbedUrl(hist, GOOGLE_KEY);
 
   return(
     <>
@@ -1301,9 +1302,9 @@ export default function App(){
               <>
                 <div className="pm-sec">🌍 Cities Explored</div>
                 <div className="pm-map">
-                  {cityMapUrl
-                    ?<img src={cityMapUrl} alt="Cities explored map" onError={e=>{e.target.style.display="none";}}/>
-                    :<iframe title="cities-map" src={`https://www.google.com/maps/embed/v1/search?key=${GOOGLE_KEY}&q=${encodeURIComponent(visitedCities.join("|"))}&zoom=2`} allowFullScreen/>
+                  {cityEmbedUrl
+                    ?<iframe key={cityEmbedUrl} title="cities-map" src={cityEmbedUrl} allowFullScreen loading="lazy"/>
+                    :<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:"var(--muted2)",fontSize:"0.82rem",background:"var(--sand)"}}>Plan your first trip to see it here!</div>
                   }
                 </div>
               </>
