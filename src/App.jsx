@@ -121,6 +121,44 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .proof-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--muted); }
 .proof-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sage); }
 
+/* ── HERO INPUTS ── */
+.hero-inputs { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 480px; margin-bottom: 16px; }
+.hero-input-row { display: flex; gap: 10px; }
+.hero-input-wrap { flex: 1; position: relative; }
+.hero-input-label { font-size: 0.65rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted2); font-weight: 600; margin-bottom: 5px; }
+.hero-ibox { display: flex; align-items: center; background: white; border-radius: 14px; border: 1.5px solid var(--border2); box-shadow: var(--sh); overflow: hidden; transition: border-color 0.2s; }
+.hero-ibox:focus-within { border-color: var(--ocean3); }
+.hero-ibox .sicon { padding: 0 0 0 14px; font-size: 0.9rem; color: var(--ocean3); }
+.hero-ibox input { flex: 1; border: none; padding: 12px 12px; font-family: 'DM Sans',sans-serif; font-size: 0.88rem; background: transparent; color: var(--ink); outline: none; }
+.hero-ibox input::placeholder { color: var(--muted2); }
+.hero-date-row { display: flex; gap: 10px; }
+.hero-date-box { flex: 1; background: white; border-radius: 14px; border: 1.5px solid var(--border2); box-shadow: var(--sh); padding: 10px 14px; transition: border-color 0.2s; }
+.hero-date-box:focus-within { border-color: var(--ocean3); }
+.hero-date-box label { font-size: 0.62rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted2); font-weight: 600; display: block; margin-bottom: 3px; }
+.hero-date-box input { border: none; font-family: 'DM Sans',sans-serif; font-size: 0.88rem; color: var(--ink); outline: none; background: transparent; width: 100%; }
+
+/* ── BUDGET BREAKDOWN ── */
+.bbd { background: white; border: 1.5px solid var(--border2); border-radius: var(--r); padding: 20px; margin-bottom: 24px; box-shadow: var(--sh); }
+.bbd-title { font-size: 0.75rem; font-weight: 700; color: var(--ink); margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+.bbd-title span { font-size: 0.68rem; color: var(--muted2); font-weight: 400; }
+.bbd-bar { display: flex; height: 10px; border-radius: 10px; overflow: hidden; margin-bottom: 16px; gap: 2px; }
+.bbd-seg { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+.bbd-rows { display: flex; flex-direction: column; gap: 8px; }
+.bbd-row { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; }
+.bbd-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.bbd-lbl { flex: 1; color: var(--muted); }
+.bbd-amt { font-weight: 700; color: var(--ink); }
+.bbd-pct { font-size: 0.7rem; color: var(--muted2); margin-left: 4px; }
+.bbd-warn { margin-top: 12px; padding: 10px 14px; background: rgba(196,92,38,0.08); border: 1px solid rgba(196,92,38,0.2); border-radius: var(--rs); font-size: 0.78rem; color: #c45c26; }
+.bbd-tip { margin-top: 10px; padding: 10px 14px; background: rgba(27,94,138,0.06); border: 1px solid rgba(27,94,138,0.15); border-radius: var(--rs); font-size: 0.78rem; color: var(--ocean); }
+.bbd-loading { display: flex; align-items: center; gap: 10px; padding: 16px 0; color: var(--muted2); font-size: 0.82rem; }
+.bbd-spinner { width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--ocean); border-radius: 50%; animation: spin 0.7s linear infinite; }
+.total-budget-input { width: 100%; padding: 14px 18px; border: 2px solid var(--border2); border-radius: var(--r); font-family: 'DM Sans',sans-serif; font-size: 1.1rem; font-weight: 600; background: white; color: var(--ink); outline: none; transition: all 0.2s; box-shadow: var(--sh); }
+.total-budget-input:focus { border-color: var(--ocean); }
+.total-budget-wrap { position: relative; margin-bottom: 8px; }
+.total-budget-wrap::before { content: "$"; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 1.1rem; font-weight: 700; color: var(--ocean); pointer-events: none; }
+.total-budget-wrap input { padding-left: 30px; }
+
 /* ── STEP PAGES ── */
 .page { padding: 44px 5vw 72px; max-width: 1380px; margin: 0 auto; }
 .sh { margin-bottom: 28px; }
@@ -935,6 +973,19 @@ export default function App(){
   const[cin,setCin]=useState("");
   const[sugg,setSugg]=useState([]);
   const[showS,setShowS]=useState(false);
+  // Origin city
+  const[originCity,setOriginCity]=useState("");
+  const[originIn,setOriginIn]=useState("");
+  const[originSugg,setOriginSugg]=useState([]);
+  const[showOriginS,setShowOriginS]=useState(false);
+  const originRef=useRef();
+  // Dates
+  const[departDate,setDepartDate]=useState("");
+  const[returnDate,setReturnDate]=useState("");
+  // Total trip budget
+  const[totalBudget,setTotalBudget]=useState("");
+  const[budgetBreakdown,setBudgetBreakdown]=useState(null);
+  const[budgetLoading,setBudgetLoading]=useState(false);
   const[prefs,setPrefs]=useState(new Set());
   const[cprefs,setCprefs]=useState([]);
   const[cpinput,setCpinput]=useState("");
@@ -1022,12 +1073,74 @@ export default function App(){
   },[cin]);
 
   useEffect(()=>{
-    const fn=e=>{if(sref.current&&!sref.current.contains(e.target))setShowS(false);};
+    if(originIn.length<2){setOriginSugg([]);return;}
+    const q=originIn.toLowerCase();
+    setOriginSugg(CITIES.filter(s=>s.city.toLowerCase().includes(q)||s.country.toLowerCase().includes(q)).slice(0,6));
+    setShowOriginS(true);
+  },[originIn]);
+
+  useEffect(()=>{
+    const fn=e=>{
+      if(sref.current&&!sref.current.contains(e.target))setShowS(false);
+      if(originRef.current&&!originRef.current.contains(e.target))setShowOriginS(false);
+    };
     document.addEventListener("mousedown",fn);
     return()=>document.removeEventListener("mousedown",fn);
   },[]);
 
   function selCity(c){setCin(c);setCity(c);setShowS(false);}
+  function selOriginCity(c){setOriginIn(c);setOriginCity(c);setShowOriginS(false);}
+
+  // Auto-calculate numDays from dates
+  useEffect(()=>{
+    if(departDate&&returnDate){
+      const diff=Math.round((new Date(returnDate)-new Date(departDate))/(1000*60*60*24));
+      if(diff>0&&diff<=30)setNumDays(diff);
+    }
+  },[departDate,returnDate]);
+
+  // Budget breakdown via AI
+  async function fetchBudgetBreakdown(total,dest,origin,nights,transportMode){
+    if(!total||!dest||total<50)return;
+    setBudgetLoading(true);setBudgetBreakdown(null);
+    const transportCosts={walking:"$0 (no transport cost)",transit:"~$5-15/day local transit",
+      driving:"~$30-60/day car rental + fuel",cycling:"~$10-20/day bike rental",rideshare:"~$20-40/day rideshares"};
+    const prompt=`You are a travel budget expert. Give a realistic budget breakdown for this trip:
+- Destination: ${dest}
+- Origin: ${origin||"unknown"}
+- Duration: ${nights} night${nights!==1?"s":""}
+- Total budget: $${total} USD per person
+- Transport mode at destination: ${transportCosts[transportMode]||"walking"}
+
+Break down the $${total} budget into these categories with realistic estimates:
+1. Flights (round trip from ${origin||"origin"} to ${dest}) — research typical economy prices
+2. Accommodation (${nights} nights, budget-appropriate for ${dest})  
+3. Food & Dining (${nights} days)
+4. Activities & Attractions (${nights} days)
+5. Local Transport (${nights} days, ${transportMode})
+6. Misc (souvenirs, tips, emergencies)
+
+If total budget seems too low for the trip, say so with a suggested minimum.
+
+Respond ONLY as JSON, no markdown:
+{"flight":NUMBER,"hotel":NUMBER,"food":NUMBER,"activities":NUMBER,"transport":NUMBER,"misc":NUMBER,"warning":"optional warning string or empty string","currency":"USD","tip":"one helpful money-saving tip for ${dest}"}`;
+    const txt=await aiCall(prompt,500);
+    if(txt){
+      try{
+        const match=txt.match(/\{[\s\S]*\}/);
+        const parsed=JSON.parse(match?match[0]:txt);
+        setBudgetBreakdown(parsed);
+      }catch(e){console.log("budget parse error",e);}
+    }
+    setBudgetLoading(false);
+  }
+
+  // Refetch breakdown when transport changes on step 2
+  useEffect(()=>{
+    if(step===2&&totalBudget&&city&&budgetBreakdown){
+      fetchBudgetBreakdown(Number(totalBudget),city,originCity,numDays,transport);
+    }
+  },[transport]);
 
   // ── ACCOUNTS ──────────────────────────────────────────────
   function createUser(){
@@ -1160,7 +1273,7 @@ export default function App(){
     const{places:p,nextToken:nt}=await doFetch(c);
     nextToken.current=nt;setAllPlaces(p);setPlaces(p);setVisibleCount(8);
     setDayPlans(Array.from({length:numDays},()=>[]));
-    setStaticMapUrl("");setLoading(false);setStep(3);
+    setStaticMapUrl("");setLoading(false);setStep(4);
   }
 
   async function showMore(){
@@ -1221,7 +1334,7 @@ export default function App(){
       if(costRes){cm={};costRes.forEach(x=>{cm[x.id]={cost:x.cost,note:x.note||""};});}
     }
     setDescMap(dm);setCostMap(cm);
-    setLoading(false);setStep(4);setItinViewDay(0);
+    setLoading(false);setStep(5);setItinViewDay(0);
     saveTrip(city,dayPlans);
     // Fetch real travel times asynchronously after render
     setTravelLoading(true);
@@ -1333,14 +1446,14 @@ export default function App(){
       {/* NAV */}
       <nav className="nav">
         <div className="nav-l">
-          <div className="logo" onClick={()=>{setStep(1);setDayPlans([[]]); setCin("");setCity("");}}>
+          <div className="logo" onClick={()=>{setStep(1);setDayPlans([[]]);setCin("");setCity("");setOriginIn("");setOriginCity("");setDepartDate("");setReturnDate("");setTotalBudget("");setBudgetBreakdown(null);}}>
             Mapit<em>stry</em>
           </div>
           {step>1&&<button className="back" onClick={()=>setStep(step-1)}>← Back</button>}
         </div>
         <div className="nav-r">
-          {city&&step>1&&<div className="nav-city">📍 {city}</div>}
-          {step>1&&<div className="prog">{[1,2,3,4].map(s=><div key={s} className={`pd ${s===step?"on":s<step?"done":""}`}/>)}</div>}
+          {city&&step>1&&<div className="nav-city">📍 {city}{originCity?` ← ${originCity}`:""}</div>}
+          {step>1&&<div className="prog">{[1,2,3,4,5].map(s=><div key={s} className={`pd ${s===step?"on":s<step?"done":""}`}/>)}</div>}
           {activeUser
             ?<button className="ubtn" onClick={()=>setShowProfile(true)}><div className="uav">{initials}</div>{activeUser}</button>
             :<button className="ubtn guest" onClick={()=>setShowUserSetup(true)}>👤 Sign In</button>
@@ -1381,32 +1494,67 @@ export default function App(){
                 </div>
               ))}
             </div>
-            <div className="sc" ref={sref}>
-              <div className="sw">
-                <div className="si-wrap">
-                  <div className="sicon">📍</div>
-                  <input className="si" placeholder="Type any city or town…" value={cin}
+            <div className="hero-inputs">
+              {/* Destination */}
+              <div>
+                <div className="hero-input-label">📍 Where to?</div>
+                <div className="hero-ibox" ref={sref} style={{position:"relative"}}>
+                  <input className="si" style={{padding:"14px 14px"}} placeholder="Destination city…" value={cin}
                     onChange={e=>{setCin(e.target.value);setCity(e.target.value);}}
-                    onKeyDown={e=>{if(e.key==="Enter"&&cin.trim()){setShowS(false);setStep(2);}}}
+                    onKeyDown={e=>{if(e.key==="Enter"&&cin.trim()){setShowS(false);}}}
                     onFocus={()=>cin.length>=2&&setShowS(true)}
                   />
-                </div>
-                <button className="sbtn" onClick={()=>{if(cin.trim()){setShowS(false);setStep(2);}else toast.show("Please enter a city!")}}>
-                  Explore →
-                </button>
-              </div>
-              {showS&&sugg.length>0&&(
-                <div className="ssugg">
-                  {sugg.map(s=>(
-                    <div key={s.city} className="sitem" onClick={()=>selCity(s.city)}>
-                      <span>{s.flag}</span><div><div>{s.city}</div><div className="ssub">{s.country}</div></div>
+                  {showS&&sugg.length>0&&(
+                    <div className="ssugg" style={{top:"calc(100% + 6px)"}}>
+                      {sugg.map(s=>(
+                        <div key={s.city} className="sitem" onClick={()=>selCity(s.city)}>
+                          <span>{s.flag}</span><div><div>{s.city}</div><div className="ssub">{s.country}</div></div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
+              </div>
+              {/* Origin */}
+              <div>
+                <div className="hero-input-label">🛫 Flying from?</div>
+                <div className="hero-ibox" ref={originRef} style={{position:"relative"}}>
+                  <input style={{padding:"14px 14px",flex:1,border:"none",fontFamily:"'DM Sans',sans-serif",fontSize:"0.88rem",background:"transparent",color:"var(--ink)",outline:"none"}}
+                    placeholder="Your home city (for flight estimates)…"
+                    value={originIn}
+                    onChange={e=>{setOriginIn(e.target.value);setOriginCity(e.target.value);}}
+                    onFocus={()=>originIn.length>=2&&setShowOriginS(true)}
+                  />
+                  {showOriginS&&originSugg.length>0&&(
+                    <div className="ssugg" style={{top:"calc(100% + 6px)"}}>
+                      {originSugg.map(s=>(
+                        <div key={s.city} className="sitem" onClick={()=>selOriginCity(s.city)}>
+                          <span>{s.flag}</span><div><div>{s.city}</div><div className="ssub">{s.country}</div></div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* Dates */}
+              <div className="hero-date-row">
+                <div className="hero-date-box">
+                  <label>Departure</label>
+                  <input type="date" value={departDate} onChange={e=>setDepartDate(e.target.value)} min={new Date().toISOString().split("T")[0]}/>
+                </div>
+                <div className="hero-date-box">
+                  <label>Return</label>
+                  <input type="date" value={returnDate} onChange={e=>setReturnDate(e.target.value)} min={departDate||new Date().toISOString().split("T")[0]}/>
+                </div>
+              </div>
+              {/* Explore button */}
+              <button className="sbtn" style={{borderRadius:14,padding:"14px",width:"100%",fontSize:"0.95rem"}}
+                onClick={()=>{if(cin.trim()){setShowS(false);setStep(2);}else toast.show("Please enter a destination!")}}>
+                Plan My Trip →
+              </button>
             </div>
             <div className="chips">
-              {["🗽 New York City","🗼 Paris","🏯 Kyoto","🎸 Nashville","🏛️ Rome","🌊 Bali"].map(c=>(
+              {["🗽 New York","🗼 Paris","🏯 Kyoto","🎸 Nashville","🏛️ Rome","🌊 Bali"].map(c=>(
                 <div key={c} className="chip" onClick={()=>{const v=c.split(" ").slice(1).join(" ");setCin(v);setCity(v);setShowS(false);}}>{c}</div>
               ))}
             </div>
@@ -1419,13 +1567,117 @@ export default function App(){
         </div>
       )}
 
-      {/* STEP 2 */}
+      {/* STEP 2 — BUDGET & TRANSPORT */}
       {step===2&&(
         <div className="page">
           <div className="sh">
-            <div className="sey">Step 2 of 4</div>
+            <div className="sey">Step 2 of 5</div>
+            <h2 className="st">Plan your <span>budget</span></h2>
+            <p className="ss">Set your total trip budget and choose how you'll get around. We'll show you what's realistic.</p>
+          </div>
+
+          <div className="sec-label">Total Trip Budget (per person)</div>
+          <div className="total-budget-wrap">
+            <input className="total-budget-input" type="number" min={0} placeholder="e.g. 2000"
+              value={totalBudget}
+              onChange={e=>{
+                setTotalBudget(e.target.value);
+                setBudgetBreakdown(null);
+              }}
+              onBlur={e=>{
+                if(e.target.value&&Number(e.target.value)>0){
+                  fetchBudgetBreakdown(Number(e.target.value),city,originCity,numDays,transport);
+                }
+              }}
+              onKeyDown={e=>{
+                if(e.key==="Enter"&&totalBudget&&Number(totalBudget)>0){
+                  fetchBudgetBreakdown(Number(totalBudget),city,originCity,numDays,transport);
+                }
+              }}
+            />
+          </div>
+          <div style={{fontSize:"0.75rem",color:"var(--muted2)",marginBottom:20}}>
+            {departDate&&returnDate?`${numDays} night${numDays!==1?"s":""} · ${new Date(departDate).toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${new Date(returnDate).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`:"Enter your travel dates on the previous screen for more accurate estimates"}
+          </div>
+
+          {/* Budget breakdown */}
+          {budgetLoading&&(
+            <div className="bbd">
+              <div className="bbd-loading">
+                <div className="bbd-spinner"/>
+                ✦ AI is estimating your trip costs…
+              </div>
+            </div>
+          )}
+          {budgetBreakdown&&!budgetLoading&&(()=>{
+            const bd=budgetBreakdown;
+            const items=[
+              {key:"flight",label:"✈️ Flights",color:"#1b5e8a"},
+              {key:"hotel",label:"🏨 Hotel",color:"#2474ad"},
+              {key:"food",label:"🍽️ Food & Dining",color:"#4a7c59"},
+              {key:"activities",label:"🎭 Activities",color:"#c8820a"},
+              {key:"transport",label:"🚌 Local Transport",color:"#7c5cbf"},
+              {key:"misc",label:"🎒 Misc",color:"#9b8c80"},
+            ];
+            const total=items.reduce((s,it)=>s+(bd[it.key]||0),0);
+            const budget_total=Number(totalBudget);
+            const over=total>budget_total;
+            return(
+              <div className="bbd">
+                <div className="bbd-title">
+                  💰 Estimated Cost Breakdown
+                  <span>{over?"⚠️ Over budget":"✓ Within budget"}</span>
+                </div>
+                <div className="bbd-bar">
+                  {items.map(it=>(
+                    <div key={it.key} className="bbd-seg" style={{
+                      width:`${Math.round(((bd[it.key]||0)/Math.max(total,1))*100)}%`,
+                      background:it.color,minWidth:bd[it.key]>0?4:0
+                    }}/>
+                  ))}
+                </div>
+                <div className="bbd-rows">
+                  {items.map(it=>(
+                    <div key={it.key} className="bbd-row">
+                      <div className="bbd-dot" style={{background:it.color}}/>
+                      <div className="bbd-lbl">{it.label}</div>
+                      <div className="bbd-amt">${bd[it.key]||0}</div>
+                      <div className="bbd-pct">{Math.round(((bd[it.key]||0)/Math.max(total,1))*100)}%</div>
+                    </div>
+                  ))}
+                  <div className="bbd-row" style={{borderTop:"1.5px solid var(--border2)",paddingTop:8,marginTop:4}}>
+                    <div className="bbd-dot" style={{background:"transparent"}}/>
+                    <div className="bbd-lbl" style={{fontWeight:700,color:"var(--ink)"}}>Total Estimate</div>
+                    <div className="bbd-amt" style={{color:over?"#c45c26":"var(--ocean)"}}>${total}</div>
+                    <div className="bbd-pct" style={{color:over?"#c45c26":"var(--sage)"}}>of ${budget_total}</div>
+                  </div>
+                </div>
+                {bd.warning&&<div className="bbd-warn">⚠️ {bd.warning}</div>}
+                {bd.tip&&<div className="bbd-tip">💡 {bd.tip}</div>}
+              </div>
+            );
+          })()}
+
+          <div className="sec-label" style={{marginTop:8}}>Getting Around — affects your budget</div>
+          <div className="transport-grid">
+            {TRANSPORT.map(t=>(
+              <div key={t.id} className={`tc ${transport===t.id?"sel":""}`} onClick={()=>{setTransport(t.id);if(totalBudget&&Number(totalBudget)>0)fetchBudgetBreakdown(Number(totalBudget),city,originCity,numDays,t.id);}}>
+                <div className="tc-icon">{t.icon}</div><div className="tc-name">{t.name}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="brow"><button className="gobt" onClick={()=>setStep(3)}>Set Preferences →</button></div>
+        </div>
+      )}
+
+      {/* STEP 3 — PREFERENCES */}
+      {step===3&&(
+        <div className="page">
+          <div className="sh">
+            <div className="sey">Step 3 of 5</div>
             <h2 className="st">Customize your trip to <span>{city}</span></h2>
-            <p className="ss">Tell us what you love, how you're getting around, and how long you're staying.</p>
+            <p className="ss">Tell us what you love, how long you're staying, and when you start each day.</p>
           </div>
           <div className="pg">
             {PREFS.map(p=>(
@@ -1444,7 +1696,7 @@ export default function App(){
           <div className="days-row">
             <div className="days-text">
               <div className="days-title">Trip Length</div>
-              <div className="days-subtitle">We'll create a separate day-by-day plan. Drag places between days in the next step.</div>
+              <div className="days-subtitle">{departDate&&returnDate?`Auto-calculated from your dates (${numDays} day${numDays!==1?"s":""}). You can adjust manually.`:"We'll create a separate day-by-day plan."}</div>
             </div>
             <div className="days-ctrl">
               <button className="daybtn" onClick={()=>setNumDays(d=>Math.max(1,d-1))}>−</button>
@@ -1454,15 +1706,6 @@ export default function App(){
             </div>
           </div>
 
-          <div className="sec-label">Getting Around</div>
-          <div className="transport-grid">
-            {TRANSPORT.map(t=>(
-              <div key={t.id} className={`tc ${transport===t.id?"sel":""}`} onClick={()=>setTransport(t.id)}>
-                <div className="tc-icon">{t.icon}</div><div className="tc-name">{t.name}</div>
-              </div>
-            ))}
-          </div>
-
           <div className="sec-label">Daily Schedule</div>
           <div className="time-row">
             <div className="tg"><label>Start Time</label><input type="time" className="tinput" value={startTime} onChange={e=>setStartTime(e.target.value)}/></div>
@@ -1470,7 +1713,7 @@ export default function App(){
             <div style={{display:"flex",alignItems:"flex-end",paddingBottom:4,color:"var(--muted2)",fontSize:"0.81rem"}}>Applied to each day of your trip</div>
           </div>
 
-          <div className="sec-label">Budget (per person per day)</div>
+          <div className="sec-label">Spending Style (per person per day)</div>
           <div className="bg">
             {BUDGETS.map(b=>(
               <div key={b.id} className={`bc ${budget===b.id?"sel":""}`} onClick={()=>setBudget(budget===b.id?null:b.id)}>
@@ -1487,10 +1730,10 @@ export default function App(){
       )}
 
       {/* STEP 3 */}
-      {step===3&&(
+      {step===4&&(
         <div className="page">
           <div className="sh">
-            <div className="sey">Step 3 of 4</div>
+            <div className="sey">Step 4 of 5</div>
             <h2 className="st">Best spots in <span>{city}</span></h2>
             <p className="ss">Click a card to preview it. Hit Add to pin it. Drag pins between day tabs in the sidebar to move them.</p>
           </div>
@@ -1611,7 +1854,7 @@ export default function App(){
       )}
 
       {/* STEP 4 */}
-      {step===4&&(
+      {step===5&&(
         <div className="page">
           <div className="ih">
             <div>
