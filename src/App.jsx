@@ -581,9 +581,18 @@ function saveHist(name,h){const u=loadU();if(!u[name])u[name]={created:new Date(
 function getCreated(name){return loadU()[name]?.created||"";}
 
 // ─── PDF EXPORT ───────────────────────────────────────────────
-function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime){
+async function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime){
+  // Load jsPDF dynamically if not already available
+  if(!window.jspdf){
+    await new Promise((resolve,reject)=>{
+      const s=document.createElement("script");
+      s.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+      s.onload=resolve; s.onerror=reject;
+      document.head.appendChild(s);
+    });
+  }
   const{jsPDF}=window.jspdf||{};
-  if(!jsPDF){alert("jsPDF not loaded.");return;}
+  if(!jsPDF){alert("Could not load PDF library. Please check your internet connection.");return;}
 
   const doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
   const W=doc.internal.pageSize.getWidth();
@@ -1610,7 +1619,7 @@ export default function App(){
             </div>
             <div className="iac np">
               <button className="obt" onClick={()=>setStep(3)}>← Edit Places</button>
-              <button className="dbt" onClick={()=>exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime)}>⬇ Export PDF</button>
+              <button className="dbt" onClick={()=>{exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime);}}>⬇ Export PDF</button>
             </div>
           </div>
 
