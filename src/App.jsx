@@ -253,7 +253,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .gobt:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
 /* ── RESULTS ── */
-.rl { display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start; }
+.rl { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
 @media(max-width:960px) { .rl { grid-template-columns: 1fr; } }
 .map-wrap { margin-bottom: 18px; }
 .mapbox { width: 100%; height: 300px; border-radius: var(--r); overflow: hidden; border: 2px solid var(--border2); box-shadow: var(--shm); background: var(--sand2); }
@@ -2167,106 +2167,8 @@ export default function App(){
               </div>
             </div>
           </div>
-          {/* ── FULL WIDTH PANEL: budget + transport + weather ── */}
-          <div style={{display:"flex",gap:16,marginBottom:18,flexWrap:"wrap",alignItems:"stretch"}}>
 
-            {/* Budget donut */}
-            {Number(totalBudget)>0&&(()=>{
-              const bNum=Number(totalBudget)||0;
-              const flt=(flightCost?.cost||0)*(travelers||1);
-              const hot=hotelCost?.total||0;
-              const act=allAdded.reduce((s,p)=>{try{const ip=getInstantPrice(p);return s+(ip?.cost||0);}catch{return s;}},0)*(travelers||1);
-              const tCostObjP=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
-              const milesPnl=(()=>{
-                if(Object.values(travelMap||{}).some(t=>t?.distanceMiles)) return Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0);
-                let mi=0;for(const day of dayPlans){for(let i=0;i<day.length-1;i++){const pa=day[i],pb=day[i+1];if(pa.lat&&pb.lat)mi+=haversineMiles(pa.lat,pa.lng,pb.lat,pb.lng);else mi+=1;}}return mi;
-              })();
-              const trans=tCostObjP.perMile*(tCostObjP.multiply?(travelers||1):1)*(milesPnl*ROAD_FACTOR);
-              const spent=flt+hot+act+trans;
-              const rem=Math.max(0,bNum-spent);
-              const over=spent>bNum;
-              const fp=bNum>0?Math.round(flt/bNum*100):0;
-              const hp=bNum>0?Math.round(hot/bNum*100):0;
-              const ap=bNum>0?Math.round(act/bNum*100):0;
-              const tp=bNum>0?Math.round(trans/bNum*100):0;
-              const grad=`conic-gradient(#1b5e8a 0% ${fp}%, #4a9fd4 ${fp}% ${fp+hp}%, #4a7c59 ${fp+hp}% ${fp+hp+ap}%, #7c5cbf ${fp+hp+ap}% ${fp+hp+ap+tp}%, ${over?"#e07060":"#c8e6d4"} ${fp+hp+ap+tp}% 100%)`;
-              return(
-                <div style={{background:"white",borderRadius:16,border:"1px solid var(--border)",padding:"16px 20px",display:"flex",gap:20,alignItems:"center",flexShrink:0}}>
-                  <div style={{position:"relative",width:110,height:110,flexShrink:0}}>
-                    <div style={{width:110,height:110,borderRadius:"50%",background:grad,transition:"background 0.4s"}}/>
-                    <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:68,height:68,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.08)"}}>
-                      <div style={{fontSize:"0.5rem",color:"var(--muted2)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{over?"Over":"Left"}</div>
-                      <div style={{fontSize:rem>9999?"0.85rem":"1.05rem",fontWeight:700,color:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1}}>${rem.toLocaleString()}</div>
-                      <div style={{fontSize:"0.48rem",color:"var(--muted2)"}}>of ${bNum.toLocaleString()}</div>
-                    </div>
-                  </div>
-                  <div style={{fontSize:"0.72rem",display:"flex",flexDirection:"column",gap:5,minWidth:140}}>
-                    {[
-                      {label:"✈️ Flights",color:"#1b5e8a",val:flt},
-                      {label:"🏨 Hotel",color:"#4a9fd4",val:hot},
-                      {label:"🎭 Activities",color:"#4a7c59",val:act},
-                      {label:"🚌 Transport",color:"#7c5cbf",val:trans},
-                    ].map(sg=>(
-                      <div key={sg.label} style={{display:"flex",alignItems:"center",gap:6}}>
-                        <div style={{width:7,height:7,borderRadius:"50%",background:sg.color,flexShrink:0}}/>
-                        <span style={{color:"var(--muted2)",flex:1}}>{sg.label}</span>
-                        <span style={{fontWeight:600}}>{sg.val>0?`$${Math.round(sg.val).toLocaleString()}`:"—"}</span>
-                      </div>
-                    ))}
-                    {over&&<div style={{fontSize:"0.65rem",color:"#c45c26",fontWeight:600}}>⚠️ Over budget</div>}
-                    {(travelers||1)>1&&<div style={{fontSize:"0.62rem",color:"var(--ocean)",fontWeight:600}}>👥 {travelers} travelers</div>}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Transport selector */}
-            <div style={{background:"white",borderRadius:16,border:"1px solid var(--border)",padding:"16px 20px",display:"flex",flexDirection:"column",gap:10,justifyContent:"center"}}>
-              <div style={{fontSize:"0.68rem",fontWeight:700,color:"var(--ink)",letterSpacing:"0.5px"}}>🚌 Getting Around</div>
-              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                {TRANSPORT.map(t=>(
-                  <div key={t.id}
-                    style={{padding:"6px 12px",borderRadius:20,border:"1.5px solid",fontSize:"0.76rem",cursor:"pointer",transition:"all 0.18s",
-                      borderColor:transport===t.id?"var(--ocean)":"var(--border2)",
-                      background:transport===t.id?"var(--ocean)":"white",
-                      color:transport===t.id?"white":"var(--muted)"}}
-                    onClick={()=>setTransport(t.id)}>
-                    {t.icon} {t.name}
-                  </div>
-                ))}
-              </div>
-              {transport&&transport!=="walking"&&(
-                <div style={{fontSize:"0.65rem",color:"var(--muted2)"}}>
-                  {TRANSPORT_COSTS[transport]?.note} · {TRANSPORT_COSTS[transport]?.multiply?"multiplied by travelers":"shared cost"}
-                </div>
-              )}
-            </div>
-
-            {/* Weather */}
-            {(weatherLoading||(weather&&weather.length>0))&&(
-              <div style={{background:"white",borderRadius:16,border:"1px solid var(--border)",padding:"16px 20px",flex:1,minWidth:220}}>
-                <div style={{fontSize:"0.68rem",fontWeight:700,color:"var(--ink)",marginBottom:10,letterSpacing:"0.5px"}}>🌤 Weather Forecast</div>
-                {weatherLoading&&<div style={{fontSize:"0.72rem",color:"var(--muted2)",display:"flex",gap:6,alignItems:"center"}}><div className="bbd-spinner"/>Loading…</div>}
-                {weather&&weather.length>0&&(
-                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                    {weather.slice(0,numDays).map((day,i)=>{
-                      const icon=day.main==="Rain"||day.main==="Drizzle"?"🌧":day.main==="Snow"?"❄️":day.main==="Thunderstorm"?"⛈":day.main==="Clear"?"☀️":day.main==="Clouds"?"⛅":"🌤";
-                      return(
-                        <div key={i} style={{textAlign:"center",minWidth:48}}>
-                          <div style={{fontSize:"0.6rem",color:"var(--muted2)",fontWeight:600,marginBottom:2}}>Day {i+1}</div>
-                          <div style={{fontSize:"1.2rem"}}>{icon}</div>
-                          <div style={{fontSize:"0.78rem",fontWeight:700,color:"var(--ink)"}}>{day.temp}°</div>
-                          <div style={{fontSize:"0.55rem",color:"var(--muted2)",lineHeight:1.2,maxWidth:52}}>{day.description}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="rl">
+          <div className="rl">          <div className="rl">
             <div>
               <div className="map-wrap">
                 <div className="mapbox">
@@ -2332,11 +2234,100 @@ export default function App(){
               {places.length<=visibleCount&&allPlaces.length>=8&&<button className="show-more" onClick={showMore} disabled={!nextToken.current}>{nextToken.current?"+ Load More from Google":"✓ All places loaded"}</button>}
             </div>
 
-            {/* SIDEBAR — day builder only */}
+            {/* SIDEBAR */}
             <div className="sb">
-              <div className="sbt">Day Builder</div>
-              <div className="sbs">{allAdded.length} place{allAdded.length!==1?"s":""} pinned</div>
+              <div className="sbt">Your Itinerary</div>
+              <div className="sbs">{allAdded.length} place{allAdded.length!==1?"s":""} across {numDays} day{numDays!==1?"s":""}</div>
               <div className="sb-scroll">
+
+                {/* ── BUDGET DONUT (sticky in sidebar) ── */}
+                {Number(totalBudget)>0&&(()=>{
+                  const bNum=Number(totalBudget)||0;
+                  const flt=(flightCost?.cost||0)*(travelers||1);
+                  const hot=hotelCost?.total||0;
+                  const act=allAdded.reduce((s,p)=>{try{const ip=getInstantPrice(p);return s+(ip?.cost||0);}catch{return s;}},0)*(travelers||1);
+                  const tCostObjP=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
+                  const milesPnl=(()=>{
+                    if(Object.values(travelMap||{}).some(t=>t?.distanceMiles)) return Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0);
+                    let mi=0;for(const day of dayPlans){for(let i=0;i<day.length-1;i++){const pa=day[i],pb=day[i+1];if(pa.lat&&pb.lat)mi+=haversineMiles(pa.lat,pa.lng,pb.lat,pb.lng);else mi+=1;}}return mi;
+                  })();
+                  const trans=tCostObjP.perMile*(tCostObjP.multiply?(travelers||1):1)*(milesPnl*ROAD_FACTOR);
+                  const spent=flt+hot+act+trans;
+                  const rem=Math.max(0,bNum-spent);
+                  const over=spent>bNum;
+                  const fp=bNum>0?Math.round(flt/bNum*100):0;
+                  const hp=bNum>0?Math.round(hot/bNum*100):0;
+                  const ap=bNum>0?Math.round(act/bNum*100):0;
+                  const tp=bNum>0?Math.round(trans/bNum*100):0;
+                  const grad=`conic-gradient(#1b5e8a 0% ${fp}%, #4a9fd4 ${fp}% ${fp+hp}%, #4a7c59 ${fp+hp}% ${fp+hp+ap}%, #7c5cbf ${fp+hp+ap}% ${fp+hp+ap+tp}%, ${over?"#e07060":"#c8e6d4"} ${fp+hp+ap+tp}% 100%)`;
+                  return(
+                    <div style={{padding:"14px 0 16px",borderBottom:"1px solid var(--border)",marginBottom:14}}>
+                      <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:10}}>
+                        <div style={{position:"relative",width:100,height:100,flexShrink:0}}>
+                          <div style={{width:100,height:100,borderRadius:"50%",background:grad,transition:"background 0.4s"}}/>
+                          <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:62,height:62,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 6px rgba(0,0,0,0.08)"}}>
+                            <div style={{fontSize:"0.48rem",color:"var(--muted2)",fontWeight:600,textTransform:"uppercase",letterSpacing:"0.5px"}}>{over?"Over":"Left"}</div>
+                            <div style={{fontSize:rem>9999?"0.82rem":"1rem",fontWeight:700,color:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1}}>${rem.toLocaleString()}</div>
+                            <div style={{fontSize:"0.45rem",color:"var(--muted2)"}}>of ${bNum.toLocaleString()}</div>
+                          </div>
+                        </div>
+                        <div style={{flex:1,fontSize:"0.75rem",display:"flex",flexDirection:"column",gap:5}}>
+                          {[
+                            {label:"✈️ Flights",color:"#1b5e8a",val:flt},
+                            {label:"🏨 Hotel",color:"#4a9fd4",val:hot},
+                            {label:"🎭 Activities",color:"#4a7c59",val:act},
+                            {label:"🚌 Transport",color:"#7c5cbf",val:trans},
+                          ].map(sg=>(
+                            <div key={sg.label} style={{display:"flex",alignItems:"center",gap:5}}>
+                              <div style={{width:7,height:7,borderRadius:"50%",background:sg.color,flexShrink:0}}/>
+                              <span style={{color:"var(--muted2)",flex:1,fontSize:"0.72rem"}}>{sg.label}</span>
+                              <span style={{fontWeight:700,fontSize:"0.78rem"}}>{sg.val>0?`$${Math.round(sg.val).toLocaleString()}`:"—"}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {over&&<div style={{fontSize:"0.7rem",color:"#c45c26",fontWeight:600,padding:"6px 10px",background:"rgba(196,92,38,0.07)",borderRadius:8}}>⚠️ Over budget by ${Math.round(spent-bNum).toLocaleString()}</div>}
+                      {(travelers||1)>1&&!over&&<div style={{fontSize:"0.68rem",color:"var(--ocean)",fontWeight:600}}>👥 {travelers} travelers included</div>}
+                    </div>
+                  );
+                })()}
+
+                {/* ── WEATHER + TRANSPORT MERGED CARD ── */}
+                <div style={{padding:"12px 0 14px",borderBottom:"1px solid var(--border)",marginBottom:14}}>
+                  {/* Transport */}
+                  <div style={{fontSize:"0.72rem",fontWeight:700,color:"var(--ink)",marginBottom:8}}>🚌 Getting Around</div>
+                  <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:weather&&weather.length>0?12:0}}>
+                    {TRANSPORT.map(t=>(
+                      <div key={t.id}
+                        style={{padding:"5px 10px",borderRadius:20,border:"1.5px solid",fontSize:"0.73rem",cursor:"pointer",transition:"all 0.18s",
+                          borderColor:transport===t.id?"var(--ocean)":"var(--border2)",
+                          background:transport===t.id?"var(--ocean)":"white",
+                          color:transport===t.id?"white":"var(--muted)"}}
+                        onClick={()=>setTransport(t.id)}>
+                        {t.icon} {t.name}
+                      </div>
+                    ))}
+                  </div>
+                  {/* Weather */}
+                  {weatherLoading&&<div style={{fontSize:"0.7rem",color:"var(--muted2)",display:"flex",gap:6,alignItems:"center",marginTop:8}}><div className="bbd-spinner"/>Loading forecast…</div>}
+                  {weather&&weather.length>0&&(
+                    <>
+                      <div style={{fontSize:"0.72rem",fontWeight:700,color:"var(--ink)",marginBottom:8}}>🌤 Forecast</div>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(44px,1fr))",gap:5}}>
+                        {weather.slice(0,numDays).map((day,i)=>{
+                          const icon=day.main==="Rain"||day.main==="Drizzle"?"🌧":day.main==="Snow"?"❄️":day.main==="Thunderstorm"?"⛈":day.main==="Clear"?"☀️":day.main==="Clouds"?"⛅":"🌤";
+                          return(
+                            <div key={i} style={{textAlign:"center",padding:"6px 4px",borderRadius:8,background:"var(--sand)"}}>
+                              <div style={{fontSize:"0.58rem",color:"var(--muted2)",fontWeight:600,marginBottom:1}}>D{i+1}</div>
+                              <div style={{fontSize:"1rem"}}>{icon}</div>
+                              <div style={{fontSize:"0.72rem",fontWeight:700,color:"var(--ink)"}}>{day.temp}°</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
               <div className="day-drop-zone" onDragOver={onDragOver} onDrop={e=>onDropOnDay(e,activeSideDay)}>
                 {(dayPlans[activeSideDay]||[]).length===0
                   ?<div className="em">No places yet — add some!</div>
@@ -2397,11 +2388,15 @@ export default function App(){
               {/* AI description */}
               <div style={{marginBottom:16,minHeight:60}}>
                 <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
-                  <span style={{fontSize:"0.65rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--ocean)",fontWeight:600}}>✦ Claude AI</span>
+                  <span style={{fontSize:"0.65rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--ocean)",fontWeight:600}}>✦ Claude AI Description</span>
                 </div>
                 {modalLoading
-                  ?<div style={{display:"flex",gap:8,alignItems:"center",color:"var(--muted2)",fontSize:"0.82rem"}}><div className="bbd-spinner"/>Writing description…</div>
-                  :<p style={{fontSize:"0.88rem",lineHeight:1.65,color:"var(--ink)",margin:0}}>{modalAiDesc||placeModal.desc}</p>
+                  ?<div style={{display:"flex",gap:8,alignItems:"center",color:"var(--muted2)",fontSize:"0.82rem"}}><div className="bbd-spinner"/>Claude is writing a description…</div>
+                  :modalAiDesc
+                    ?<p style={{fontSize:"0.9rem",lineHeight:1.7,color:"var(--ink)",margin:0}}>{modalAiDesc}</p>
+                    :placeModal.desc
+                      ?<p style={{fontSize:"0.9rem",lineHeight:1.7,color:"var(--muted)",margin:0,fontStyle:"italic"}}>{placeModal.desc}</p>
+                      :<p style={{fontSize:"0.9rem",color:"var(--muted2)",margin:0}}>No description available.</p>
                 }
               </div>
               {/* Stats row */}
@@ -2514,16 +2509,20 @@ export default function App(){
                     {aiUsed&&<div style={{marginTop:8,fontSize:"0.72rem",color:"rgba(255,255,255,0.5)",fontStyle:"italic"}}>Descriptions & costs researched by Claude AI</div>}
                   </div>
                   {/* Cost pill */}
-                  <div style={{position:"relative",zIndex:1,textAlign:"right"}}>
-                    <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"rgba(255,255,255,0.5)",marginBottom:4}}>
-                      {bNum>0?"Budget remaining":"Est. total"}
+                  <div style={{position:"relative",zIndex:1,textAlign:"right",background:"rgba(0,0,0,0.2)",borderRadius:14,padding:"14px 18px"}}>
+                    <div style={{fontSize:"0.65rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"rgba(255,255,255,0.7)",marginBottom:6,fontWeight:600}}>
+                      {bNum>0?"Budget Remaining":"Estimated Total"}
                     </div>
-                    <div style={{fontFamily:"Cormorant Garamond,serif",fontSize:"2.8rem",fontWeight:700,lineHeight:1,color:over?"#ff8a70":"white"}}>
+                    <div style={{fontFamily:"Cormorant Garamond,serif",fontSize:"2.6rem",fontWeight:700,lineHeight:1,color:over?"#ffaa88":"#ffffff",textShadow:"0 2px 8px rgba(0,0,0,0.3)"}}>
                       ${bNum>0?remaining.toLocaleString():grandTotal.toLocaleString()}
                     </div>
-                    {bNum>0&&<div style={{fontSize:"0.72rem",color:"rgba(255,255,255,0.5)"}}>of ${bNum.toLocaleString()} budget</div>}
-                    {travelers>1&&grandTotal>0&&<div style={{fontSize:"0.72rem",color:"rgba(255,255,255,0.6)",marginTop:2}}>${Math.round(grandTotal/travelers).toLocaleString()} per person</div>}
-                    {over&&<div style={{fontSize:"0.72rem",color:"#ff8a70",fontWeight:600,marginTop:4}}>⚠️ Over by ${(grandTotal-bNum).toLocaleString()}</div>}
+                    {bNum>0&&<div style={{fontSize:"0.78rem",color:"rgba(255,255,255,0.65)",marginTop:4}}>of ${bNum.toLocaleString()} total budget</div>}
+                    {travelers>1&&grandTotal>0&&(
+                      <div style={{fontSize:"0.78rem",color:"rgba(255,255,255,0.65)",marginTop:2,padding:"4px 8px",background:"rgba(255,255,255,0.1)",borderRadius:8,display:"inline-block",marginTop:6}}>
+                        ${Math.round(grandTotal/travelers).toLocaleString()} per person
+                      </div>
+                    )}
+                    {over&&<div style={{fontSize:"0.75rem",color:"#ffaa88",fontWeight:700,marginTop:6}}>⚠️ Over by ${(grandTotal-bNum).toLocaleString()}</div>}
                   </div>
                 </div>
 
@@ -2578,24 +2577,62 @@ export default function App(){
                       ))}
                     </div>
 
-                    {/* Day cost breakdown */}
-                    {numDays>1&&(
-                      <div style={{background:"white",borderRadius:14,border:"1px solid var(--border)",padding:"14px 16px"}}>
-                        <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginBottom:10}}>Cost by Day</div>
-                        <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                          {dayCosts.map((cost,di)=>(
-                            <div key={di} style={{flex:1,minWidth:72,textAlign:"center",padding:"12px 8px",borderRadius:12,background:"var(--sand)",boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
-                              <div style={{fontSize:"0.65rem",color:"var(--muted2)",marginBottom:4,fontWeight:600,letterSpacing:"0.5px"}}>Day {di+1}</div>
-                              <div style={{fontSize:"1.05rem",fontWeight:700,color:"var(--ink)",fontFamily:"Cormorant Garamond,serif"}}>{cost===0?"Free":`$${cost}`}</div>
-                              {weather&&weather[di]&&(
-                                <div style={{fontSize:"1rem",marginTop:4}}>
-                                  {weather[di].main==="Rain"||weather[di].main==="Drizzle"?"🌧":weather[di].main==="Clear"?"☀️":weather[di].main==="Snow"?"❄️":weather[di].main==="Thunderstorm"?"⛈":"⛅"}
-                                  <div style={{fontSize:"0.62rem",color:"var(--muted2)",marginTop:1}}>{weather[di].temp}°F</div>
+                    {/* Day cost breakdown + bar chart */}
+                    {numDays>1&&(()=>{
+                      const maxCost=Math.max(...dayCosts,1);
+                      return(
+                        <div style={{background:"white",borderRadius:14,border:"1px solid var(--border)",padding:"16px"}}>
+                          <div style={{fontSize:"0.65rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginBottom:14}}>Daily Spending</div>
+                          <div style={{display:"flex",gap:6,alignItems:"flex-end",height:80,marginBottom:10}}>
+                            {dayCosts.map((cost,di)=>{
+                              const pct=maxCost>0?cost/maxCost:0;
+                              const weath=weather&&weather[di];
+                              const wIcon=weath?(weath.main==="Rain"||weath.main==="Drizzle"?"🌧":weath.main==="Clear"?"☀️":weath.main==="Snow"?"❄️":weath.main==="Thunderstorm"?"⛈":"⛅"):"";
+                              return(
+                                <div key={di} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                                  <div style={{fontSize:"0.65rem",fontWeight:700,color:"var(--ink)"}}>{cost===0?"Free":`$${cost}`}</div>
+                                  <div style={{width:"100%",height:Math.max(pct*56,4),background:cost===0?"#c8e6d4":cost===maxCost?"#c45c26":"var(--ocean)",borderRadius:"4px 4px 0 0",transition:"height 0.4s ease",minHeight:4}}/>
+                                  <div style={{fontSize:"0.58rem",color:"var(--muted2)"}}>D{di+1} {wIcon}</div>
                                 </div>
-                              )}
-                            </div>
-                          ))}
+                              );
+                            })}
+                          </div>
+                          {/* Spending trend note */}
+                          {dayCosts.some(c=>c>0)&&(()=>{
+                            const maxDay=dayCosts.indexOf(Math.max(...dayCosts))+1;
+                            const minNonZero=dayCosts.filter(c=>c>0);
+                            const avg=Math.round(minNonZero.reduce((s,v)=>s+v,0)/minNonZero.length);
+                            return <div style={{fontSize:"0.68rem",color:"var(--muted2)",borderTop:"1px solid var(--border)",paddingTop:8,marginTop:4}}>
+                              Day {maxDay} is your heaviest day · avg ${avg}/day across active days
+                            </div>;
+                          })()}
                         </div>
+                      );
+                    })()}
+
+                    {/* Spending breakdown horizontal bar */}
+                    {grandTotal>0&&(
+                      <div style={{background:"white",borderRadius:14,border:"1px solid var(--border)",padding:"16px"}}>
+                        <div style={{fontSize:"0.65rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginBottom:12}}>Where Your Money Goes</div>
+                        {[
+                          {label:"✈️ Flights",color:"#1b5e8a",val:flt},
+                          {label:"🏨 Hotel",color:"#4a9fd4",val:hot},
+                          {label:"🎭 Activities",color:"#4a7c59",val:actTotal},
+                          {label:"🚌 Transport",color:"#7c5cbf",val:transTotal},
+                        ].filter(s=>s.val>0).map(seg=>{
+                          const pct=Math.round(seg.val/grandTotal*100);
+                          return(
+                            <div key={seg.label} style={{marginBottom:10}}>
+                              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,fontSize:"0.73rem"}}>
+                                <span style={{color:"var(--muted2)"}}>{seg.label}</span>
+                                <span style={{fontWeight:700,color:"var(--ink)"}}>${seg.val.toLocaleString()} <span style={{color:"var(--muted2)",fontWeight:400}}>({pct}%)</span></span>
+                              </div>
+                              <div style={{height:8,borderRadius:4,background:"var(--sand)",overflow:"hidden"}}>
+                                <div style={{height:"100%",width:`${pct}%`,background:seg.color,borderRadius:4,transition:"width 0.5s ease"}}/>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
