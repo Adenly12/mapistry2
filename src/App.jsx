@@ -1049,12 +1049,13 @@ export default function App(){
   const[totalBudget,setTotalBudget]=useState("");
   const[budgetBreakdown,setBudgetBreakdown]=useState(null);
   const[budgetLoading,setBudgetLoading]=useState(false);
-  const[flightCost,setFlightCost]=useState(null);   // AI estimate
-  const[hotelCost,setHotelCost]=useState(null);     // AI estimate
+  const[flightCost,setFlightCost]=useState(null);   // real or estimated
+  const[hotelCost,setHotelCost]=useState(null);     // real or estimated
   const[flightOverride,setFlightOverride]=useState(""); // user override
   const[hotelOverride,setHotelOverride]=useState(""); // user override
   const[editingFlight,setEditingFlight]=useState(false);
   const[editingHotel,setEditingHotel]=useState(false);
+  const[costFetchError,setCostFetchError]=useState(null);
   const[prefs,setPrefs]=useState(new Set());
   const[cprefs,setCprefs]=useState([]);
   const[cpinput,setCpinput]=useState("");
@@ -1170,6 +1171,66 @@ export default function App(){
   },[departDate,returnDate]);
 
 
+
+  // Fetch real flight prices + hotel estimates
+  async function fetchRealCosts(){
+    if(!city||!departDate||!returnDate)return;
+    setBudgetLoading(true);
+    setCostFetchError(null);
+    try{
+      // Flights — real data from Serpapi Google Flights
+      const flightParams=new URLSearchParams({
+        origin:originCity||"",
+        destination:city,
+        depart_date:departDate,
+        return_date:returnDate,
+      });
+      // Hotels — smart estimate by city
+      const hotelParams=new URLSearchParams({
+        city,
+        nights:String(numDays),
+      });
+      const [flightRes, hotelRes] = await Promise.all([
+        fetch(`/api/flights?${flightParams}`),
+        fetch(`/api/hotels?${hotelParams}`),
+      ]);
+      const [fd, hd] = await Promise.all([flightRes.json(), hotelRes.json()]);
+
+      if(fd.price){
+        setFlightCost({
+          cost:fd.price,
+          note:fd.airline?`${fd.airline} · ${fd.stops===0?"Nonstop":`${fd.stops} stop${fd.stops>1?"s":""}`}·  Economy round-trip`:"Economy round-trip",
+          priceLevel:fd.price_level,
+          typicalRange:fd.typical_range,
+          real:true,
+        });
+      } else if(fd.error&&!originCity){
+        setFlightCost({cost:0,note:"No origin city — add one for flight prices",real:false});
+      } else {
+        setFlightCost({cost:0,note:fd.error||"No flights found for these dates",real:false});
+      }
+
+      if(hd.nightly){
+        setHotelCost({
+          cost:hd.nightly,
+          total:hd.total,
+          note:hd.note,
+          real:false, // estimate
+        });
+      }
+    }catch(e){
+      console.error("fetchRealCosts error",e);
+      setCostFetchError("Could not load estimates. Check your connection.");
+    }
+    setBudgetLoading(false);
+  }
+
+  // Auto-fetch when entering step 2
+  useEffect(()=>{
+    if(step===2&&city&&departDate&&returnDate&&!flightCost&&!budgetLoading){
+      fetchRealCosts();
+    }
+  },[step]);
 
   // ── ACCOUNTS ──────────────────────────────────────────────
   function createUser(){
@@ -1642,8 +1703,8 @@ export default function App(){
 
       {/* STEP 2 — BUDGET */}
       {step===2&&(()=>{
-        const effFlight=flightOverride!==""?Number(flightOverride):0;
-        const effHotel=(hotelOverride!==""?Number(hotelOverride):0)*numDays;
+        const effFlight=flightOverride!==""?Number(flightOverride):(flightCost?.cost||0);
+        const effHotel=hotelOverride!==""?(Number(hotelOverride)*numDays):(hotelCost?.total||0);
         const budgetNum=Number(totalBudget)||0;
         const remaining=Math.max(0,budgetNum-effFlight-effHotel);
         const totalSpend=effFlight+effHotel;
@@ -1688,29 +1749,53 @@ export default function App(){
               <div className="cost-card">
                 <div className="cost-card-icon">✈️</div>
                 <div className="cost-card-label">Round-Trip Flight</div>
-                <div className="cost-card-amount" style={{color:"#1b5e8a"}}>${flightOverride!==""?Number(flightOverride).toLocaleString():"—"}</div>
-                <div className="cost-card-note">{flightOverride!==""?"Your estimate":"Enter your flight cost below"}</div>
-                <div className="cost-card-edit">
-                  {editingFlight
-                    ?<><input className="cost-card-override" type="number" min={0} placeholder="Total flight cost"
-                        value={flightOverride} onChange={e=>setFlightOverride(e.target.value)}
-                        autoFocus onKeyDown={e=>e.key==="Enter"&&setEditingFlight(false)}/>
-                      <button className="cost-card-editbtn" onClick={()=>setEditingFlight(false)}>Done</button></>
-                    :<button className="cost-card-editbtn" onClick={()=>setEditingFlight(true)}>
-                        {flightOverride!==""?"✎ Edit price":"+ Add price"}
-                      </button>
-                  }
-                  {flightOverride!==""&&!editingFlight&&(
-                    <button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>setFlightOverride("")}>Clear</button>
-                  )}
-                </div>
+                {budgetLoading&&!flightCost
+                  ?<div className="bbd-loading" style={{padding:"8px 0"}}><div className="bbd-spinner"/>Searching Google Flights…</div>
+                  :<>
+                    <div className="cost-card-amount" style={{color:"#1b5e8a"}}>
+                      {flightOverride!==""?`$${Number(flightOverride).toLocaleString()}`:flightCost?.cost>0?`$${flightCost.cost.toLocaleString()}`:"—"}
+                    </div>
+                    <div className="cost-card-note">
+                      {flightOverride!==""?"Your override"
+                        :flightCost?.real?<span style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
+                          <span style={{background:"rgba(74,124,89,0.12)",color:"var(--sage)",borderRadius:10,padding:"1px 7px",fontSize:"0.65rem",fontWeight:700}}>LIVE</span>
+                          {flightCost.note}
+                        </span>
+                        :flightCost?.note||"Add origin city for live prices"}
+                    </div>
+                    {flightCost?.typicalRange&&!flightOverride&&(
+                      <div style={{fontSize:"0.68rem",color:"var(--muted2)",marginBottom:6}}>
+                        Typical: ${flightCost.typicalRange[0]}–${flightCost.typicalRange[1]}
+                        {flightCost.priceLevel&&<span style={{marginLeft:6,fontWeight:600,color:flightCost.priceLevel==="low"?"var(--sage)":flightCost.priceLevel==="high"?"#c45c26":"var(--muted)"}}>· {flightCost.priceLevel}</span>}
+                      </div>
+                    )}
+                    <div className="cost-card-edit">
+                      {editingFlight
+                        ?<><input className="cost-card-override" type="number" min={0} placeholder="Your flight cost"
+                            value={flightOverride} onChange={e=>setFlightOverride(e.target.value)}
+                            autoFocus onKeyDown={e=>e.key==="Enter"&&setEditingFlight(false)}/>
+                          <button className="cost-card-editbtn" onClick={()=>setEditingFlight(false)}>Done</button></>
+                        :<button className="cost-card-editbtn" onClick={()=>setEditingFlight(true)}>
+                            {flightOverride!==""?"✎ Edit":"✎ Override"}
+                          </button>
+                      }
+                      {flightOverride!==""&&!editingFlight&&<button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>setFlightOverride("")}>Reset</button>}
+                      {!flightOverride&&flightCost&&<button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>{setFlightCost(null);fetchRealCosts();}}>🔄</button>}
+                    </div>
+                  </>
+                }
               </div>
               {/* Hotel card */}
               <div className="cost-card">
                 <div className="cost-card-icon">🏨</div>
                 <div className="cost-card-label">Hotel · {numDays} night{numDays!==1?"s":""}</div>
-                <div className="cost-card-amount" style={{color:"#4a9fd4"}}>{hotelOverride!==""?`$${(Number(hotelOverride)*numDays).toLocaleString()}`:"—"}</div>
-                <div className="cost-card-note">{hotelOverride!==""?`$${hotelOverride}/night`:"Enter nightly rate below"}</div>
+                <div className="cost-card-amount" style={{color:"#4a9fd4"}}>
+                  {hotelOverride!==""?`$${(Number(hotelOverride)*numDays).toLocaleString()}`:hotelCost?.total>0?`$${hotelCost.total.toLocaleString()}`:"—"}
+                </div>
+                <div className="cost-card-note">
+                  {hotelOverride!==""?`$${hotelOverride}/night · your override`
+                    :hotelCost?.note||"Loading estimate…"}
+                </div>
                 <div className="cost-card-edit">
                   {editingHotel
                     ?<><input className="cost-card-override" type="number" min={0} placeholder="Price per night"
