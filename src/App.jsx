@@ -285,7 +285,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .show-more:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ── SIDEBAR ── */
-.sb { background: white; border: 2px solid var(--border2); border-radius: var(--r); padding: 20px 17px; position: sticky; top: 78px; box-shadow: var(--shm); }
+.sb { background: white; border: 2px solid var(--border2); border-radius: var(--r); padding: 20px 17px 0 17px; position: sticky; top: 78px; box-shadow: var(--shm); max-height: calc(100vh - 96px); display: flex; flex-direction: column; overflow: hidden; }
+.sb-scroll { flex: 1; overflow-y: auto; padding-bottom: 8px; }
+.sb-footer { padding: 12px 0 16px; border-top: 1px solid var(--border); background: white; flex-shrink: 0; }
 .sbt { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 2px; color: var(--ink); }
 .sbs { font-size: 0.72rem; color: var(--muted2); margin-bottom: 14px; }
 .day-tabs { display: flex; gap: 5px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -442,13 +444,16 @@ function haversineMiles(lat1,lng1,lat2,lng2){
 }
 
 // Transport cost per mile — multiply:true = scales with travelers
+// Road distances are ~1.4x straight-line, rates reflect real-world city costs
 const TRANSPORT_COSTS = {
   walking:  {perMile:0,    multiply:false, note:"Free"},
-  transit:  {perMile:0.30, multiply:true,  note:"Per person fare"},
-  driving:  {perMile:0.21, multiply:false, note:"IRS standard mileage rate"},
-  cycling:  {perMile:0.50, multiply:true,  note:"Bike share per mile"},
-  rideshare:{perMile:2.50, multiply:false, note:"Avg rideshare per mile"},
+  transit:  {perMile:0.65, multiply:true,  note:"Per person fare (incl. transfers)"},
+  driving:  {perMile:0.35, multiply:false, note:"Fuel + parking estimate"},
+  cycling:  {perMile:1.20, multiply:true,  note:"Bike share (time-based pricing)"},
+  rideshare:{perMile:3.00, multiply:false, note:"Avg rideshare incl. fees & tip"},
 };
+// Road distance multiplier — actual routes are longer than straight-line
+const ROAD_FACTOR = 1.4;
 
 const TRANSPORT = [
   {id:"walking",icon:"🚶",name:"Walking"},
@@ -1848,17 +1853,17 @@ export default function App(){
           if(Object.values(travelMap||{}).some(t=>t?.distanceMiles)){
             return Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0);
           }
-          const allPl=dayPlans.flat();
-          if(allPl.length<2) return 0;
           let mi=0;
-          for(let idx=0;idx<allPl.length-1;idx++){
-            const pa=allPl[idx], pb=allPl[idx+1];
-            if(pa.lat&&pa.lng&&pb.lat&&pb.lng) mi+=haversineMiles(pa.lat,pa.lng,pb.lat,pb.lng);
-            else mi+=1;
+          for(const day of dayPlans){
+            for(let idx=0;idx<day.length-1;idx++){
+              const pa=day[idx], pb=day[idx+1];
+              if(pa.lat&&pa.lng&&pb.lat&&pb.lng) mi+=haversineMiles(pa.lat,pa.lng,pb.lat,pb.lng);
+              else mi+=1;
+            }
           }
           return mi;
         })();
-        const effTransport=tCost.perMile*(tCost.multiply?travelers:1)*totalMiles;
+        const effTransport=tCost.perMile*(tCost.multiply?travelers:1)*(totalMiles*ROAD_FACTOR);
 
         const totalSpendWithAll=effFlightTotal+effHotel+effActivities+effTransport;
         const remainingWithAll=Math.max(0,budgetNum-totalSpendWithAll);
@@ -2081,66 +2086,103 @@ export default function App(){
       {/* STEP 3 — BROWSE & BUILD */}
       {step===3&&(
         <div className="page">
-          <div className="sh">
-            <div className="sey">Step 3 of 4</div>
-            <h2 className="st">Explore <span>{city}</span></h2>
+          <div className="sh" style={{marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+              <div>
+                <div className="sey">Step 3 of 4</div>
+                <h2 className="st">Explore <span>{city}</span></h2>
+              </div>
+              {/* AI badge */}
+              <div style={{display:"flex",gap:8,alignItems:"center",padding:"8px 14px",background:"linear-gradient(135deg,#0f3a56,#1b5e8a)",borderRadius:12,color:"white",flexShrink:0}}>
+                <span style={{fontSize:"1.1rem"}}>✦</span>
+                <div>
+                  <div style={{fontSize:"0.7rem",fontWeight:700,letterSpacing:"0.5px"}}>Powered by Claude AI</div>
+                  <div style={{fontSize:"0.58rem",color:"rgba(255,255,255,0.65)"}}>Descriptions, costs & recommendations</div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* ── WEATHER STRIP ── */}
           {/* ── FILTER BAR ── */}
-          <div style={{marginBottom:18}}>
-            {/* Interest chips */}
-            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10,alignItems:"center"}}>
-              <span style={{fontSize:"0.68rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginRight:4}}>Interests</span>
-              {PREFS.map(p=>(
-                <div key={p.val}
-                  className={`chip ${prefs.has(p.val)?"sel":""}`}
-                  style={{cursor:"pointer",background:prefs.has(p.val)?"var(--ocean)":"rgba(255,255,255,0.85)",color:prefs.has(p.val)?"white":"var(--ink2)",borderColor:prefs.has(p.val)?"var(--ocean)":"var(--border2)",transition:"all 0.18s"}}
-                  onClick={()=>{
-                    setPrefs(prev=>{const n=new Set(prev);n.has(p.val)?n.delete(p.val):n.add(p.val);return n;});
-                    clearTimeout(filterDebounce.current);
-                    filterDebounce.current=setTimeout(()=>refreshPlaces(),600);
-                  }}>
-                  {p.icon} {p.name}
+          <div style={{marginBottom:18,display:"flex",flexDirection:"column",gap:12}}>
+
+            {/* BUDGET — biggest emphasis, first */}
+            <div style={{padding:"16px 20px",background:"white",borderRadius:16,border:"2px solid var(--border2)",boxShadow:"0 2px 8px rgba(26,20,16,0.06)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+                <span style={{fontSize:"1.2rem"}}>💰</span>
+                <div>
+                  <div style={{fontSize:"0.82rem",fontWeight:700,color:"var(--ink)"}}>Budget Filter</div>
+                  <div style={{fontSize:"0.65rem",color:"var(--muted2)"}}>Places outside your budget range are hidden from results</div>
                 </div>
-              ))}
-              {/* Custom interest input */}
-              <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                <input className="cpi" style={{width:180,padding:"6px 14px",fontSize:"0.77rem"}}
-                  placeholder="+ Custom interest…"
-                  value={cpinput} onChange={e=>setCpinput(e.target.value)}
-                  onKeyDown={e=>e.key==="Enter"&&addCpref()}/>
-                {cpinput&&<button className="cap" style={{padding:"6px 14px",fontSize:"0.77rem"}} onClick={addCpref}>Add</button>}
+                {budget&&<button style={{marginLeft:"auto",fontSize:"0.68rem",color:"var(--ocean)",fontWeight:600,cursor:"pointer",background:"none",border:"none",textDecoration:"underline"}} onClick={()=>setBudget(null)}>Clear</button>}
               </div>
-            </div>
-            {cprefs.length>0&&(
-              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                {cprefs.map(t=>(
-                  <div key={t} className="ctag">{t}
-                    <button onClick={()=>setCprefs(c=>c.filter(x=>x!==t))}>✕</button>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+                {BUDGETS.map(b=>(
+                  <div key={b.id}
+                    style={{cursor:"pointer",padding:"12px 8px",borderRadius:12,border:`2px solid ${budget===b.id?b.color:"var(--border)"}`,
+                      background:budget===b.id?b.color+"1a":"white",transition:"all 0.18s",textAlign:"center"}}
+                    onClick={()=>{
+                      setBudget(budget===b.id?null:b.id);
+                      clearTimeout(filterDebounce.current);
+                      filterDebounce.current=setTimeout(()=>refreshPlaces(),600);
+                    }}>
+                    <div style={{fontSize:"1.1rem",marginBottom:4,fontWeight:700,color:budget===b.id?b.color:"var(--muted)"}}>{b.tier}</div>
+                    <div style={{fontSize:"0.7rem",fontWeight:700,color:budget===b.id?b.color:"var(--ink)",lineHeight:1.3}}>{b.label}</div>
+                    <div style={{fontSize:"0.58rem",color:"var(--muted2)",marginTop:3}}>{b.range}</div>
                   </div>
                 ))}
               </div>
-            )}
-            {/* Spending style + search button */}
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-              <span style={{fontSize:"0.68rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginRight:4}}>Budget</span>
-              {BUDGETS.map(b=>(
-                <div key={b.id}
-                  className="chip"
-                  style={{cursor:"pointer",background:budget===b.id?"var(--ocean)":"rgba(255,255,255,0.85)",color:budget===b.id?"white":"var(--ink2)",borderColor:budget===b.id?"var(--ocean)":"var(--border2)",transition:"all 0.18s",fontSize:"0.75rem"}}
-                  onClick={()=>{
-                    setBudget(budget===b.id?null:b.id);
-                    clearTimeout(filterDebounce.current);
-                    filterDebounce.current=setTimeout(()=>refreshPlaces(),600);
-                  }}>
-                  {b.tier} {b.label}
-                </div>
-              ))}
+            </div>
 
+            {/* INTERESTS */}
+            <div style={{padding:"14px 18px",background:"white",borderRadius:14,border:"1px solid var(--border2)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:10}}>
+                <span style={{fontSize:"0.82rem",fontWeight:700,color:"var(--ink)"}}>🎯 Interests</span>
+                <span style={{fontSize:"0.65rem",color:"var(--muted2)"}}>Filter places by what you love</span>
+              </div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
+                {PREFS.map(p=>(
+                  <div key={p.val}
+                    className={`chip ${prefs.has(p.val)?"sel":""}`}
+                    style={{cursor:"pointer",background:prefs.has(p.val)?"var(--ocean)":"rgba(255,255,255,0.85)",color:prefs.has(p.val)?"white":"var(--ink2)",borderColor:prefs.has(p.val)?"var(--ocean)":"var(--border2)",transition:"all 0.18s"}}
+                    onClick={()=>{
+                      setPrefs(prev=>{const n=new Set(prev);n.has(p.val)?n.delete(p.val):n.add(p.val);return n;});
+                      clearTimeout(filterDebounce.current);
+                      filterDebounce.current=setTimeout(()=>refreshPlaces(),600);
+                    }}>
+                    {p.icon} {p.name}
+                  </div>
+                ))}
+              </div>
+              {/* Custom interests — emphasized as AI feature */}
+              <div style={{padding:"12px 16px",background:"linear-gradient(135deg,rgba(27,94,138,0.05),rgba(74,159,212,0.05))",borderRadius:12,border:"1.5px dashed var(--ocean3)"}}>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+                  <span style={{fontSize:"0.9rem"}}>✦</span>
+                  <div>
+                    <div style={{fontSize:"0.75rem",fontWeight:700,color:"var(--ocean)"}}>Describe your own interests</div>
+                    <div style={{fontSize:"0.62rem",color:"var(--muted2)"}}>Claude will find places that match — be as specific as you want</div>
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                  <input className="cpi" style={{flex:1,padding:"8px 14px",fontSize:"0.78rem",border:"1.5px solid var(--border2)",borderRadius:8}}
+                    placeholder="e.g. jazz bars, rooftop views, vegan food, street art…"
+                    value={cpinput} onChange={e=>setCpinput(e.target.value)}
+                    onKeyDown={e=>e.key==="Enter"&&addCpref()}/>
+                  <button className="cap" style={{padding:"8px 18px",fontSize:"0.78rem",flexShrink:0}} onClick={addCpref}>+ Add</button>
+                </div>
+                {cprefs.length>0&&(
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:8}}>
+                    {cprefs.map(t=>(
+                      <div key={t} className="ctag">{t}
+                        <button onClick={()=>setCprefs(c=>c.filter(x=>x!==t))}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-
           <div className="rl">
             <div>
               <div className="map-wrap">
@@ -2208,6 +2250,7 @@ export default function App(){
             <div className="sb">
               <div className="sbt">Your Itinerary</div>
               <div className="sbs">{allAdded.length} place{allAdded.length!==1?"s":""} across {numDays} day{numDays!==1?"s":""}</div>
+              <div className="sb-scroll">
 
               {/* Mini budget donut */}
               {Number(totalBudget)>0&&(()=>{
@@ -2220,20 +2263,22 @@ export default function App(){
                 const tCostObj=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
                 // Use real travelMap distances if available, else sum straight-line between pinned places
                 const milesTotal=(()=>{
+                  // Use real travelMap distances if available (populated after Generate Itinerary)
                   if(Object.values(travelMap||{}).some(t=>t?.distanceMiles)){
                     return Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0);
                   }
-                  const allP=dayPlans.flat();
-                  if(allP.length<2) return 0;
+                  // Otherwise sum straight-line distances within each day only
                   let miles=0;
-                  for(let idx=0;idx<allP.length-1;idx++){
-                    const pa=allP[idx], pb=allP[idx+1];
-                    if(pa.lat&&pa.lng&&pb.lat&&pb.lng) miles+=haversineMiles(pa.lat,pa.lng,pb.lat,pb.lng);
-                    else miles+=1;
+                  for(const day of dayPlans){
+                    for(let idx=0;idx<day.length-1;idx++){
+                      const pa=day[idx], pb=day[idx+1];
+                      if(pa.lat&&pa.lng&&pb.lat&&pb.lng) miles+=haversineMiles(pa.lat,pa.lng,pb.lat,pb.lng);
+                      else miles+=1;
+                    }
                   }
                   return miles;
                 })();
-                const trans=tCostObj.perMile*(tCostObj.multiply?(travelers||1):1)*milesTotal;
+                const trans=tCostObj.perMile*(tCostObj.multiply?(travelers||1):1)*(milesTotal*ROAD_FACTOR);
                 const spent=flt+hot+act+trans;
                 const rem=Math.max(0,bNum-spent);
                 const over=spent>bNum;
@@ -2352,9 +2397,12 @@ export default function App(){
                   ))
                 }
               </div>
-              <button className="finbt" disabled={allAdded.length===0} onClick={goToItinerary}>
-                ✦ Generate Itinerary
-              </button>
+              </div>{/* end sb-scroll */}
+              <div className="sb-footer">
+                <button className="finbt" disabled={allAdded.length===0} onClick={goToItinerary} style={{width:"100%"}}>
+                  ✦ Generate Itinerary
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2368,7 +2416,10 @@ export default function App(){
             <div>
               <h2 className="imt">Your {numDays>1?`${numDays}-day trip to`:"day in"} <em>{city}</em></h2>
               <div className="iml">{allAdded.length} stops · {travelers} traveler{travelers!==1?"s":""}{originCity?` · from ${originCity}`:""}</div>
-              {aiUsed&&<div className="aib">✦ AI-personalized descriptions & researched costs</div>}
+              <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap"}}>
+                {aiUsed&&<div className="aib">✦ AI descriptions & researched costs</div>}
+                <div style={{fontSize:"0.72rem",padding:"3px 10px",borderRadius:20,background:"linear-gradient(135deg,rgba(27,94,138,0.1),rgba(74,159,212,0.1))",color:"var(--ocean)",fontWeight:600,border:"1px solid rgba(27,94,138,0.2)"}}>Built with Claude · Anthropic</div>
+              </div>
               {travelLoading&&<div style={{fontSize:"0.75rem",color:"var(--ocean3)",marginTop:6}}>⏱ Calculating travel times…</div>}
             </div>
             <div className="iac">
@@ -2385,9 +2436,21 @@ export default function App(){
             const actCosts=allAdded.map(p=>costMap?.[p.id]?.cost??getInstantPrice(p)?.cost??0);
             const actTotal=actCosts.reduce((s,v)=>s+v,0)*travelers;
             const tCostObj2=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
-            const milesTotal2=Object.values(travelMap||{}).reduce((s,t)=>s+(t?.distanceMiles||0),0)||
-              (()=>{const ap=allAdded;let m=0;for(let i=0;i<ap.length-1;i++){if(ap[i].lat&&ap[i+1].lat)m+=haversineMiles(ap[i].lat,ap[i].lng,ap[i+1].lat,ap[i+1].lng);else m+=1;}return m||numDays*2;})();
-            const transTotal=tCostObj2.perMile*(tCostObj2.multiply?travelers:1)*milesTotal2;
+            const milesTotal2=(()=>{
+              if(Object.values(travelMap||{}).some(t=>t?.distanceMiles)){
+                return Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0);
+              }
+              let m=0;
+              for(const day of dayPlans){
+                for(let i=0;i<day.length-1;i++){
+                  const pa=day[i],pb=day[i+1];
+                  if(pa.lat&&pa.lng&&pb.lat&&pb.lng) m+=haversineMiles(pa.lat,pa.lng,pb.lat,pb.lng);
+                  else m+=1;
+                }
+              }
+              return m;
+            })();
+            const transTotal=tCostObj2.perMile*(tCostObj2.multiply?travelers:1)*(milesTotal2*ROAD_FACTOR);
             const grandTotal=flt+hot+actTotal+transTotal;
             const remaining=Math.max(0,bNum-grandTotal);
             const over=bNum>0&&grandTotal>bNum;
@@ -2453,45 +2516,47 @@ export default function App(){
 
                   {/* Donut */}
                   <div style={{background:"white",borderRadius:16,border:"1px solid var(--border)",padding:"20px",display:"flex",gap:20,alignItems:"center",flex:"0 0 auto"}}>
-                    <div style={{position:"relative",width:150,height:150}}>
-                      <div style={{width:150,height:150,borderRadius:"50%",background:grad,transition:"background 0.5s"}}/>
-                      <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:94,height:94,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(0,0,0,0.08)"}}>
-                        <div style={{fontSize:"0.48rem",letterSpacing:"1px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>Total</div>
-                        <div style={{fontSize:"1.15rem",fontWeight:700,color:"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1}}>${grandTotal.toLocaleString()}</div>
-                        {travelers>1&&<div style={{fontSize:"0.45rem",color:"var(--muted2)"}}>{travelers} travelers</div>}
+                    <div style={{position:"relative",width:210,height:210,flexShrink:0}}>
+                      <div style={{width:210,height:210,borderRadius:"50%",background:grad,transition:"background 0.5s"}}/>
+                      <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:130,height:130,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 16px rgba(0,0,0,0.10)"}}>
+                        <div style={{fontSize:"0.55rem",letterSpacing:"1px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>Total</div>
+                        <div style={{fontSize:grandTotal>9999?"1.3rem":"1.6rem",fontWeight:700,color:"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1.05}}>${grandTotal.toLocaleString()}</div>
+                        {travelers>1&&<div style={{fontSize:"0.55rem",color:"var(--ocean)",fontWeight:600,marginTop:2}}>{travelers} travelers</div>}
+                        {bNum>0&&<div style={{fontSize:"0.52rem",color:"var(--muted2)",marginTop:1}}>of ${bNum.toLocaleString()}</div>}
                       </div>
                     </div>
-                    <div style={{fontSize:"0.73rem",display:"flex",flexDirection:"column",gap:6}}>
+                    <div style={{fontSize:"0.82rem",display:"flex",flexDirection:"column",gap:9}}>
                       {[
                         {label:"✈️ Flights",color:"#1b5e8a",val:flt},
                         {label:"🏨 Hotel",color:"#4a9fd4",val:hot},
                         {label:"🎭 Activities",color:"#4a7c59",val:actTotal},
                         {label:"🚌 Transport",color:"#7c5cbf",val:transTotal},
                       ].map(seg=>(
-                        <div key={seg.label} style={{display:"flex",alignItems:"center",gap:8,minWidth:160}}>
-                          <div style={{width:8,height:8,borderRadius:"50%",background:seg.color,flexShrink:0}}/>
+                        <div key={seg.label} style={{display:"flex",alignItems:"center",gap:10,minWidth:180}}>
+                          <div style={{width:10,height:10,borderRadius:"50%",background:seg.color,flexShrink:0}}/>
                           <span style={{color:"var(--muted2)",flex:1}}>{seg.label}</span>
-                          <span style={{fontWeight:700,color:"var(--ink)"}}>{seg.val>0?`$${seg.val.toLocaleString()}`:"—"}</span>
+                          <span style={{fontWeight:700,color:"var(--ink)",fontSize:"0.88rem"}}>{seg.val>0?`$${seg.val.toLocaleString()}`:"—"}</span>
                         </div>
                       ))}
+                      {over&&<div style={{fontSize:"0.75rem",color:"#c45c26",fontWeight:600,marginTop:4,padding:"6px 10px",background:"rgba(196,92,38,0.07)",borderRadius:8}}>⚠️ Over budget by ${(grandTotal-bNum).toLocaleString()}</div>}
                     </div>
                   </div>
 
                   {/* Stat cards */}
                   <div style={{flex:1,display:"flex",flexDirection:"column",gap:10,minWidth:200}}>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                       {[
                         {icon:"📍",label:"Total Stops",val:allAdded.length,sub:`across ${numDays} day${numDays!==1?"s":""}`},
                         {icon:"⏱",label:"Travel Time",val:totalTravelMin>0?`${Math.floor(totalTravelMin/60)}h ${totalTravelMin%60}m`:"—",sub:"between stops"},
                         {icon:"👥",label:"Travelers",val:travelers,sub:travelers>1?`$${Math.round(grandTotal/travelers).toLocaleString()} each`:"Solo trip"},
-                        {icon:"🗺",label:"Distance",val:milesTotal2>0?`${Math.round(milesTotal2)} mi`:"—",sub:"total route"},
+                        {icon:"🗺",label:"Distance",val:milesTotal2>0?`${Math.round(milesTotal2*ROAD_FACTOR)} mi`:"—",sub:"estimated route"},
                       ].map(stat=>(
-                        <div key={stat.label} style={{background:"white",borderRadius:14,border:"1px solid var(--border)",padding:"14px 16px",display:"flex",gap:10,alignItems:"center"}}>
-                          <div style={{fontSize:"1.4rem"}}>{stat.icon}</div>
+                        <div key={stat.label} style={{background:"white",borderRadius:16,border:"1px solid var(--border)",padding:"18px 20px",display:"flex",gap:14,alignItems:"center",boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
+                          <div style={{fontSize:"1.8rem",lineHeight:1}}>{stat.icon}</div>
                           <div>
-                            <div style={{fontSize:"1.05rem",fontWeight:700,color:"var(--ink)",lineHeight:1.1}}>{stat.val}</div>
-                            <div style={{fontSize:"0.62rem",color:"var(--muted2)",marginTop:2}}>{stat.label}</div>
-                            <div style={{fontSize:"0.58rem",color:"var(--muted2)",opacity:0.7}}>{stat.sub}</div>
+                            <div style={{fontSize:"1.3rem",fontWeight:700,color:"var(--ink)",lineHeight:1.1,fontFamily:"Cormorant Garamond,serif"}}>{stat.val}</div>
+                            <div style={{fontSize:"0.68rem",color:"var(--muted2)",marginTop:3,fontWeight:500}}>{stat.label}</div>
+                            <div style={{fontSize:"0.6rem",color:"var(--muted2)",opacity:0.75,marginTop:1}}>{stat.sub}</div>
                           </div>
                         </div>
                       ))}
@@ -2501,14 +2566,15 @@ export default function App(){
                     {numDays>1&&(
                       <div style={{background:"white",borderRadius:14,border:"1px solid var(--border)",padding:"14px 16px"}}>
                         <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginBottom:10}}>Cost by Day</div>
-                        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                        <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                           {dayCosts.map((cost,di)=>(
-                            <div key={di} style={{flex:1,minWidth:60,textAlign:"center",padding:"8px 6px",borderRadius:10,background:"var(--sand)"}}>
-                              <div style={{fontSize:"0.6rem",color:"var(--muted2)",marginBottom:3}}>Day {di+1}</div>
-                              <div style={{fontSize:"0.85rem",fontWeight:700,color:"var(--ink)"}}>{cost===0?"Free":`$${cost}`}</div>
+                            <div key={di} style={{flex:1,minWidth:72,textAlign:"center",padding:"12px 8px",borderRadius:12,background:"var(--sand)",boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
+                              <div style={{fontSize:"0.65rem",color:"var(--muted2)",marginBottom:4,fontWeight:600,letterSpacing:"0.5px"}}>Day {di+1}</div>
+                              <div style={{fontSize:"1.05rem",fontWeight:700,color:"var(--ink)",fontFamily:"Cormorant Garamond,serif"}}>{cost===0?"Free":`$${cost}`}</div>
                               {weather&&weather[di]&&(
-                                <div style={{fontSize:"0.8rem",marginTop:2}}>
-                                  {weather[di].main==="Rain"||weather[di].main==="Drizzle"?"🌧":weather[di].main==="Clear"?"☀️":weather[di].main==="Snow"?"❄️":"⛅"}
+                                <div style={{fontSize:"1rem",marginTop:4}}>
+                                  {weather[di].main==="Rain"||weather[di].main==="Drizzle"?"🌧":weather[di].main==="Clear"?"☀️":weather[di].main==="Snow"?"❄️":weather[di].main==="Thunderstorm"?"⛈":"⛅"}
+                                  <div style={{fontSize:"0.62rem",color:"var(--muted2)",marginTop:1}}>{weather[di].temp}°F</div>
                                 </div>
                               )}
                             </div>
