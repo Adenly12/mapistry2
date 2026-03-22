@@ -1281,8 +1281,7 @@ export default function App(){
                       </div>
                       {!isLast&&(
                         <div className="trvl"><div/>
-                          <div className="trvli">{TRANSPORT.find(x=>x.id===transport)?.icon||"🚶"} {t.travelText} by {tlabel.toLowerCase()} to next stop</div
-                          }
+                          <div className="trvli">{TRANSPORT.find(x=>x.id===transport)?.icon||"🚶"} {t.travelText} by {tlabel.toLowerCase()} to next stop</div>
                         </div>
                       )}
                     </div>
