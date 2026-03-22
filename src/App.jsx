@@ -53,27 +53,37 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 /* ── NAV ── */
 .nav {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 48px; height: 66px;
-  background: rgba(250,246,240,0.93); backdrop-filter: blur(24px);
+  padding: 0 32px; height: 62px;
+  background: rgba(250,246,240,0.96); backdrop-filter: blur(24px);
   border-bottom: 1px solid var(--border2);
   position: sticky; top: 0; z-index: 300;
 }
-.logo { font-family: 'Cormorant Garamond', serif; font-size: 1.75rem; color: var(--ocean); cursor: pointer; font-weight: 600; letter-spacing: -0.3px; }
+.logo { font-family: 'Cormorant Garamond', serif; font-size: 1.75rem; color: var(--ocean); cursor: pointer; font-weight: 600; letter-spacing: -0.3px; flex-shrink: 0; }
 .logo em { font-style: italic; color: var(--ocean2); }
 .nav-l { display: flex; align-items: center; gap: 16px; }
 .back { display: flex; align-items: center; gap: 6px; background: var(--sand); border: 1px solid var(--border2); color: var(--muted); border-radius: 30px; padding: 7px 16px; font-size: 0.79rem; cursor: pointer; transition: all 0.2s; }
 .back:hover { background: var(--sand2); color: var(--ink); }
 .nav-r { display: flex; align-items: center; gap: 10px; }
 .nav-city { font-size: 0.71rem; color: var(--muted2); letter-spacing: 1.5px; text-transform: uppercase; }
-.prog { display: flex; gap: 5px; }
-.pd { width: 6px; height: 6px; border-radius: 50%; background: var(--sand3); transition: all 0.3s; }
-.pd.on { background: var(--ocean); width: 18px; border-radius: 3px; }
-.pd.done { background: var(--sage); }
-.ubtn { display: flex; align-items: center; gap: 7px; background: var(--ocean); color: white; border: none; border-radius: 30px; padding: 7px 16px; font-size: 0.79rem; cursor: pointer; transition: all 0.2s; font-weight: 500; }
+.ubtn { display: flex; align-items: center; gap: 7px; background: var(--ocean); color: white; border: none; border-radius: 30px; padding: 7px 16px; font-size: 0.79rem; cursor: pointer; transition: all 0.2s; font-weight: 500; flex-shrink:0; }
 .ubtn:hover { background: var(--ocean2); }
 .ubtn.guest { background: var(--sand); color: var(--ocean); border: 1px solid var(--border2); }
 .ubtn.guest:hover { background: var(--sand2); }
 .uav { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg,var(--ocean),var(--ocean2)); display: flex; align-items: center; justify-content: center; font-size: 0.66rem; font-weight: 700; }
+/* ── STEP BREADCRUMB ── */
+.step-nav { display: flex; align-items: center; gap: 0; flex: 1; justify-content: center; padding: 0 16px; overflow: hidden; }
+.step-nav-item { display: flex; align-items: center; gap: 0; }
+.step-nav-btn { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 20px; border: none; background: none; cursor: pointer; font-family: 'DM Sans',sans-serif; font-size: 0.75rem; font-weight: 500; color: var(--muted2); transition: all 0.18s; white-space: nowrap; }
+.step-nav-btn:hover:not(:disabled) { background: var(--sand); color: var(--ink); }
+.step-nav-btn.active { background: var(--ocean); color: white; font-weight: 600; }
+.step-nav-btn.done { color: var(--ocean); }
+.step-nav-btn.done:hover { background: rgba(27,94,138,0.08); }
+.step-nav-btn:disabled { cursor: default; opacity: 0.4; }
+.step-nav-num { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; background: var(--sand2); color: var(--muted); transition: all 0.18s; flex-shrink: 0; }
+.step-nav-btn.active .step-nav-num { background: rgba(255,255,255,0.25); color: white; }
+.step-nav-btn.done .step-nav-num { background: var(--ocean); color: white; }
+.step-nav-divider { color: var(--border2); font-size: 0.7rem; padding: 0 2px; user-select: none; }
+@media(max-width:760px){ .step-nav-label { display: none; } .step-nav { gap: 0; } }
 
 /* ── HERO ── */
 .hero {
@@ -1463,22 +1473,55 @@ export default function App(){
       <style>{STYLES}</style>
 
       {/* NAV */}
-      <nav className="nav">
-        <div className="nav-l">
-          <div className="logo" onClick={()=>{setStep(1);setDayPlans([[]]);setCin("");setCity("");setOriginIn("");setOriginCity("");setDepartDate("");setReturnDate("");setTotalBudget("");setBudgetBreakdown(null);}}>
-            Mapit<em>stry</em>
-          </div>
-          {step>1&&<button className="back" onClick={()=>setStep(step-1)}>← Back</button>}
-        </div>
-        <div className="nav-r">
-          {city&&step>1&&<div className="nav-city">📍 {city}{originCity?` ← ${originCity}`:""}</div>}
-          {step>1&&<div className="prog">{[1,2,3,4,5].map(s=><div key={s} className={`pd ${s===step?"on":s<step?"done":""}`}/>)}</div>}
-          {activeUser
-            ?<button className="ubtn" onClick={()=>setShowProfile(true)}><div className="uav">{initials}</div>{activeUser}</button>
-            :<button className="ubtn guest" onClick={()=>setShowUserSetup(true)}>👤 Sign In</button>
-          }
-        </div>
-      </nav>
+      {(()=>{
+        const STEPS=[
+          {n:1,label:"Trip"},
+          {n:2,label:"Budget"},
+          {n:3,label:"Preferences"},
+          {n:4,label:"Places"},
+          {n:5,label:"Itinerary"},
+        ];
+        function goToStep(n){
+          // Can only jump to steps already reached (step <= current step)
+          if(n>step)return;
+          setStep(n);
+        }
+        return(
+          <nav className="nav">
+            <div className="nav-l">
+              <div className="logo" onClick={()=>{setStep(1);setDayPlans([[]]);setCin("");setCity("");setOriginIn("");setOriginCity("");setDepartDate("");setReturnDate("");setTotalBudget("");setBudgetBreakdown(null);}}>
+                Mapit<em>stry</em>
+              </div>
+            </div>
+            {step>1?(
+              <div className="step-nav">
+                {STEPS.map((s,i)=>(
+                  <div key={s.n} className="step-nav-item">
+                    {i>0&&<div className="step-nav-divider">›</div>}
+                    <button
+                      className={`step-nav-btn ${s.n===step?"active":s.n<step?"done":""}`}
+                      onClick={()=>goToStep(s.n)}
+                      disabled={s.n>step}
+                      title={s.n>step?"Complete previous steps first":""}
+                    >
+                      <div className="step-nav-num">{s.n<step?"✓":s.n}</div>
+                      <span className="step-nav-label">{s.label}</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ):(
+              <div style={{flex:1}}/>
+            )}
+            <div className="nav-r">
+              {activeUser
+                ?<button className="ubtn" onClick={()=>setShowProfile(true)}><div className="uav">{initials}</div>{activeUser}</button>
+                :<button className="ubtn guest" onClick={()=>setShowUserSetup(true)}>👤 Sign In</button>
+              }
+            </div>
+          </nav>
+        );
+      })()}
 
       {/* STEP 1: HERO */}
       {step===1&&(
