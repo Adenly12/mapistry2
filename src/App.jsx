@@ -432,6 +432,16 @@ const BUDGETS = [
   {id:"upscale",tier:"$$$",label:"Upscale",range:"$75–$150/person",desc:"Nicer restaurants, private tours & premium venues.",color:"#7c5cbf"},
   {id:"luxury",tier:"$$$$",label:"Luxury",range:"$150+/person",desc:"Fine dining, exclusive experiences & VIP access.",color:"#1b5e8a"},
 ];
+// Transport cost estimates (per trip/segment, USD)
+// multiply: true = cost scales with number of travelers
+const TRANSPORT_COSTS = {
+  walking:  {cost:0,  multiply:false, note:"Free"},
+  transit:  {cost:3,  multiply:true,  note:"Per person fare"},
+  driving:  {cost:10, multiply:false, note:"Fuel per trip"},
+  cycling:  {cost:5,  multiply:true,  note:"Per bike rental"},
+  rideshare:{cost:15, multiply:false, note:"Per ride (shared)"},
+};
+
 const TRANSPORT = [
   {id:"walking",icon:"🚶",name:"Walking"},
   {id:"transit",icon:"🚌",name:"Transit"},
@@ -1058,6 +1068,7 @@ export default function App(){
   const[returnDate,setReturnDate]=useState("");
   // Total trip budget
   const[totalBudget,setTotalBudget]=useState("");
+  const[travelers,setTravelers]=useState(1);
   const[budgetBreakdown,setBudgetBreakdown]=useState(null);
   const[budgetLoading,setBudgetLoading]=useState(false);
   const[flightCost,setFlightCost]=useState(null);   // real or estimated
@@ -1108,6 +1119,7 @@ export default function App(){
   const[usernameInput,setUsernameInput]=useState("");
   const toast=useToast();
   const sref=useRef();
+  const filterDebounce=useRef(null);
   const nextToken=useRef(null);
 
   // Hero photo slideshow
@@ -1583,7 +1595,7 @@ export default function App(){
         return(
           <nav className="nav">
             <div className="nav-l">
-              <div className="logo" onClick={()=>{setStep(1);setMaxStep(1);setDayPlans([[]]);setCin("");setCity("");setOriginIn("");setOriginCity("");setDepartDate("");setReturnDate("");setTotalBudget("");setBudgetBreakdown(null);}}>
+              <div className="logo" onClick={()=>{setStep(1);setMaxStep(1);setTravelers(1);setDayPlans([[]]);setCin("");setCity("");setOriginIn("");setOriginCity("");setDepartDate("");setReturnDate("");setTotalBudget("");setBudgetBreakdown(null);}}>
                 Mapit<em>stry</em>
               </div>
             </div>
@@ -1705,6 +1717,18 @@ export default function App(){
                   <input type="date" value={returnDate} onChange={e=>setReturnDate(e.target.value)} min={departDate||new Date().toISOString().split("T")[0]}/>
                 </div>
               </div>
+              {/* Travelers */}
+              <div className="hero-date-box" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px"}}>
+                <div>
+                  <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginBottom:2}}>👥 Travelers</div>
+                  <div style={{fontSize:"0.78rem",color:"var(--muted2)"}}>Adults & children</div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <button className="daybtn" onClick={()=>setTravelers(t=>Math.max(1,t-1))}>−</button>
+                  <div className="daynum" style={{fontSize:"1.3rem",minWidth:24,textAlign:"center"}}>{travelers}</div>
+                  <button className="daybtn" onClick={()=>setTravelers(t=>Math.min(20,t+1))}>+</button>
+                </div>
+              </div>
               {/* Explore button */}
               <button className="sbtn" style={{borderRadius:14,padding:"14px",width:"100%",fontSize:"0.95rem"}}
                 onClick={()=>{
@@ -1743,32 +1767,44 @@ export default function App(){
         const totalSpend=effFlight+effHotel;
         const over=budgetNum>0&&totalSpend>budgetNum;
 
-        // Activities cost — declared BEFORE it's used in gradient/segments
+        // Activities — multiply by travelers
         const effActivities=(()=>{
           try{
             return dayPlans.flat().reduce((s,p)=>{
               const ip=getInstantPrice(p);
               return s+(ip?.cost||0);
-            },0);
+            },0)*travelers;
           }catch{return 0;}
         })();
-        const totalSpendWithAct=effFlight+effHotel+effActivities;
-        const remainingWithAct=Math.max(0,budgetNum-totalSpendWithAct);
-        const overWithAct=budgetNum>0&&totalSpendWithAct>budgetNum;
 
-        // CSS conic-gradient donut
-        const flightPct=budgetNum>0?Math.round(effFlight/budgetNum*100):0;
+        // Flights — multiply by travelers
+        const effFlightTotal=effFlight*travelers;
+
+        // Transport — only transit and cycling multiply by travelers
+        const tCost=TRANSPORT_COSTS[transport]||{cost:0,multiply:false};
+        const tripsPerDay=Math.max(1,(dayPlans.flat().length||1));
+        const transportDailyBase=tCost.cost*tripsPerDay;
+        const effTransport=(tCost.multiply?transportDailyBase*travelers:transportDailyBase)*numDays;
+
+        const totalSpendWithAll=effFlightTotal+effHotel+effActivities+effTransport;
+        const remainingWithAll=Math.max(0,budgetNum-totalSpendWithAll);
+        const overWithAct=budgetNum>0&&totalSpendWithAll>budgetNum;
+
+        // CSS conic-gradient donut — 5 segments
+        const flightPct=budgetNum>0?Math.round(effFlightTotal/budgetNum*100):0;
         const hotelPct=budgetNum>0?Math.round(effHotel/budgetNum*100):0;
         const actPct=budgetNum>0?Math.round(effActivities/budgetNum*100):0;
+        const transPct=budgetNum>0?Math.round(effTransport/budgetNum*100):0;
         const gradient=budgetNum>0
-          ?`conic-gradient(#1b5e8a 0% ${flightPct}%, #4a9fd4 ${flightPct}% ${flightPct+hotelPct}%, #4a7c59 ${flightPct+hotelPct}% ${flightPct+hotelPct+actPct}%, ${overWithAct?"#e07060":"#c8e6d4"} ${flightPct+hotelPct+actPct}% 100%)`
+          ?`conic-gradient(#1b5e8a 0% ${flightPct}%, #4a9fd4 ${flightPct}% ${flightPct+hotelPct}%, #4a7c59 ${flightPct+hotelPct}% ${flightPct+hotelPct+actPct}%, #7c5cbf ${flightPct+hotelPct+actPct}% ${flightPct+hotelPct+actPct+transPct}%, ${overWithAct?"#e07060":"#c8e6d4"} ${flightPct+hotelPct+actPct+transPct}% 100%)`
           :`conic-gradient(var(--sand2) 0% 100%)`;
 
         const segments=[
-          {label:"✈️ Flights",color:"#1b5e8a",value:effFlight},
+          {label:"✈️ Flights",color:"#1b5e8a",value:effFlightTotal},
           {label:"🏨 Hotel",color:"#4a9fd4",value:effHotel},
           {label:"🎭 Activities",color:"#4a7c59",value:effActivities},
-          {label:"💰 Remaining",color:overWithAct?"#e07060":"#c8e6d4",value:remainingWithAct},
+          {label:"🚌 Transport",color:"#7c5cbf",value:effTransport},
+          {label:"💰 Remaining",color:overWithAct?"#e07060":"#c8e6d4",value:remainingWithAll},
         ];
 
         return(
@@ -1935,8 +1971,9 @@ export default function App(){
                   {budgetNum>0
                     ?<>
                       <div style={{fontSize:"0.55rem",letterSpacing:"1px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>Left</div>
-                      <div style={{fontSize:remainingWithAct>9999?"0.95rem":"1.15rem",fontWeight:700,color:overWithAct?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1.1}}>${remainingWithAct.toLocaleString()}</div>
+                      <div style={{fontSize:remainingWithAct>9999?"0.95rem":"1.15rem",fontWeight:700,color:overWithAct?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1.1}}>${remainingWithAll.toLocaleString()}</div>
                       <div style={{fontSize:"0.55rem",color:"var(--muted2)"}}>of ${budgetNum.toLocaleString()}</div>
+                      {travelers>1&&<div style={{fontSize:"0.5rem",color:"var(--ocean)",fontWeight:600}}>{travelers} travelers</div>}
                     </>
                     :<div style={{fontSize:"0.65rem",color:"var(--muted2)",textAlign:"center",padding:"0 10px",lineHeight:1.4}}>Enter budget above</div>
                   }
@@ -1981,6 +2018,8 @@ export default function App(){
                   style={{cursor:"pointer",background:prefs.has(p.val)?"var(--ocean)":"rgba(255,255,255,0.85)",color:prefs.has(p.val)?"white":"var(--ink2)",borderColor:prefs.has(p.val)?"var(--ocean)":"var(--border2)",transition:"all 0.18s"}}
                   onClick={()=>{
                     setPrefs(prev=>{const n=new Set(prev);n.has(p.val)?n.delete(p.val):n.add(p.val);return n;});
+                    clearTimeout(filterDebounce.current);
+                    filterDebounce.current=setTimeout(()=>refreshPlaces(),600);
                   }}>
                   {p.icon} {p.name}
                 </div>
@@ -2010,7 +2049,11 @@ export default function App(){
                 <div key={b.id}
                   className="chip"
                   style={{cursor:"pointer",background:budget===b.id?"var(--ocean)":"rgba(255,255,255,0.85)",color:budget===b.id?"white":"var(--ink2)",borderColor:budget===b.id?"var(--ocean)":"var(--border2)",transition:"all 0.18s",fontSize:"0.75rem"}}
-                  onClick={()=>setBudget(budget===b.id?null:b.id)}>
+                  onClick={()=>{
+                    setBudget(budget===b.id?null:b.id);
+                    clearTimeout(filterDebounce.current);
+                    filterDebounce.current=setTimeout(()=>refreshPlaces(),600);
+                  }}>
                   {b.tier} {b.label}
                 </div>
               ))}
@@ -2088,6 +2131,53 @@ export default function App(){
             <div className="sb">
               <div className="sbt">Your Itinerary</div>
               <div className="sbs">{allAdded.length} place{allAdded.length!==1?"s":""} across {numDays} day{numDays!==1?"s":""}</div>
+
+              {/* Mini budget donut */}
+              {Number(totalBudget)>0&&(()=>{
+                const bNum=Number(totalBudget)||0;
+                const flt=(flightCost?.cost||0)*(travelers||1);
+                const hot=hotelCost?.total||0;
+                const act=allAdded.reduce((s,p)=>{
+                  try{const ip=getInstantPrice(p);return s+(ip?.cost||0);}catch{return s;}
+                },0)*(travelers||1);
+                const tCostObj=TRANSPORT_COSTS[transport]||{cost:0,multiply:false};
+                const trans=(tCostObj.multiply?tCostObj.cost*(travelers||1):tCostObj.cost)*Math.max(1,allAdded.length)*numDays;
+                const spent=flt+hot+act+trans;
+                const rem=Math.max(0,bNum-spent);
+                const over=spent>bNum;
+                const fp=bNum>0?Math.round(flt/bNum*100):0;
+                const hp=bNum>0?Math.round(hot/bNum*100):0;
+                const ap=bNum>0?Math.round(act/bNum*100):0;
+                const tp=bNum>0?Math.round(trans/bNum*100):0;
+                const grad=`conic-gradient(#1b5e8a 0% ${fp}%, #4a9fd4 ${fp}% ${fp+hp}%, #4a7c59 ${fp+hp}% ${fp+hp+ap}%, #7c5cbf ${fp+hp+ap}% ${fp+hp+ap+tp}%, ${over?"#e07060":"#c8e6d4"} ${fp+hp+ap+tp}% 100%)`;
+                return(
+                  <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0 12px",borderBottom:"1px solid var(--border)",marginBottom:10}}>
+                    <div style={{position:"relative",width:64,height:64,flexShrink:0}}>
+                      <div style={{width:64,height:64,borderRadius:"50%",background:grad,transition:"background 0.4s ease"}}/>
+                      <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:40,height:40,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                        <div style={{fontSize:"0.55rem",color:over?"#c45c26":"var(--ocean)",fontWeight:700}}>${rem.toLocaleString()}</div>
+                        <div style={{fontSize:"0.42rem",color:"var(--muted2)"}}>left</div>
+                      </div>
+                    </div>
+                    <div style={{flex:1,fontSize:"0.68rem"}}>
+                      {[
+                        {label:"Activities",color:"#4a7c59",val:act},
+                        {label:"Transport",color:"#7c5cbf",val:trans},
+                      ].map(seg=>(
+                        <div key={seg.label} style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                          <span style={{color:"var(--muted2)",display:"flex",alignItems:"center",gap:4}}>
+                            <span style={{width:6,height:6,borderRadius:"50%",background:seg.color,display:"inline-block"}}/>
+                            {seg.label}
+                          </span>
+                          <span style={{fontWeight:600,color:"var(--ink)"}}>{seg.val>0?`$${seg.val.toLocaleString()}`:"—"}</span>
+                        </div>
+                      ))}
+                      {over&&<div style={{fontSize:"0.65rem",color:"#c45c26",fontWeight:600,marginTop:3}}>⚠️ Over budget</div>}
+                      {!over&&<div style={{fontSize:"0.65rem",color:"var(--muted2)",marginTop:3}}>${bNum.toLocaleString()} total budget</div>}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Transport selector in sidebar */}
               <div className="sec-label" style={{marginTop:8,marginBottom:6}}>Getting Around</div>
