@@ -1074,7 +1074,6 @@ export default function App(){
   const[transport,setTransport]=useState("walking");
   const[numDays,setNumDays]=useState(1);
   const[startTime,setStartTime]=useState("09:00");
-  const[endTime,setEndTime]=useState("21:00");
   const[places,setPlaces]=useState(MOCK);
   const[allPlaces,setAllPlaces]=useState(MOCK);
   const[visibleCount,setVisibleCount]=useState(8);
@@ -1384,7 +1383,7 @@ export default function App(){
     const{places:p,nextToken:nt}=await doFetch(c);
     nextToken.current=nt;setAllPlaces(p);setPlaces(p);setVisibleCount(8);
     setDayPlans(Array.from({length:numDays},()=>[]));
-    setStaticMapUrl("");setLoading(false);goStep(4);
+    setStaticMapUrl("");setLoading(false);goStep(3);
   }
 
   async function showMore(){
@@ -1445,7 +1444,7 @@ export default function App(){
       if(costRes){cm={};costRes.forEach(x=>{cm[x.id]={cost:x.cost,note:x.note||""};});}
     }
     setDescMap(dm);setCostMap(cm);
-    setLoading(false);goStep(5);setItinViewDay(0);
+    setLoading(false);goStep(4);setItinViewDay(0);
     saveTrip(city,dayPlans);
     // Fetch real travel times asynchronously after render
     setTravelLoading(true);
@@ -1560,9 +1559,8 @@ export default function App(){
         const STEPS=[
           {n:1,label:"Trip"},
           {n:2,label:"Budget"},
-          {n:3,label:"Preferences"},
-          {n:4,label:"Places"},
-          {n:5,label:"Itinerary"},
+          {n:3,label:"Browse"},
+          {n:4,label:"Itinerary"},
         ];
         function goToStep(n){
           if(n>maxStep)return;
@@ -1734,15 +1732,25 @@ export default function App(){
         // CSS conic-gradient donut — no SVG math needed
         const flightPct=budgetNum>0?Math.round(effFlight/budgetNum*100):0;
         const hotelPct=budgetNum>0?Math.round(effHotel/budgetNum*100):0;
-        const remPct=Math.max(0,100-flightPct-hotelPct);
+        const actPct=budgetNum>0?Math.round(effActivities/budgetNum*100):0;
         const gradient=budgetNum>0
-          ?`conic-gradient(#1b5e8a 0% ${flightPct}%, #4a9fd4 ${flightPct}% ${flightPct+hotelPct}%, ${over?"#e07060":"#c8e6d4"} ${flightPct+hotelPct}% 100%)`
+          ?`conic-gradient(#1b5e8a 0% ${flightPct}%, #4a9fd4 ${flightPct}% ${flightPct+hotelPct}%, #4a7c59 ${flightPct+hotelPct}% ${flightPct+hotelPct+actPct}%, ${overWithAct?"#e07060":"#c8e6d4"} ${flightPct+hotelPct+actPct}% 100%)`
           :`conic-gradient(var(--sand2) 0% 100%)`;
+
+        // Activities cost = sum of instant prices for all pinned places
+        const effActivities=dayPlans.flat().reduce((s,p)=>{
+          const ip=getInstantPrice(p);
+          return s+(ip?.cost||0);
+        },0);
+        const totalSpendWithAct=effFlight+effHotel+effActivities;
+        const remainingWithAct=Math.max(0,budgetNum-totalSpendWithAct);
+        const overWithAct=budgetNum>0&&totalSpendWithAct>budgetNum;
 
         const segments=[
           {label:"✈️ Flights",color:"#1b5e8a",value:effFlight},
           {label:"🏨 Hotel",color:"#4a9fd4",value:effHotel},
-          {label:"💰 Remaining",color:over?"#e07060":"#c8e6d4",value:remaining},
+          {label:"🎭 Activities",color:"#4a7c59",value:effActivities},
+          {label:"💰 Remaining",color:overWithAct?"#e07060":"#c8e6d4",value:remainingWithAct},
         ];
 
         return(
@@ -1909,7 +1917,7 @@ export default function App(){
                   {budgetNum>0
                     ?<>
                       <div style={{fontSize:"0.55rem",letterSpacing:"1px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>Left</div>
-                      <div style={{fontSize:remaining>9999?"0.95rem":"1.15rem",fontWeight:700,color:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1.1}}>${remaining.toLocaleString()}</div>
+                      <div style={{fontSize:remainingWithAct>9999?"0.95rem":"1.15rem",fontWeight:700,color:overWithAct?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1.1}}>${remainingWithAct.toLocaleString()}</div>
                       <div style={{fontSize:"0.55rem",color:"var(--muted2)"}}>of ${budgetNum.toLocaleString()}</div>
                     </>
                     :<div style={{fontSize:"0.65rem",color:"var(--muted2)",textAlign:"center",padding:"0 10px",lineHeight:1.4}}>Enter budget above</div>
@@ -1930,87 +1938,74 @@ export default function App(){
               </div>
             </div>
 
-            <div className="brow"><button className="gobt" onClick={()=>goStep(3)}>Set Preferences →</button></div>
+            <div className="brow"><button className="gobt" onClick={goToResults}>Browse Places →</button></div>
           </div>
         );
       })()}
 
-            {/* STEP 3 — PREFERENCES */}
+
+      {/* STEP 3 — BROWSE & BUILD */}
       {step===3&&(
         <div className="page">
           <div className="sh">
-            <div className="sey">Step 3 of 5</div>
-            <h2 className="st">Customize your trip to <span>{city}</span></h2>
-            <p className="ss">Tell us what you love, how long you're staying, and when you start each day.</p>
-          </div>
-          <div className="sec-label">Getting Around</div>
-          <div className="transport-grid" style={{marginBottom:24}}>
-            {TRANSPORT.map(t=>(
-              <div key={t.id} className={`tc ${transport===t.id?"sel":""}`} onClick={()=>setTransport(t.id)}>
-                <div className="tc-icon">{t.icon}</div><div className="tc-name">{t.name}</div>
-              </div>
-            ))}
+            <div className="sey">Step 3 of 4</div>
+            <h2 className="st">Explore <span>{city}</span></h2>
           </div>
 
-          <div className="sec-label">Your Interests</div>
-          <div className="pg">
-            {PREFS.map(p=>(
-              <div key={p.val} className={`pc ${prefs.has(p.val)?"sel":""}`} onClick={()=>setPrefs(prev=>{const n=new Set(prev);n.has(p.val)?n.delete(p.val):n.add(p.val);return n;})}>
-                <div className="pi">{p.icon}</div><div className="pn">{p.name}</div><div className="pd2">{p.desc}</div>
+          {/* ── FILTER BAR ── */}
+          <div style={{marginBottom:18}}>
+            {/* Interest chips */}
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10,alignItems:"center"}}>
+              <span style={{fontSize:"0.68rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginRight:4}}>Interests</span>
+              {PREFS.map(p=>(
+                <div key={p.val}
+                  className={`chip ${prefs.has(p.val)?"sel":""}`}
+                  style={{cursor:"pointer",background:prefs.has(p.val)?"var(--ocean)":"rgba(255,255,255,0.85)",color:prefs.has(p.val)?"white":"var(--ink2)",borderColor:prefs.has(p.val)?"var(--ocean)":"var(--border2)",transition:"all 0.18s"}}
+                  onClick={()=>{
+                    setPrefs(prev=>{const n=new Set(prev);n.has(p.val)?n.delete(p.val):n.add(p.val);return n;});
+                  }}>
+                  {p.icon} {p.name}
+                </div>
+              ))}
+              {/* Custom interest input */}
+              <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                <input className="cpi" style={{width:180,padding:"6px 14px",fontSize:"0.77rem"}}
+                  placeholder="+ Custom interest…"
+                  value={cpinput} onChange={e=>setCpinput(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&addCpref()}/>
+                {cpinput&&<button className="cap" style={{padding:"6px 14px",fontSize:"0.77rem"}} onClick={addCpref}>Add</button>}
               </div>
-            ))}
-          </div>
-          <div className="cpw">
-            <input className="cpi" placeholder="Type your own interest… e.g. jazz bars, rooftop views, street art" value={cpinput} onChange={e=>setCpinput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addCpref()}/>
-            <button className="cap" onClick={addCpref}>+ Add</button>
-          </div>
-          {cprefs.length>0&&<div className="ctags">{cprefs.map(t=><div key={t} className="ctag">{t}<button onClick={()=>setCprefs(c=>c.filter(x=>x!==t))}>✕</button></div>)}</div>}
-
-          <div className="sec-label" style={{marginTop:8}}>How many days?</div>
-          <div className="days-row">
-            <div className="days-text">
-              <div className="days-title">Trip Length</div>
-              <div className="days-subtitle">{departDate&&returnDate?`Auto-calculated from your dates (${numDays} day${numDays!==1?"s":""}). You can adjust manually.`:"We'll create a separate day-by-day plan."}</div>
             </div>
-            <div className="days-ctrl">
-              <button className="daybtn" onClick={()=>setNumDays(d=>Math.max(1,d-1))}>−</button>
-              <div className="daynum">{numDays}</div>
-              <button className="daybtn" onClick={()=>setNumDays(d=>Math.min(7,d+1))}>+</button>
-              <span style={{fontSize:"0.82rem",color:"var(--muted2)"}}>day{numDays!==1?"s":""}</span>
+            {cprefs.length>0&&(
+              <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+                {cprefs.map(t=>(
+                  <div key={t} className="ctag">{t}
+                    <button onClick={()=>setCprefs(c=>c.filter(x=>x!==t))}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Spending style + search button */}
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+              <span style={{fontSize:"0.68rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginRight:4}}>Budget</span>
+              {BUDGETS.map(b=>(
+                <div key={b.id}
+                  className="chip"
+                  style={{cursor:"pointer",background:budget===b.id?"var(--ocean)":"rgba(255,255,255,0.85)",color:budget===b.id?"white":"var(--ink2)",borderColor:budget===b.id?"var(--ocean)":"var(--border2)",transition:"all 0.18s",fontSize:"0.75rem"}}
+                  onClick={()=>setBudget(budget===b.id?null:b.id)}>
+                  {b.tier} {b.label}
+                </div>
+              ))}
+              <button className="gobt" style={{padding:"7px 20px",fontSize:"0.82rem",marginLeft:"auto"}}
+                onClick={()=>{
+                  setPlaces([]);setAllPlaces([]);setVisibleCount(8);
+                  goToResults();
+                }}>
+                🔍 Refresh Places
+              </button>
             </div>
           </div>
 
-          <div className="sec-label">Daily Schedule</div>
-          <div className="time-row">
-            <div className="tg"><label>Start Time</label><input type="time" className="tinput" value={startTime} onChange={e=>setStartTime(e.target.value)}/></div>
-            <div className="tg"><label>End Time</label><input type="time" className="tinput" value={endTime} onChange={e=>setEndTime(e.target.value)}/></div>
-            <div style={{display:"flex",alignItems:"flex-end",paddingBottom:4,color:"var(--muted2)",fontSize:"0.81rem"}}>Applied to each day of your trip</div>
-          </div>
-
-          <div className="sec-label">Spending Style (per person per day)</div>
-          <div className="bg">
-            {BUDGETS.map(b=>(
-              <div key={b.id} className={`bc ${budget===b.id?"sel":""}`} onClick={()=>setBudget(budget===b.id?null:b.id)}>
-                <div className="btr" style={{color:b.color}}>{b.tier}</div>
-                <div className="bl">{b.label}</div>
-                <div className="br" style={{color:b.color}}>{b.range}</div>
-                <div className="bd">{b.desc}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="brow"><button className="gobt" onClick={goToResults}>Find Places →</button></div>
-        </div>
-      )}
-
-      {/* STEP 3 */}
-      {step===4&&(
-        <div className="page">
-          <div className="sh">
-            <div className="sey">Step 4 of 5</div>
-            <h2 className="st">Best spots in <span>{city}</span></h2>
-            <p className="ss">Click a card to preview it. Hit Add to pin it. Drag pins between day tabs in the sidebar to move them.</p>
-          </div>
           <div className="rl">
             <div>
               <div className="map-wrap">
@@ -2027,7 +2022,7 @@ export default function App(){
                 </div>
                 <div className="map-hint">
                   {allAdded.length>0
-                    ?<>📍 {allAdded.length} location{allAdded.length!==1?"s":""} pinned — showing numbered markers on map</>
+                    ?<>📍 {allAdded.length} location{allAdded.length!==1?"s":""} pinned — showing on map</>
                     :<>Click any card to preview its location</>
                   }
                 </div>
@@ -2038,21 +2033,17 @@ export default function App(){
                   const focused=focusedId===p.id;
                   const img=p.photoRef?purl(p.photoRef):null;
                   const ip=getInstantPrice(p);
-                  // If AI itinerary costs are available, prefer those
                   const costEntry=costMap?.[p.id];
                   const displayPrice=costEntry!=null?costEntry:ip;
                   const pb=displayPrice.cost===0?"Free":`~$${displayPrice.cost}`;
                   const pbNote=displayPrice.note||null;
-                  // Budget match indicator
                   const bc=budget?{free:[0,1],mid:[1,2],upscale:[2,3],luxury:[3,4]}[budget]:null;
                   const plMatch=!bc||p.priceLevel==null||bc.includes(p.priceLevel);
                   return(
                     <div key={p.id} className={`plcard ${added?"added":""} ${focused&&!added?"focused":""}`} onClick={()=>focusPlace(p)}>
                       <div className="plimg">
                         {img?<img src={img} alt={p.name} onError={e=>{e.target.parentElement.innerHTML=p.emoji;}} loading="lazy"/>:<span>{p.emoji}</span>}
-                        {pb&&<div className="pbadge" style={{
-                          background:costMap?.[p.id]!=null?"rgba(27,94,138,0.85)":plMatch?"rgba(26,20,16,0.7)":"rgba(180,60,60,0.75)",
-                        }} title={plMatch?"":"May not match your budget"}>{pb}</div>}
+                        {pb&&<div className="pbadge" style={{background:costMap?.[p.id]!=null?"rgba(27,94,138,0.85)":plMatch?"rgba(26,20,16,0.7)":"rgba(180,60,60,0.75)"}} title={plMatch?"":"May not match your budget"}>{pb}</div>}
                         {added&&<div className="pin-badge">📍 Pinned</div>}
                       </div>
                       <div className="plbody">
@@ -2082,6 +2073,22 @@ export default function App(){
             <div className="sb">
               <div className="sbt">Your Itinerary</div>
               <div className="sbs">{allAdded.length} place{allAdded.length!==1?"s":""} across {numDays} day{numDays!==1?"s":""}</div>
+
+              {/* Transport selector in sidebar */}
+              <div className="sec-label" style={{marginTop:8,marginBottom:6}}>Getting Around</div>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:12}}>
+                {TRANSPORT.map(t=>(
+                  <div key={t.id}
+                    style={{padding:"4px 10px",borderRadius:20,border:"1.5px solid",fontSize:"0.75rem",cursor:"pointer",transition:"all 0.18s",
+                      borderColor:transport===t.id?"var(--ocean)":"var(--border2)",
+                      background:transport===t.id?"var(--ocean)":"white",
+                      color:transport===t.id?"white":"var(--muted)"}}
+                    onClick={()=>setTransport(t.id)}>
+                    {t.icon} {t.name}
+                  </div>
+                ))}
+              </div>
+
               {numDays>1&&(
                 <>
                   <div style={{fontSize:"0.72rem",color:"var(--muted2)",marginBottom:8}}>
@@ -2099,36 +2106,37 @@ export default function App(){
                   </div>
                 </>
               )}
-              <div className="day-drop-zone"
-                onDragOver={onDragOver}
-                onDrop={e=>onDropOnDay(e,activeSideDay)}>
-                {dayPlans[activeSideDay]?.length===0
-                  ?<div className="em">Add places to Day {activeSideDay+1}</div>
-                  :dayPlans[activeSideDay].map((p,i)=>(
-                    <div key={p.id} className="ii"
-                      draggable
-                      onDragStart={e=>onDragStart(e,i,activeSideDay)}
-                      onDragOver={e=>{e.preventDefault();e.stopPropagation();}}
+              <div className="day-drop-zone" onDragOver={onDragOver} onDrop={e=>onDropOnDay(e,activeSideDay)}>
+                {(dayPlans[activeSideDay]||[]).length===0
+                  ?<div className="em">No places yet — add some!</div>
+                  :(dayPlans[activeSideDay]||[]).map((p,i)=>(
+                    <div key={p.id} className={`ii`}
+                      draggable onDragStart={e=>onDragStart(e,i,activeSideDay)}
+                      onDragOver={onDragOver}
                       onDrop={e=>onDropReorder(e,i,activeSideDay)}
                       onDragEnd={onDragEnd}>
                       <div className="ii-l">
                         <span className="dh ii-dh">⠿</span>
-                        <div><div>{p.emoji} {p.name}</div><div className="iis">{p.type} · ~{p.duration} min</div></div>
+                        <div>
+                          <div>{p.name}</div>
+                          <div className="iis">{p.type} · ~{p.duration} min</div>
+                        </div>
                       </div>
                       <button className="rmbt" onClick={()=>removeFromDay(p.id,activeSideDay)}>✕</button>
                     </div>
                   ))
                 }
               </div>
-              {numDays>1&&<div style={{fontSize:"0.71rem",color:"var(--muted2)",textAlign:"center",marginTop:8}}>Tip: drop a card onto a Day tab above to move it between days</div>}
-              <button className="finbt" onClick={goToItinerary} disabled={allAdded.length===0}>✨ Generate Itinerary</button>
+              <button className="finbt" disabled={allAdded.length===0} onClick={goToItinerary}>
+                ✦ Generate Itinerary
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* STEP 4 */}
-      {step===5&&(
+            {/* STEP 4 — ITINERARY */}
+      {step===4&&(
         <div className="page">
           <div className="ih">
             <div>
@@ -2138,7 +2146,7 @@ export default function App(){
               {travelLoading&&<div style={{fontSize:"0.75rem",color:"var(--ocean3)",marginTop:6}}>⏱ Calculating real travel times via Google Maps…</div>}
             </div>
             <div className="iac">
-              <button className="obt" onClick={()=>goStep(3)}>← Edit Places</button>
+              <button className="obt" onClick={()=>setStep(3)}>← Edit Places</button>
               <button className="dbt" onClick={()=>{exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime);}}>⬇ Export PDF</button>
             </div>
           </div>
