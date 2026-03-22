@@ -560,50 +560,47 @@ function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,star
   // PAGE 1 — COVER
   // ═══════════════════════════════════════════
 
-  // Full bleed header
-  doc.setFillColor(...TERRA); doc.rect(0,0,W,56,"F");
+  // Compact header bar
+  doc.setFillColor(...TERRA); doc.rect(0,0,W,32,"F");
+  doc.setFillColor(175,68,22); doc.rect(W-10,0,10,32,"F");
 
-  // Subtle right-side accent block
-  doc.setFillColor(175,68,22); doc.rect(W-18,0,18,56,"F");
-
-  // Brand
-  doc.setFont("times","bold"); doc.setFontSize(22);
-  doc.setTextColor(...WHITE); doc.text("Mapistry",MAR,20);
-  doc.setFont("helvetica","normal"); doc.setFontSize(7.5);
-  doc.setTextColor(235,205,178); doc.text("YOUR PERSONAL TRAVEL PLANNER",MAR,27.5);
+  // Brand + city on one line
+  doc.setFont("times","bold"); doc.setFontSize(14);
+  doc.setTextColor(...WHITE); doc.text("Mapistry",MAR,13);
+  doc.setFont("helvetica","normal"); doc.setFontSize(6.5);
+  doc.setTextColor(235,205,178); doc.text("TRAVEL PLANNER",MAR,19.5);
 
   // Thin rule
-  doc.setDrawColor(235,185,140); doc.setLineWidth(0.4); doc.line(MAR,31,W-20,31);
+  doc.setDrawColor(235,185,140); doc.setLineWidth(0.3); doc.line(MAR,22,W-12,22);
 
-  // City
-  doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(215,180,148);
-  doc.text("ITINERARY FOR",MAR,38);
-  doc.setFont("times","bold"); doc.setFontSize(20); doc.setTextColor(...WHITE);
-  doc.text(city.toUpperCase(),MAR,50);
+  // City on same header
+  doc.setFont("helvetica","bold"); doc.setFontSize(6); doc.setTextColor(215,180,148);
+  doc.text("ITINERARY FOR",MAR,27);
+  doc.setFont("times","bold"); doc.setFontSize(13); doc.setTextColor(...WHITE);
+  doc.text(city.toUpperCase(),MAR+28,27);
 
-  // ── SUMMARY CARD ──
-  let y=66;
-  doc.setFillColor(...WHITE); doc.roundedRect(MAR,y,INNER,32,3,3,"F");
-  doc.setDrawColor(...DIVIDER); doc.setLineWidth(0.3); doc.roundedRect(MAR,y,INNER,32,3,3,"S");
-
-  // 3-col stats
+  // ── SUMMARY STRIP (single row, not a tall card) ──
+  let y=36;
   const cols=[
     {label:"STOPS",value:String(allPlaces.length)},
     {label:"TRANSPORT",value:tlabel},
     ...(blabel?[{label:"BUDGET",value:blabel}]:[]),
     ...(totalCost!=null?[{label:"EST. COST",value:totalCost===0?"Free":`$${totalCost}`}]:[]),
   ];
+  const stripH=16;
+  doc.setFillColor(...WHITE); doc.roundedRect(MAR,y,INNER,stripH,2,2,"F");
+  doc.setDrawColor(...DIVIDER); doc.setLineWidth(0.25); doc.roundedRect(MAR,y,INNER,stripH,2,2,"S");
   const colW=INNER/Math.min(cols.length,4);
   cols.slice(0,4).forEach((c,ci)=>{
     const cx=MAR+ci*colW+colW/2;
-    if(ci>0){doc.setDrawColor(...DIVIDER);doc.setLineWidth(0.25);doc.line(MAR+ci*colW,y+6,MAR+ci*colW,y+26);}
-    doc.setFont("helvetica","bold"); doc.setFontSize(6.5); doc.setTextColor(...MUTED2);
-    doc.text(c.label,cx,y+11,{align:"center"});
-    doc.setFont("times","bold"); doc.setFontSize(13); doc.setTextColor(...INK);
-    doc.text(c.value,cx,y+22,{align:"center"});
+    if(ci>0){doc.setDrawColor(...DIVIDER);doc.setLineWidth(0.2);doc.line(MAR+ci*colW,y+3,MAR+ci*colW,y+stripH-3);}
+    doc.setFont("helvetica","bold"); doc.setFontSize(5.5); doc.setTextColor(...MUTED2);
+    doc.text(c.label,cx,y+5.5,{align:"center"});
+    doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...INK);
+    doc.text(c.value,cx,y+12.5,{align:"center"});
   });
 
-  y+=40;
+  y+=22;
 
   // ── DAYS ──
   const[sh0,sm0]=startTime.split(":").map(Number);
@@ -615,19 +612,18 @@ function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,star
     if(y>H-40){doc.addPage();y=16;}
 
     if(dayPlans.length>1){
-      // Day pill
-      doc.setFillColor(...OCEAN); doc.roundedRect(MAR,y,INNER,10,2.5,2.5,"F");
-      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(...WHITE);
-      doc.text(`DAY ${di+1}`,MAR+5,y+7);
-      doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(185,215,240);
-      doc.text(`${day.length} stop${day.length!==1?"s":""}  ·  ${tlabel}`,MAR+22,y+7);
-      y+=15;
+      if(y>H-30){doc.addPage();y=14;}
+      doc.setFillColor(...OCEAN); doc.roundedRect(MAR,y,INNER,7,2,2,"F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...WHITE);
+      doc.text(`DAY ${di+1}`,MAR+4,y+5);
+      doc.setFont("helvetica","normal"); doc.setFontSize(6.5); doc.setTextColor(185,215,240);
+      doc.text(`${day.length} stop${day.length!==1?"s":""}  ·  ${tlabel}`,MAR+18,y+5);
+      y+=11;
     }else{
-      // Single-day thin rule label
-      doc.setFont("helvetica","bold"); doc.setFontSize(6.5); doc.setTextColor(...MUTED2);
-      doc.text("YOUR ITINERARY",MAR,y+4);
-      hRule(y+7);
-      y+=13;
+      doc.setFont("helvetica","bold"); doc.setFontSize(6); doc.setTextColor(...MUTED2);
+      doc.text("YOUR ITINERARY",MAR,y+3);
+      hRule(y+6);
+      y+=10;
     }
 
     let h=sh0, m=sm0;
