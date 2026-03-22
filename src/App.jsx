@@ -536,11 +536,14 @@ function useToast(){const[msg,setMsg]=useState("");const[vis,setVis]=useState(fa
 
 // Build an interactive Embed API URL showing all pinned places
 // Uses directions mode (origin -> destination + waypoints) for 2+ places, place mode for 1
-function buildStaticMapUrl(places, focusedPlace=null){
+function buildStaticMapUrl(places, transport="walking"){
   if(!GOOGLE_KEY||!places.length)return null;
   if(places.length===1){
     return `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${places[0].lat},${places[0].lng}&zoom=15`;
   }
+  // Map app transport ids to Google Maps Embed API modes
+  const modeMap={walking:"walking",transit:"transit",driving:"driving",cycling:"bicycling",rideshare:"driving"};
+  const mode=modeMap[transport]||"walking";
   // Directions mode: origin, destination, up to 8 waypoints in between
   const origin=`${places[0].lat},${places[0].lng}`;
   const dest=`${places[places.length-1].lat},${places[places.length-1].lng}`;
@@ -548,7 +551,7 @@ function buildStaticMapUrl(places, focusedPlace=null){
   const waypoints=middle.map(p=>`${p.lat},${p.lng}`).join("|");
   let url=`https://www.google.com/maps/embed/v1/directions?key=${GOOGLE_KEY}&origin=${origin}&destination=${dest}`;
   if(waypoints)url+=`&waypoints=${encodeURIComponent(waypoints)}`;
-  url+=`&mode=walking&zoom=13`;
+  url+=`&mode=${mode}&zoom=13`;
   return url;
 }
 
@@ -596,7 +599,7 @@ function buildCityEmbedUrl(tripHistory){
   return "data:text/html;charset=utf-8,"+encodeURIComponent(html);
 }
 
-// ─── AI (Google Gemini — free tier) ──────────────────────────
+// ─── AI (Google Gemini) ───────────────────────────────────────
 async function aiCall(prompt, maxTokens=1200){
   if(!GEMINI_KEY||GEMINI_KEY==="PASTE_YOUR_GEMINI_KEY_HERE")return null;
   try{
@@ -1143,7 +1146,7 @@ export default function App(){
 
   const[editTimeVal,setEditTimeVal]=useState("");
   const[editDurVal,setEditDurVal]=useState(60);
-  const[placeModal,setPlaceModal]=useState(null); // {place, aiDesc, loading}
+  const[placeModal,setPlaceModal]=useState(null);
   const[modalAiDesc,setModalAiDesc]=useState("");
   const[modalLoading,setModalLoading]=useState(false);
   const[cardDescMap,setCardDescMap]=useState({});
@@ -1183,16 +1186,16 @@ export default function App(){
     setActiveSideDay(d=>Math.min(d,numDays-1));
   },[numDays]);
 
-  // Rebuild interactive map URL whenever pinned places change
+  // Rebuild interactive map URL whenever pinned places or transport mode changes
   useEffect(()=>{
     const all=dayPlans.flat();
     if(all.length>0){
-      const url=buildStaticMapUrl(all);
+      const url=buildStaticMapUrl(all,transport);
       if(url)setStaticMapUrl(url);
     }else{
       setStaticMapUrl("");
     }
-  },[dayPlans]);
+  },[dayPlans,transport]);
 
   // City autocomplete
   useEffect(()=>{
@@ -1477,7 +1480,7 @@ export default function App(){
     setModalLoading(true);
     try{
       const prompt=`You are an expert travel writer. Write a rich, engaging 3–4 sentence description of "${place.name}" (${place.type}) in ${city}. Cover what makes it iconic or unique, the atmosphere and sensory experience, one specific insider tip or best time to visit, and any notable history or cultural significance. Be vivid and specific. Write in second person, present tense.`;
-      const txt=await aiCall(prompt, 350);
+      const txt=await aiCall(prompt,350);
       setModalAiDesc(txt||place.desc||"");
     }catch{setModalAiDesc(place.desc||"");}
     setModalLoading(false);

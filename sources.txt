@@ -1,1 +1,11 @@
-Anthropic. (2026, March 21). Claude [Generative AI chat].
+1. Claude (Anthropic) Anthropic. (2024). Intro to Claude. Anthropic Developer Documentation. https://docs.claude.com/en/docs/intro
+2. AI / Anthropic API Anthropic. (2024). Claude API documentation. Anthropic Platform. https://docs.anthropic.com/en/docs/about-claude/models
+3. Vercel Vercel. (2026). Vercel documentation. https://vercel.com/docs
+4. Google Google. (2026). Cloud APIs overview. Google Cloud Documentation. https://docs.cloud.google.com/apis/docs/overview
+5. API (General) (Depends on which specific API is being referenced — please clarify if needed.)
+6. SerpAPI SerpApi. (2026). Google Search Engine Results API. SerpApi Documentation. https://serpapi.com/search-api
+7. Google Maps Google. (2026). Google Maps Platform documentation. Google for Developers. https://developers.google.com/maps/documentation
+8. Google Cloud APIs Google. (2026). Google Cloud APIs. Google Cloud. https://cloud.google.com/apis
+9. OpenWeatherMap API OpenWeather. (2026). Weather API documentation. OpenWeatherMap. https://openweathermap.org/api
+10. Anthropic API Anthropic. (2024). Claude API platform. https://platform.claude.com/docs/en/home
+11. Gemini Google. (2026). Gemini API documentation. Google AI for Developers. https://ai.google.dev/gemini-api/docs
