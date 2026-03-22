@@ -1765,13 +1765,14 @@ export default function App(){
                     </div>
                     {/* Airport route label */}
                     {flightCost?.originCode&&flightCost?.destCode&&!flightOverride&&(
-                      <div style={{fontSize:"0.72rem",fontWeight:600,color:"var(--ocean)",marginBottom:4,display:"flex",alignItems:"center",gap:4}}>
-                        <span>{flightCost.originCode}</span>
-                        <span style={{color:"var(--muted2)"}}>→</span>
-                        <span>{flightCost.destCode}</span>
-                        <span style={{color:"var(--muted2)",fontWeight:400,fontSize:"0.65rem"}}>
-                          · {flightCost.originAirport&&flightCost.originAirport!==originCity?flightCost.originAirport:""}
-                        </span>
+                      <div style={{fontSize:"0.71rem",color:"var(--muted2)",marginBottom:6,lineHeight:1.5}}>
+                        <div style={{display:"flex",alignItems:"center",gap:5,fontWeight:600,color:"var(--ocean)",marginBottom:2}}>
+                          <span>{flightCost.originCode}</span>
+                          <span style={{color:"var(--muted2)",fontWeight:400}}>→</span>
+                          <span>{flightCost.destCode}</span>
+                        </div>
+                        {flightCost.originAirport&&<div style={{fontSize:"0.65rem"}}>{flightCost.originAirport}</div>}
+                        {flightCost.destAirport&&<div style={{fontSize:"0.65rem"}}>{flightCost.destAirport}</div>}
                       </div>
                     )}
                     <div className="cost-card-note">
@@ -1831,11 +1832,11 @@ export default function App(){
                         autoFocus onKeyDown={e=>e.key==="Enter"&&setEditingHotel(false)}/>
                       <button className="cost-card-editbtn" onClick={()=>setEditingHotel(false)}>Done</button></>
                     :<button className="cost-card-editbtn" onClick={()=>setEditingHotel(true)}>
-                        {hotelOverride!==""?"✎ Edit price":"+ Add price"}
+                        {hotelOverride!==""?"✎ Edit":"✎ Override"}
                       </button>
                   }
                   {hotelOverride!==""&&!editingHotel&&(
-                    <button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>setHotelOverride("")}>Clear</button>
+                    <button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>setHotelOverride("")}>Reset</button>
                   )}
                 </div>
               </div>
