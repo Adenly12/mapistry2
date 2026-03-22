@@ -444,10 +444,10 @@ function haversineMiles(lat1,lng1,lat2,lng2){
 // Transport cost per mile — multiply:true = scales with travelers
 const TRANSPORT_COSTS = {
   walking:  {perMile:0,    multiply:false, note:"Free"},
-  transit:  {perMile:0.15, multiply:true,  note:"Per person fare"},
-  driving:  {perMile:0.20, multiply:false, note:"Shared fuel cost"},
-  cycling:  {perMile:0.25, multiply:true,  note:"Per bike rental"},
-  rideshare:{perMile:1.50, multiply:false, note:"Per ride (shared car)"},
+  transit:  {perMile:0.30, multiply:true,  note:"Per person fare"},
+  driving:  {perMile:0.21, multiply:false, note:"IRS standard mileage rate"},
+  cycling:  {perMile:0.50, multiply:true,  note:"Bike share per mile"},
+  rideshare:{perMile:2.50, multiply:false, note:"Avg rideshare per mile"},
 };
 
 const TRANSPORT = [
@@ -2384,124 +2384,140 @@ export default function App(){
             const hot=hotelCost?.total||0;
             const actCosts=allAdded.map(p=>costMap?.[p.id]?.cost??getInstantPrice(p)?.cost??0);
             const actTotal=actCosts.reduce((s,v)=>s+v,0)*travelers;
-            const tCostObj=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
-            const milesSoFar=Object.values(travelMap||{}).reduce((s,t)=>s+(t?.distanceMiles||1),0)||numDays*4;
-            const transTotal=tCostObj.perMile*(tCostObj.multiply?travelers:1)*milesSoFar;
+            const tCostObj2=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
+            const milesTotal2=Object.values(travelMap||{}).reduce((s,t)=>s+(t?.distanceMiles||0),0)||
+              (()=>{const ap=allAdded;let m=0;for(let i=0;i<ap.length-1;i++){if(ap[i].lat&&ap[i+1].lat)m+=haversineMiles(ap[i].lat,ap[i].lng,ap[i+1].lat,ap[i+1].lng);else m+=1;}return m||numDays*2;})();
+            const transTotal=tCostObj2.perMile*(tCostObj2.multiply?travelers:1)*milesTotal2;
             const grandTotal=flt+hot+actTotal+transTotal;
             const remaining=Math.max(0,bNum-grandTotal);
             const over=bNum>0&&grandTotal>bNum;
-
             const totalTravelMin=Object.values(travelMap||{}).reduce((s,t)=>s+(t?.minutes||0),0);
+            const perPerson=travelers>1?Math.round(grandTotal/travelers):0;
+
+            // Day costs
+            const dayCosts=dayPlans.map(day=>day.reduce((s,p)=>s+(costMap?.[p.id]?.cost??getInstantPrice(p)?.cost??0),0)*travelers);
 
             // Donut
             const fp=bNum>0?Math.round(flt/bNum*100):0;
             const hp=bNum>0?Math.round(hot/bNum*100):0;
-            const ap=bNum>0?Math.round(actTotal/bNum*100):0;
-            const tp=bNum>0?Math.round(transTotal/bNum*100):0;
+            const ap2=bNum>0?Math.round(actTotal/bNum*100):0;
+            const tp2=bNum>0?Math.round(transTotal/bNum*100):0;
             const grad=bNum>0
-              ?`conic-gradient(#1b5e8a 0% ${fp}%, #4a9fd4 ${fp}% ${fp+hp}%, #4a7c59 ${fp+hp}% ${fp+hp+ap}%, #7c5cbf ${fp+hp+ap}% ${fp+hp+ap+tp}%, ${over?"#e07060":"#c8e6d4"} ${fp+hp+ap+tp}% 100%)`
+              ?`conic-gradient(#1b5e8a 0% ${fp}%, #4a9fd4 ${fp}% ${fp+hp}%, #4a7c59 ${fp+hp}% ${fp+hp+ap2}%, #7c5cbf ${fp+hp+ap2}% ${fp+hp+ap2+tp2}%, ${over?"#e07060":"#c8e6d4"} ${fp+hp+ap2+tp2}% 100%)`
               :`conic-gradient(var(--sand2) 0% 100%)`;
 
             return(
-              <div style={{display:"flex",gap:24,flexWrap:"wrap",marginBottom:24,padding:"20px 24px",background:"white",borderRadius:16,border:"1px solid var(--border)",boxShadow:"0 2px 12px rgba(26,20,16,0.06)"}}>
+              <div style={{marginBottom:28}}>
 
-                {/* Donut */}
-                <div style={{display:"flex",gap:20,alignItems:"center",flexShrink:0}}>
-                  <div style={{position:"relative",width:140,height:140}}>
-                    <div style={{width:140,height:140,borderRadius:"50%",background:grad,transition:"background 0.5s"}}/>
-                    <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:88,height:88,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(26,20,16,0.08)"}}>
-                      <div style={{fontSize:"0.5rem",letterSpacing:"1px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>{bNum>0?"Left":"Total"}</div>
-                      <div style={{fontSize:remaining>9999||grandTotal>9999?"0.9rem":"1.1rem",fontWeight:700,color:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1.1}}>
-                        ${bNum>0?remaining.toLocaleString():grandTotal.toLocaleString()}
-                      </div>
-                      {bNum>0&&<div style={{fontSize:"0.48rem",color:"var(--muted2)"}}>of ${bNum.toLocaleString()}</div>}
-                      {travelers>1&&<div style={{fontSize:"0.45rem",color:"var(--ocean)",fontWeight:600}}>{travelers} travelers</div>}
+                {/* ── HERO BANNER ── */}
+                <div style={{
+                  background:"linear-gradient(135deg, #0f3a56 0%, #1b5e8a 50%, #2474ad 100%)",
+                  borderRadius:20,padding:"28px 32px",marginBottom:16,color:"white",
+                  display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:16,
+                  position:"relative",overflow:"hidden",
+                }}>
+                  {/* Background decoration */}
+                  <div style={{position:"absolute",top:-40,right:-40,width:200,height:200,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
+                  <div style={{position:"absolute",bottom:-60,right:80,width:160,height:160,borderRadius:"50%",background:"rgba(255,255,255,0.03)"}}/>
+                  <div style={{position:"relative",zIndex:1}}>
+                    <div style={{fontSize:"0.65rem",letterSpacing:"2px",textTransform:"uppercase",color:"rgba(255,255,255,0.6)",marginBottom:6}}>✦ AI-Powered Itinerary</div>
+                    <div style={{fontFamily:"Cormorant Garamond,serif",fontSize:"2.2rem",fontWeight:700,lineHeight:1.1,marginBottom:4}}>
+                      {city}
                     </div>
-                  </div>
-                  <div style={{fontSize:"0.72rem",display:"flex",flexDirection:"column",gap:5}}>
-                    {[
-                      {label:"✈️ Flights",color:"#1b5e8a",val:flt},
-                      {label:"🏨 Hotel",color:"#4a9fd4",val:hot},
-                      {label:"🎭 Activities",color:"#4a7c59",val:actTotal},
-                      {label:"🚌 Transport",color:"#7c5cbf",val:transTotal},
-                    ].map(seg=>(
-                      <div key={seg.label} style={{display:"flex",alignItems:"center",gap:6}}>
-                        <div style={{width:8,height:8,borderRadius:"50%",background:seg.color,flexShrink:0}}/>
-                        <span style={{color:"var(--muted2)",minWidth:80}}>{seg.label}</span>
-                        <span style={{fontWeight:600,color:"var(--ink)"}}>{seg.val>0?`$${seg.val.toLocaleString()}`:"—"}</span>
-                      </div>
-                    ))}
-                    {over&&<div style={{fontSize:"0.68rem",color:"#c45c26",fontWeight:600,marginTop:4}}>⚠️ Over budget by ${(grandTotal-bNum).toLocaleString()}</div>}
-                  </div>
-                </div>
-
-                {/* Divider */}
-                <div style={{width:1,background:"var(--border)",alignSelf:"stretch",margin:"0 4px"}}/>
-
-                {/* Trip stats */}
-                <div style={{flex:1,display:"flex",flexDirection:"column",gap:12,justifyContent:"center",minWidth:180}}>
-                  <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>Trip Summary</div>
-                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                    {[
-                      {icon:"📍",label:"Stops",val:allAdded.length},
-                      {icon:"📅",label:"Days",val:numDays},
-                      {icon:"👥",label:"Travelers",val:travelers},
-                      {icon:"⏱",label:"In Transit",val:totalTravelMin>0?`${Math.floor(totalTravelMin/60)}h ${totalTravelMin%60}m`:"—"},
-                    ].map(stat=>(
-                      <div key={stat.label} style={{padding:"10px 14px",background:"var(--sand)",borderRadius:12,textAlign:"center",minWidth:72}}>
-                        <div style={{fontSize:"1.1rem",marginBottom:3}}>{stat.icon}</div>
-                        <div style={{fontSize:"0.95rem",fontWeight:700,color:"var(--ink)"}}>{stat.val}</div>
-                        <div style={{fontSize:"0.6rem",color:"var(--muted2)",marginTop:1}}>{stat.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Trip dates */}
-                  {departDate&&returnDate&&(
-                    <div style={{fontSize:"0.78rem",color:"var(--muted2)",display:"flex",alignItems:"center",gap:8}}>
-                      <span>📆</span>
-                      <span>{new Date(departDate+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})} — {new Date(returnDate+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</span>
-                    </div>
-                  )}
-                  {/* Transport mode */}
-                  <div style={{fontSize:"0.78rem",color:"var(--muted2)",display:"flex",alignItems:"center",gap:8}}>
-                    <span>{TRANSPORT.find(t=>t.id===transport)?.icon||"🚶"}</span>
-                    <span>Getting around by {TRANSPORT.find(t=>t.id===transport)?.name||"Walking"}</span>
-                  </div>
-                  {/* Cost per person vs total */}
-                  {grandTotal>0&&(
-                    <div style={{padding:"10px 14px",background:"rgba(27,94,138,0.06)",borderRadius:12,fontSize:"0.78rem"}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                        <span style={{color:"var(--muted2)"}}>Per person</span>
-                        <span style={{fontWeight:700,color:"var(--ocean)"}}>${Math.round(grandTotal/travelers).toLocaleString()}</span>
-                      </div>
-                      {travelers>1&&(
-                        <div style={{display:"flex",justifyContent:"space-between"}}>
-                          <span style={{color:"var(--muted2)"}}>Group total ({travelers})</span>
-                          <span style={{fontWeight:700,color:"var(--ocean)"}}>${grandTotal.toLocaleString()}</span>
-                        </div>
+                    <div style={{fontSize:"0.85rem",color:"rgba(255,255,255,0.75)",display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}}>
+                      {departDate&&returnDate&&(
+                        <span>📆 {new Date(departDate+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})} – {new Date(returnDate+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</span>
                       )}
+                      <span>📍 {allAdded.length} stops</span>
+                      <span>👥 {travelers} traveler{travelers!==1?"s":""}</span>
+                      <span>{TRANSPORT.find(t=>t.id===transport)?.icon} {TRANSPORT.find(t=>t.id===transport)?.name}</span>
                     </div>
-                  )}
+                    {aiUsed&&<div style={{marginTop:8,fontSize:"0.72rem",color:"rgba(255,255,255,0.5)",fontStyle:"italic"}}>Descriptions & costs researched by Claude AI</div>}
+                  </div>
+                  {/* Cost pill */}
+                  <div style={{position:"relative",zIndex:1,textAlign:"right"}}>
+                    <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"rgba(255,255,255,0.5)",marginBottom:4}}>
+                      {bNum>0?"Budget remaining":"Est. total"}
+                    </div>
+                    <div style={{fontFamily:"Cormorant Garamond,serif",fontSize:"2.8rem",fontWeight:700,lineHeight:1,color:over?"#ff8a70":"white"}}>
+                      ${bNum>0?remaining.toLocaleString():grandTotal.toLocaleString()}
+                    </div>
+                    {bNum>0&&<div style={{fontSize:"0.72rem",color:"rgba(255,255,255,0.5)"}}>of ${bNum.toLocaleString()} budget</div>}
+                    {travelers>1&&grandTotal>0&&<div style={{fontSize:"0.72rem",color:"rgba(255,255,255,0.6)",marginTop:2}}>${Math.round(grandTotal/travelers).toLocaleString()} per person</div>}
+                    {over&&<div style={{fontSize:"0.72rem",color:"#ff8a70",fontWeight:600,marginTop:4}}>⚠️ Over by ${(grandTotal-bNum).toLocaleString()}</div>}
+                  </div>
                 </div>
 
-                {/* Day cost breakdown */}
-                {numDays>1&&(
-                  <>
-                    <div style={{width:1,background:"var(--border)",alignSelf:"stretch",margin:"0 4px"}}/>
-                    <div style={{display:"flex",flexDirection:"column",gap:6,justifyContent:"center",minWidth:120}}>
-                      <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginBottom:2}}>By day</div>
-                      {dayPlans.map((day,di)=>{
-                        const dayTotal=day.reduce((s,p)=>s+(costMap?.[p.id]?.cost??getInstantPrice(p)?.cost??0),0)*travelers;
-                        return(
-                          <div key={di} style={{display:"flex",justifyContent:"space-between",gap:16,fontSize:"0.75rem"}}>
-                            <span style={{color:"var(--muted2)"}}>Day {di+1}</span>
-                            <span style={{fontWeight:600,color:"var(--ink)"}}>{dayTotal===0?"Free":`~$${dayTotal}`}</span>
-                          </div>
-                        );
-                      })}
+                {/* ── STATS + DONUT ROW ── */}
+                <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:16}}>
+
+                  {/* Donut */}
+                  <div style={{background:"white",borderRadius:16,border:"1px solid var(--border)",padding:"20px",display:"flex",gap:20,alignItems:"center",flex:"0 0 auto"}}>
+                    <div style={{position:"relative",width:150,height:150}}>
+                      <div style={{width:150,height:150,borderRadius:"50%",background:grad,transition:"background 0.5s"}}/>
+                      <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:94,height:94,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(0,0,0,0.08)"}}>
+                        <div style={{fontSize:"0.48rem",letterSpacing:"1px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>Total</div>
+                        <div style={{fontSize:"1.15rem",fontWeight:700,color:"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1}}>${grandTotal.toLocaleString()}</div>
+                        {travelers>1&&<div style={{fontSize:"0.45rem",color:"var(--muted2)"}}>{travelers} travelers</div>}
+                      </div>
                     </div>
-                  </>
-                )}
+                    <div style={{fontSize:"0.73rem",display:"flex",flexDirection:"column",gap:6}}>
+                      {[
+                        {label:"✈️ Flights",color:"#1b5e8a",val:flt},
+                        {label:"🏨 Hotel",color:"#4a9fd4",val:hot},
+                        {label:"🎭 Activities",color:"#4a7c59",val:actTotal},
+                        {label:"🚌 Transport",color:"#7c5cbf",val:transTotal},
+                      ].map(seg=>(
+                        <div key={seg.label} style={{display:"flex",alignItems:"center",gap:8,minWidth:160}}>
+                          <div style={{width:8,height:8,borderRadius:"50%",background:seg.color,flexShrink:0}}/>
+                          <span style={{color:"var(--muted2)",flex:1}}>{seg.label}</span>
+                          <span style={{fontWeight:700,color:"var(--ink)"}}>{seg.val>0?`$${seg.val.toLocaleString()}`:"—"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Stat cards */}
+                  <div style={{flex:1,display:"flex",flexDirection:"column",gap:10,minWidth:200}}>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                      {[
+                        {icon:"📍",label:"Total Stops",val:allAdded.length,sub:`across ${numDays} day${numDays!==1?"s":""}`},
+                        {icon:"⏱",label:"Travel Time",val:totalTravelMin>0?`${Math.floor(totalTravelMin/60)}h ${totalTravelMin%60}m`:"—",sub:"between stops"},
+                        {icon:"👥",label:"Travelers",val:travelers,sub:travelers>1?`$${Math.round(grandTotal/travelers).toLocaleString()} each`:"Solo trip"},
+                        {icon:"🗺",label:"Distance",val:milesTotal2>0?`${Math.round(milesTotal2)} mi`:"—",sub:"total route"},
+                      ].map(stat=>(
+                        <div key={stat.label} style={{background:"white",borderRadius:14,border:"1px solid var(--border)",padding:"14px 16px",display:"flex",gap:10,alignItems:"center"}}>
+                          <div style={{fontSize:"1.4rem"}}>{stat.icon}</div>
+                          <div>
+                            <div style={{fontSize:"1.05rem",fontWeight:700,color:"var(--ink)",lineHeight:1.1}}>{stat.val}</div>
+                            <div style={{fontSize:"0.62rem",color:"var(--muted2)",marginTop:2}}>{stat.label}</div>
+                            <div style={{fontSize:"0.58rem",color:"var(--muted2)",opacity:0.7}}>{stat.sub}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Day cost breakdown */}
+                    {numDays>1&&(
+                      <div style={{background:"white",borderRadius:14,border:"1px solid var(--border)",padding:"14px 16px"}}>
+                        <div style={{fontSize:"0.62rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600,marginBottom:10}}>Cost by Day</div>
+                        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                          {dayCosts.map((cost,di)=>(
+                            <div key={di} style={{flex:1,minWidth:60,textAlign:"center",padding:"8px 6px",borderRadius:10,background:"var(--sand)"}}>
+                              <div style={{fontSize:"0.6rem",color:"var(--muted2)",marginBottom:3}}>Day {di+1}</div>
+                              <div style={{fontSize:"0.85rem",fontWeight:700,color:"var(--ink)"}}>{cost===0?"Free":`$${cost}`}</div>
+                              {weather&&weather[di]&&(
+                                <div style={{fontSize:"0.8rem",marginTop:2}}>
+                                  {weather[di].main==="Rain"||weather[di].main==="Drizzle"?"🌧":weather[di].main==="Clear"?"☀️":weather[di].main==="Snow"?"❄️":"⛅"}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             );
           })()}
