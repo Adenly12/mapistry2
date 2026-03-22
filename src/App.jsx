@@ -612,7 +612,7 @@ async function aiCall(prompt, maxTokens=1200){
     const r=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
       headers:getAIHeaders(ANTHROPIC_KEY),
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
+      body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:maxTokens,messages:[{role:"user",content:prompt}]})
     });
     const d=await r.json();
     if(d.error){console.error("aiCall error",d.error);return null;}
@@ -2367,9 +2367,7 @@ export default function App(){
                           style={{cursor:"pointer",position:"relative",transition:"all 0.2s"}}
                           onClick={async e=>{
                             e.stopPropagation();
-                            // Toggle off if already expanded
                             if(cardDescMap[p.id]){setCardDescMap(m=>({...m,[p.id]:null}));return;}
-                            // Already loading
                             if(cardDescLoading[p.id])return;
                             setCardDescLoading(m=>({...m,[p.id]:true}));
                             const result=await fetchCardDesc(p,city);
