@@ -318,7 +318,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .pm-btns { display: flex; gap: 9px; margin-top: 18px; }
 .pm-btn { flex: 1; padding: 10px; background: var(--sand); border: 2px solid var(--border2); border-radius: 60px; font-size: 0.83rem; cursor: pointer; color: var(--muted); transition: all 0.2s; }
 .pm-btn:hover { color: var(--ink); border-color: var(--border2); }
-.pm-btn.danger:hover { color: var(--ocean); border-color: rgba(27,94,138,0.3); }
+.pm-btn.danger:hover { color: var(--ocean2); border-color: rgba(27,94,138,0.3); }
 .usetup { background: white; border-radius: var(--r); padding: 36px; width: 100%; max-width: 400px; box-shadow: var(--shl); border: 2px solid var(--border2); }
 .ust { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; font-weight: 600; margin-bottom: 5px; color: var(--ink); }
 .uss { color: var(--muted); font-size: 0.84rem; margin-bottom: 22px; line-height: 1.6; }
@@ -1571,32 +1571,29 @@ export default function App(){
             <div className="pm-sec">🧳 Your Trips</div>
             {hist.length===0
               ?<div className="pm-empty">No trips yet — go plan one! ✈️</div>
-              :{(()=>{
-                const MAP_COLORS=["#c45c26","#1b5e8a","#4a7c59","#c8820a","#7c5cbf","#e06b30"];
-                // dedupe cities in same order as the map markers
-                const seen=new Set();const cityOrder=[];
-                hist.forEach(h=>{if(!seen.has(h.city)&&h.lat&&h.lng&&!(h.lat===0&&h.lng===0)){seen.add(h.city);cityOrder.push(h.city);}});
-                return(
-                  <div className="pm-trips">
-                    {hist.map(h=>{
-                      const ci=cityOrder.indexOf(h.city);
-                      const dot=ci>=0?MAP_COLORS[ci%MAP_COLORS.length]:"var(--muted2)";
-                      return(
-                        <div key={h.id} className="pm-trip">
-                          <div style={{display:"flex",alignItems:"center",gap:10}}>
-                            <div style={{width:11,height:11,borderRadius:"50%",background:dot,flexShrink:0,boxShadow:`0 0 0 2px white, 0 0 0 3px ${dot}`}}/>
-                            <div>
-                              <div className="pm-trip-city">{h.city}</div>
-                              <div className="pm-trip-meta">{h.date}{h.days>1?` · ${h.days} days`:""} · {h.places?.slice(0,2).join(", ")}{h.stops>2?` +${h.stops-2} more`:""}</div>
-                            </div>
+              :<div className="pm-trips">
+                {(()=>{
+                  const MC=["#c45c26","#1b5e8a","#4a7c59","#c8820a","#7c5cbf","#e06b30"];
+                  const seen=new Set(); const order=[];
+                  hist.forEach(h=>{if(!seen.has(h.city)&&h.lat&&h.lng&&!(h.lat===0&&h.lng===0)){seen.add(h.city);order.push(h.city);}});
+                  return hist.map(h=>{
+                    const ci=order.indexOf(h.city);
+                    const dot=ci>=0?MC[ci%MC.length]:"#9b8c80";
+                    return(
+                      <div key={h.id} className="pm-trip">
+                        <div style={{display:"flex",alignItems:"center",gap:10}}>
+                          <div style={{width:10,height:10,borderRadius:"50%",background:dot,flexShrink:0,outline:`2px solid ${dot}`,outlineOffset:2}}/>
+                          <div>
+                            <div className="pm-trip-city">{h.city}</div>
+                            <div className="pm-trip-meta">{h.date}{h.days>1?` · ${h.days} days`:""} · {h.places?.slice(0,2).join(", ")}{h.stops>2?` +${h.stops-2} more`:""}</div>
                           </div>
-                          <div className="pm-trip-stops" style={{color:dot}}>📍 {h.stops}</div>
                         </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
+                        <div className="pm-trip-stops" style={{color:dot}}>📍 {h.stops}</div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
             }
             <div className="pm-btns">
               <button className="pm-btn" onClick={()=>{setShowProfile(false);setShowUserSetup(true);}}>Switch Profile</button>
