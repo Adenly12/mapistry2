@@ -460,20 +460,20 @@ async function fetchAIDescs(places,city,budget,prefs){
 async function fetchAICosts(places,city,budget){
   const list=places.map((p,i)=>`${i+1}. ${p.name} (${p.type})`).join("\n");
   const blabel=budget?BUDGETS.find(b=>b.id===budget)?.label:"mid-range";
-  const txt=await aiCall(`Research realistic per-person costs in USD for each of these specific places in ${city} for a ${blabel} traveler.
+  const txt=await aiCall(`You are a travel cost researcher. For each place below in ${city}, research and give a realistic per-person cost in USD for a ${blabel} traveler.
 
-Rules:
-- For museums and attractions: use the actual published admission price (e.g. MoMA = $30, Central Park = $0, Colosseum = €18)
-- For restaurants: estimate a typical full meal cost per person including a drink
-- For free parks: $0
+Be specific to the actual venue:
+- Museums/attractions: use real published admission prices (MoMA $30, British Museum free, Louvre €22, etc.)
+- Restaurants: typical meal + drink per person at that specific restaurant
+- Free parks/landmarks: cost = 0
+- Give a short note explaining what the cost covers
 - Do NOT give the same price to multiple places
-- Be specific and accurate to the actual location
 
 Places:
 ${list}
 
-Respond ONLY as JSON: [{"id":1,"cost":0,"note":"Free admission"},{"id":2,"cost":30,"note":"Museum ticket"}]
-No markdown.`, 600);
+Respond ONLY as JSON array with no markdown:
+[{"id":1,"cost":0,"note":"Free entry"},{"id":2,"cost":30,"note":"Adult admission"},{"id":3,"cost":25,"note":"Avg meal + drink"}]`, 700);
   if(!txt)return null;
   try{return JSON.parse(txt);}catch{return null;}
 }
@@ -503,46 +503,187 @@ function getCreated(name){return loadU()[name]?.created||"";}
 function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMap,startTime){
   const{jsPDF}=window.jspdf||{};
   if(!jsPDF){alert("jsPDF not loaded.");return;}
+
   const doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
   const W=doc.internal.pageSize.getWidth();
-  doc.setFillColor(196,92,38);doc.rect(0,0,W,36,"F");
-  doc.setFont("times","bold");doc.setFontSize(22);doc.setTextColor(250,246,240);doc.text("Mapistry",14,22);
-  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(230,210,190);doc.text("Your personal travel planner",14,30);
-  doc.setFont("times","bold");doc.setFontSize(18);doc.setTextColor(26,20,16);doc.text(`Your Trip to ${city}`,14,52);
+  const H=doc.internal.pageSize.getHeight();
   const blabel=budget?BUDGETS.find(b=>b.id===budget)?.label:null;
   const tlabel=TRANSPORT.find(t=>t.id===transport)?.name||"Walking";
-  if(blabel){doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(107,93,82);doc.text(`${blabel} · by ${tlabel}`,14,60);}
-  let y=68;
+
+  // ── COLOUR PALETTE ──
+  const TERRA=[196,92,38], TERRA_L=[247,240,230], SAND=[250,246,240];
+  const OCEAN=[27,94,138], SAGE=[74,124,89];
+  const INK=[26,20,16], MUTED=[107,93,82], LIGHT=[200,180,160];
+  const GOLD=[200,130,10], WHITE=[255,255,255];
+
+  // ── COVER HEADER ──
+  // Full-width warm gradient bar
+  doc.setFillColor(...TERRA); doc.rect(0,0,W,48,"F");
+  // Decorative side stripe
+  doc.setFillColor(160,60,20); doc.rect(W-8,0,8,48,"F");
+
+  // Logo
+  doc.setFont("times","bold"); doc.setFontSize(26);
+  doc.setTextColor(...WHITE); doc.text("Mapistry",12,22);
+  doc.setFont("helvetica","normal"); doc.setFontSize(8);
+  doc.setTextColor(230,200,175); doc.text("Your personal travel planner",12,30);
+
+  // Thin gold accent line
+  doc.setDrawColor(...GOLD); doc.setLineWidth(0.5); doc.line(12,34,W-20,34);
+
+  // City title
+  doc.setFont("times","bold"); doc.setFontSize(9);
+  doc.setTextColor(230,200,175); doc.text("ITINERARY FOR",12,42);
+  doc.setFontSize(13); doc.setTextColor(...WHITE);
+  doc.text(city.toUpperCase(), 42, 42);
+
+  // Meta pills row
+  let mx=12;
+  const pills=[blabel,`by ${tlabel}`,`${dayPlans.flat().length} stops`].filter(Boolean);
+  doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(200,170,140);
+  pills.forEach(pill=>{
+    const pw=doc.getTextWidth(pill)+6;
+    doc.setDrawColor(200,170,140); doc.setLineWidth(0.3);
+    doc.roundedRect(mx,35,pw,6,2,2,"S");
+    doc.text(pill,mx+3,39.2);
+    mx+=pw+4;
+  });
+
+  // ── COST SUMMARY BOX (if costs available) ──
+  const allPlaces=dayPlans.flat();
+  const hasCosts=costMap&&allPlaces.some(p=>costMap[p.id]!=null);
+  let y=58;
+
+  if(hasCosts){
+    const total=allPlaces.reduce((s,p)=>s+((costMap[p.id]?.cost)||0),0);
+    doc.setFillColor(...TERRA_L); doc.roundedRect(12,y,W-24,18,3,3,"F");
+    doc.setDrawColor(...LIGHT); doc.setLineWidth(0.3); doc.roundedRect(12,y,W-24,18,3,3,"S");
+    doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...MUTED);
+    doc.text("ESTIMATED TOTAL COST PER PERSON",16,y+5.5);
+    doc.setFont("times","bold"); doc.setFontSize(16); doc.setTextColor(...TERRA);
+    doc.text(total===0?"Free":`$${total}`,16,y+14);
+    // Mini cost breakdown on the right
+    let cx=W/2+5; let cy=y+5;
+    allPlaces.forEach((p,idx)=>{
+      const c=costMap[p.id];
+      if(!c||cx>W-14)return;
+      if(cy>y+15){cy=y+5;cx+=42;}
+      doc.setFont("helvetica","normal"); doc.setFontSize(6.5); doc.setTextColor(...MUTED);
+      const nameT=p.name.length>18?p.name.slice(0,16)+"…":p.name;
+      doc.text(`${nameT}  ${c.cost===0?"Free":"$"+c.cost}`,cx,cy);
+      cy+=4.5;
+    });
+    y+=24;
+  }
+
+  // ── DAY SECTIONS ──
   dayPlans.forEach((day,di)=>{
+    if(!day.length)return;
+
+    // Day header
     if(dayPlans.length>1){
-      if(y>260){doc.addPage();y=20;}
-      doc.setFillColor(247,240,230);doc.rect(14,y-4,W-28,10,"F");
-      doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(196,92,38);
-      doc.text(`Day ${di+1}`,16,y+3);y+=14;
+      if(y>H-30){doc.addPage();y=16;}
+      doc.setFillColor(...OCEAN); doc.roundedRect(12,y,W-24,9,2,2,"F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
+      doc.setTextColor(...WHITE); doc.text(`DAY ${di+1}  ·  ${day.length} STOP${day.length!==1?"S":""}`,16,y+6);
+      y+=14;
     }
-    const[sh,sm]=startTime.split(":").map(Number);let h=sh,m=sm;
+
+    const[sh,sm]=startTime.split(":").map(Number); let h=sh,m=sm;
+
     day.forEach((p,i)=>{
-      if(y>250){doc.addPage();y=20;}
-      const ts=ft(h,m),eH=h+Math.floor((m+p.duration)/60),eM=(m+p.duration)%60,te=ft(eH,eM);
-      doc.setFillColor(196,92,38);doc.roundedRect(14,y-4,36,8,4,4,"F");
-      doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(255,255,255);doc.text(`${ts}–${te}`,16,y+1.5);
-      const cost=costMap?.[p.id];
-      if(cost!=null){doc.setFillColor(200,130,10);doc.roundedRect(52,y-4,20,8,4,4,"F");doc.setTextColor(26,20,16);doc.text(`$${cost}`,54,y+1.5);}
-      y+=10;doc.setFont("times","bold");doc.setFontSize(13);doc.setTextColor(26,20,16);doc.text(p.name,14,y);y+=6;
-      doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(107,93,82);doc.text(`${p.type} · ★ ${p.rating} · ~${p.duration} min`,14,y);y+=6;
+      // Page break check — need ~28mm per stop minimum
+      if(y>H-32){doc.addPage();y=16;}
+
+      const ts=ft(h,m);
+      const eH=h+Math.floor((m+p.duration)/60),eM=(m+p.duration)%60,te=ft(eH,eM);
+
+      // ── STOP CARD ──
+      const cardH=hasCosts?26:24;
+      doc.setFillColor(...SAND); doc.roundedRect(12,y,W-24,cardH,2,2,"F");
+      doc.setDrawColor(...LIGHT); doc.setLineWidth(0.25); doc.roundedRect(12,y,W-24,cardH,2,2,"S");
+
+      // Left accent bar
+      doc.setFillColor(...TERRA); doc.roundedRect(12,y,3,cardH,1,1,"F");
+
+      // Stop number circle
+      doc.setFillColor(...TERRA_L); doc.circle(23,y+cardH/2,4,"F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(7);
+      doc.setTextColor(...TERRA); doc.text(String(i+1),i+1<10?21.5:20.5,y+cardH/2+2.5);
+
+      // Place name
+      doc.setFont("times","bold"); doc.setFontSize(11);
+      doc.setTextColor(...INK); doc.text(p.name,30,y+8);
+
+      // Type + rating + duration on same line
+      doc.setFont("helvetica","normal"); doc.setFontSize(7.5);
+      doc.setTextColor(...MUTED);
+      doc.text(`${p.type}  ·  ★ ${p.rating}  ·  ${p.duration} min`,30,y+13.5);
+
+      // Time pill
+      const timeStr=`${ts} – ${te}`;
+      const tpw=doc.getTextWidth(timeStr)+6;
+      doc.setFillColor(...OCEAN); doc.roundedRect(W-14-tpw,y+4,tpw,6,2,2,"F");
+      doc.setFont("helvetica","bold"); doc.setFontSize(6.5); doc.setTextColor(...WHITE);
+      doc.text(timeStr,W-11-tpw,y+8.2);
+
+      // Cost badge
+      const costEntry=costMap?.[p.id];
+      if(costEntry!=null){
+        const costStr=costEntry.cost===0?"FREE":`$${costEntry.cost}`;
+        const cpw=doc.getTextWidth(costStr)+6;
+        doc.setFillColor(...GOLD); doc.roundedRect(W-14-tpw-cpw-4,y+4,cpw,6,2,2,"F");
+        doc.setFont("helvetica","bold"); doc.setFontSize(6.5); doc.setTextColor(...INK);
+        doc.text(costStr,W-11-tpw-cpw-4,y+8.2);
+        // Cost note below if present
+        if(costEntry.note){
+          doc.setFont("helvetica","normal"); doc.setFontSize(6);
+          doc.setTextColor(...MUTED); doc.text(costEntry.note,30,y+18.5);
+        }
+      }
+
+      // Description
       const desc=descMap?.[p.id]||p.desc;
-      doc.setFontSize(9);doc.setTextColor(50,40,35);const lines=doc.splitTextToSize(desc,W-28);doc.text(lines,14,y);y+=lines.length*5+4;
+      if(desc){
+        const noteY=costEntry?.note?y+22:y+19;
+        if(noteY<y+cardH-1){
+          doc.setFont("helvetica","normal"); doc.setFontSize(7);
+          doc.setTextColor(...MUTED);
+          const descLines=doc.splitTextToSize(desc,W-40);
+          // only show first line to keep card compact
+          doc.text(descLines[0]||"",30,noteY);
+        }
+      }
+
+      y+=cardH+3;
+
+      // Travel gap
       if(i<day.length-1){
         const tv=travelMap?.[`${di}-${i}`]?.minutes||15;
-        doc.setFont("helvetica","italic");doc.setFontSize(8);doc.setTextColor(74,124,89);
-        doc.text(`  ~${tv} min ${tlabel.toLowerCase()} to next stop`,14,y);y+=7;
-        h=eH+Math.floor((eM+tv)/60);m=(eM+tv)%60;
+        doc.setFont("helvetica","italic"); doc.setFontSize(7);
+        doc.setTextColor(...SAGE);
+        doc.text(`  ↓  ~${tv} min ${tlabel.toLowerCase()}`,20,y+2);
+        y+=7;
+        // Advance clock
+        h=eH+Math.floor((eM+tv)/60); m=(eM+tv)%60;
       }
-      doc.setDrawColor(224,211,196);doc.line(14,y,W-14,y);y+=7;
     });
+
+    y+=4; // gap after day
   });
+
+  // ── FOOTER on every page ──
   const pg=doc.internal.getNumberOfPages();
-  for(let i=1;i<=pg;i++){doc.setPage(i);doc.setFont("helvetica","normal");doc.setFontSize(8);doc.setTextColor(107,93,82);doc.text(`Mapistry · Page ${i} of ${pg}`,W/2,290,{align:"center"});}
+  for(let i=1;i<=pg;i++){
+    doc.setPage(i);
+    doc.setFillColor(...TERRA_L); doc.rect(0,H-10,W,10,"F");
+    doc.setFont("helvetica","normal"); doc.setFontSize(7);
+    doc.setTextColor(...MUTED);
+    doc.text("Mapistry  ·  Your personal travel planner",12,H-4);
+    doc.text(`Page ${i} of ${pg}`,W-12,H-4,{align:"right"});
+    doc.text(new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"}),W/2,H-4,{align:"center"});
+  }
+
   doc.save(`mapistry-${city.replace(/\s+/g,"-").toLowerCase()}.pdf`);
 }
 
@@ -787,7 +928,7 @@ export default function App(){
         fetchAICosts(all,city,budget),
       ]);
       if(descRes){dm={};descRes.forEach(x=>{dm[x.id]=x.desc;});setAiUsed(true);}
-      if(costRes){cm={};costRes.forEach(x=>{cm[x.id]=x.cost;});}
+      if(costRes){cm={};costRes.forEach(x=>{cm[x.id]={cost:x.cost,note:x.note||""};});}
     }
     setDescMap(dm);setCostMap(cm);
     setLoading(false);setStep(4);setItinViewDay(0);
@@ -888,7 +1029,7 @@ export default function App(){
   const blabel=budget?BUDGETS.find(b=>b.id===budget)?.label:null;
   const tlabel=TRANSPORT.find(t=>t.id===transport)?.name||"Walking";
   const allAdded=dayPlans.flat();
-  const totalCost=costMap?allAdded.reduce((s,p)=>s+(costMap[p.id]??0),0):null;
+  const totalCost=costMap?allAdded.reduce((s,p)=>s+((costMap[p.id]?.cost)??0),0):null;
   const visiblePlaces=places.slice(0,visibleCount);
   const initials=activeUser?activeUser.slice(0,2).toUpperCase():"";
   const knownUsers=Object.keys(loadU());
@@ -1182,16 +1323,16 @@ export default function App(){
               <div className="cost-ttl">💰 Estimated Total Cost {numDays>1?`(${numDays} days)`:""}per person</div>
               <div className="cost-rows">
                 {allAdded.map(p=>{
-                  const c=costMap?.[p.id];const note=null;
+                  const c=costMap?.[p.id];
                   return c!=null?(
                     <div key={p.id} className="cost-row">
-                      <span className="cost-lbl">{p.name}</span>
-                      <span className="cost-val">{c===0?"Free":`~$${c}`}</span>
+                      <span className="cost-lbl">{p.name}{c.note?<span style={{fontSize:"0.75rem",color:"var(--muted2)",marginLeft:6}}>{c.note}</span>:null}</span>
+                      <span className="cost-val">{c.cost===0?"Free":`~$${c.cost}`}</span>
                     </div>
                   ):null;
                 })}
               </div>
-              <div className="cost-total"><span>Total estimate</span><span className="cost-total-val">{totalCost===0?"Free":`~$${totalCost}`}</span></div>
+              <div className="cost-total"><span>Total estimate</span><span className="cost-total-val">{totalCost===0?"Free":`~$${totalCost} per person`}</span></div>
             </div>
           )}
 
@@ -1234,7 +1375,7 @@ export default function App(){
                               <div className="tcmeta">
                                 <span>★ {place.rating}</span>
                                 <span>~{place.duration} min</span>
-                                {cost!=null&&<span className="cbadge">{cost===0?"Free":`~$${cost}`}</span>}
+                                {cost!=null&&<span className="cbadge">{cost.cost===0?"Free":`~$${cost.cost}`}{cost.note?<span style={{fontSize:"0.65rem",opacity:0.75,marginLeft:3}}>· {cost.note}</span>:null}</span>}
                                 <span className="edit-link" onClick={()=>openEdit(place)}>✏️ edit time</span>
                               </div>
                             </div>
