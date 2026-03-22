@@ -417,8 +417,7 @@ export default function App() {
       const allP=[...prefs,...cprefs];
       const q=allP.length>0?`${allP.join(" and ")} in ${c}`:`top attractions in ${c}`;
       // Use a CORS proxy so the request works from the browser
-      const url=`https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(q)}&key=${GOOGLE_KEY}`;
-      const res=await fetch(url);
+      const res=await fetch(`/api/places?query=${encodeURIComponent(q)}`);
       const data=await res.json();
       if(data.results?.length>0){
         return data.results.slice(0,9).map((p,i)=>({
