@@ -138,19 +138,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .hero-date-box input { border: none; font-family: 'DM Sans',sans-serif; font-size: 0.88rem; color: var(--ink); outline: none; background: transparent; width: 100%; }
 
 /* ── BUDGET BREAKDOWN ── */
-.bbd { background: white; border: 1.5px solid var(--border2); border-radius: var(--r); padding: 20px; margin-bottom: 24px; box-shadow: var(--sh); }
-.bbd-title { font-size: 0.75rem; font-weight: 700; color: var(--ink); margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
-.bbd-title span { font-size: 0.68rem; color: var(--muted2); font-weight: 400; }
-.bbd-bar { display: flex; height: 10px; border-radius: 10px; overflow: hidden; margin-bottom: 16px; gap: 2px; }
-.bbd-seg { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
-.bbd-rows { display: flex; flex-direction: column; gap: 8px; }
-.bbd-row { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; }
-.bbd-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.bbd-lbl { flex: 1; color: var(--muted); }
-.bbd-amt { font-weight: 700; color: var(--ink); }
-.bbd-pct { font-size: 0.7rem; color: var(--muted2); margin-left: 4px; }
-.bbd-warn { margin-top: 12px; padding: 10px 14px; background: rgba(196,92,38,0.08); border: 1px solid rgba(196,92,38,0.2); border-radius: var(--rs); font-size: 0.78rem; color: #c45c26; }
-.bbd-tip { margin-top: 10px; padding: 10px 14px; background: rgba(27,94,138,0.06); border: 1px solid rgba(27,94,138,0.15); border-radius: var(--rs); font-size: 0.78rem; color: var(--ocean); }
 .bbd-loading { display: flex; align-items: center; gap: 10px; padding: 16px 0; color: var(--muted2); font-size: 0.82rem; }
 .bbd-spinner { width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--ocean); border-radius: 50%; animation: spin 0.7s linear infinite; }
 .total-budget-input { width: 100%; padding: 14px 18px; border: 2px solid var(--border2); border-radius: var(--r); font-family: 'DM Sans',sans-serif; font-size: 1.1rem; font-weight: 600; background: white; color: var(--ink); outline: none; transition: all 0.2s; box-shadow: var(--sh); }
@@ -158,6 +145,28 @@ body { font-family: 'DM Sans', sans-serif; background: var(--warm); color: var(-
 .total-budget-wrap { position: relative; margin-bottom: 8px; }
 .total-budget-wrap::before { content: "$"; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 1.1rem; font-weight: 700; color: var(--ocean); pointer-events: none; }
 .total-budget-wrap input { padding-left: 30px; }
+/* Cost cards */
+.cost-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 28px; }
+.cost-card { background: white; border: 2px solid var(--border); border-radius: var(--r); padding: 18px; box-shadow: var(--sh); }
+.cost-card-icon { font-size: 1.5rem; margin-bottom: 8px; }
+.cost-card-label { font-size: 0.68rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted2); font-weight: 600; margin-bottom: 4px; }
+.cost-card-amount { font-family: 'Cormorant Garamond',serif; font-size: 1.8rem; font-weight: 700; color: var(--ocean); line-height: 1; margin-bottom: 4px; }
+.cost-card-note { font-size: 0.71rem; color: var(--muted2); margin-bottom: 10px; min-height: 16px; }
+.cost-card-edit { display: flex; align-items: center; gap: 6px; }
+.cost-card-override { flex: 1; border: 1.5px solid var(--border2); border-radius: var(--rs); padding: 7px 10px; font-family: 'DM Sans',sans-serif; font-size: 0.85rem; color: var(--ink); outline: none; background: var(--sand); transition: border-color 0.2s; }
+.cost-card-override:focus { border-color: var(--ocean); background: white; }
+.cost-card-editbtn { background: none; border: none; color: var(--ocean3); cursor: pointer; font-size: 0.75rem; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+.cost-card-editbtn:hover { color: var(--ocean); }
+/* Donut chart */
+.donut-wrap { display: flex; align-items: center; gap: 32px; background: white; border: 2px solid var(--border); border-radius: var(--r); padding: 24px; box-shadow: var(--sh); margin-bottom: 28px; }
+.donut-svg { flex-shrink: 0; }
+.donut-legend { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.donut-legend-item { display: flex; align-items: center; gap: 10px; font-size: 0.84rem; }
+.donut-legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.donut-legend-lbl { flex: 1; color: var(--muted); }
+.donut-legend-amt { font-weight: 700; color: var(--ink); }
+.donut-legend-pct { font-size: 0.7rem; color: var(--muted2); }
+.donut-over-warn { margin-top: 10px; padding: 10px 14px; background: rgba(196,92,38,0.08); border: 1px solid rgba(196,92,38,0.2); border-radius: var(--rs); font-size: 0.78rem; color: #c45c26; }
 
 /* ── STEP PAGES ── */
 .page { padding: 44px 5vw 72px; max-width: 1380px; margin: 0 auto; }
@@ -986,6 +995,12 @@ export default function App(){
   const[totalBudget,setTotalBudget]=useState("");
   const[budgetBreakdown,setBudgetBreakdown]=useState(null);
   const[budgetLoading,setBudgetLoading]=useState(false);
+  const[flightCost,setFlightCost]=useState(null);   // AI estimate
+  const[hotelCost,setHotelCost]=useState(null);     // AI estimate
+  const[flightOverride,setFlightOverride]=useState(""); // user override
+  const[hotelOverride,setHotelOverride]=useState(""); // user override
+  const[editingFlight,setEditingFlight]=useState(false);
+  const[editingHotel,setEditingHotel]=useState(false);
   const[prefs,setPrefs]=useState(new Set());
   const[cprefs,setCprefs]=useState([]);
   const[cpinput,setCpinput]=useState("");
@@ -1041,6 +1056,13 @@ export default function App(){
     const a=loadA();
     if(a&&loadU()[a]){setActiveUser(a);setHist(getHist(a));}
   },[]);
+
+  // Auto-fetch estimates when entering step 2
+  useEffect(()=>{
+    if(step===2&&city&&!flightCost&&!budgetLoading){
+      fetchTravelCostEstimates(city,originCity,numDays);
+    }
+  },[step]);
 
   // Sync dayPlans count when numDays changes
   useEffect(()=>{
@@ -1099,48 +1121,35 @@ export default function App(){
     }
   },[departDate,returnDate]);
 
-  // Budget breakdown via AI
-  async function fetchBudgetBreakdown(total,dest,origin,nights,transportMode){
-    if(!total||!dest||total<50)return;
-    setBudgetLoading(true);setBudgetBreakdown(null);
-    const transportCosts={walking:"$0 (no transport cost)",transit:"~$5-15/day local transit",
-      driving:"~$30-60/day car rental + fuel",cycling:"~$10-20/day bike rental",rideshare:"~$20-40/day rideshares"};
-    const prompt=`You are a travel budget expert. Give a realistic budget breakdown for this trip:
-- Destination: ${dest}
-- Origin: ${origin||"unknown"}
-- Duration: ${nights} night${nights!==1?"s":""}
-- Total budget: $${total} USD per person
-- Transport mode at destination: ${transportCosts[transportMode]||"walking"}
+  // Fetch flight + hotel estimates from AI
+  async function fetchTravelCostEstimates(dest, origin, nights){
+    if(!dest)return;
+    setBudgetLoading(true);
+    const prompt=`You are a travel cost expert. Estimate these two costs:
 
-Break down the $${total} budget into these categories with realistic estimates:
-1. Flights (round trip from ${origin||"origin"} to ${dest}) — research typical economy prices
-2. Accommodation (${nights} nights, budget-appropriate for ${dest})  
-3. Food & Dining (${nights} days)
-4. Activities & Attractions (${nights} days)
-5. Local Transport (${nights} days, ${transportMode})
-6. Misc (souvenirs, tips, emergencies)
+1. FLIGHT: Round-trip economy flight from "${origin||"unknown city"}" to "${dest}".
+   - If origin is unknown, estimate $0
+   - Give a realistic average economy price in USD
+   - Consider typical airline prices, not best-case deals
 
-If total budget seems too low for the trip, say so with a suggested minimum.
+2. HOTEL: Average nightly hotel cost in "${dest}" for a mid-range traveler (3-star equivalent).
+   - Per night cost in USD
+   - For ${nights} night${nights!==1?"s":""}
 
 Respond ONLY as JSON, no markdown:
-{"flight":NUMBER,"hotel":NUMBER,"food":NUMBER,"activities":NUMBER,"transport":NUMBER,"misc":NUMBER,"warning":"optional warning string or empty string","currency":"USD","tip":"one helpful money-saving tip for ${dest}"}`;
-    const txt=await aiCall(prompt,500);
+{"flight_roundtrip":NUMBER,"hotel_per_night":NUMBER,"flight_note":"e.g. Economy round-trip, avg price","hotel_note":"e.g. 3-star hotel per night"}`;
+    const txt = await aiCall(prompt, 300);
     if(txt){
       try{
-        const match=txt.match(/\{[\s\S]*\}/);
-        const parsed=JSON.parse(match?match[0]:txt);
-        setBudgetBreakdown(parsed);
-      }catch(e){console.log("budget parse error",e);}
+        const match = txt.match(/\{[\s\S]*?\}/);
+        const parsed = JSON.parse(match ? match[0] : txt);
+        if(typeof parsed.flight_roundtrip === "number") setFlightCost({cost:parsed.flight_roundtrip, note:parsed.flight_note||""});
+        if(typeof parsed.hotel_per_night === "number") setHotelCost({cost:parsed.hotel_per_night, note:parsed.hotel_note||""});
+      }catch(e){console.log("cost parse error",e);}
     }
     setBudgetLoading(false);
   }
 
-  // Refetch breakdown when transport changes on step 2
-  useEffect(()=>{
-    if(step===2&&totalBudget&&city&&budgetBreakdown){
-      fetchBudgetBreakdown(Number(totalBudget),city,originCity,numDays,transport);
-    }
-  },[transport]);
 
   // ── ACCOUNTS ──────────────────────────────────────────────
   function createUser(){
@@ -1567,109 +1576,149 @@ Respond ONLY as JSON, no markdown:
         </div>
       )}
 
-      {/* STEP 2 — BUDGET & TRANSPORT */}
-      {step===2&&(
-        <div className="page">
-          <div className="sh">
-            <div className="sey">Step 2 of 5</div>
-            <h2 className="st">Plan your <span>budget</span></h2>
-            <p className="ss">Set your total trip budget and choose how you'll get around. We'll show you what's realistic.</p>
-          </div>
+      {/* STEP 2 — BUDGET */}
+      {step===2&&(()=>{
+        // Effective costs: override takes priority over AI estimate
+        const effFlight=flightOverride!==""?Number(flightOverride):(flightCost?.cost??0);
+        const effHotel=(hotelOverride!==""?Number(hotelOverride):(hotelCost?.cost??0))*numDays;
+        const budgetNum=Number(totalBudget)||0;
+        const remaining=Math.max(0,budgetNum-effFlight-effHotel);
+        const totalSpend=effFlight+effHotel;
+        const over=budgetNum>0&&totalSpend>budgetNum;
 
-          <div className="sec-label">Total Trip Budget (per person)</div>
-          <div className="total-budget-wrap">
-            <input className="total-budget-input" type="number" min={0} placeholder="e.g. 2000"
-              value={totalBudget}
-              onChange={e=>{
-                setTotalBudget(e.target.value);
-                setBudgetBreakdown(null);
-              }}
-              onBlur={e=>{
-                if(e.target.value&&Number(e.target.value)>0){
-                  fetchBudgetBreakdown(Number(e.target.value),city,originCity,numDays,transport);
-                }
-              }}
-              onKeyDown={e=>{
-                if(e.key==="Enter"&&totalBudget&&Number(totalBudget)>0){
-                  fetchBudgetBreakdown(Number(totalBudget),city,originCity,numDays,transport);
-                }
-              }}
-            />
-          </div>
-          <div style={{fontSize:"0.75rem",color:"var(--muted2)",marginBottom:20}}>
-            {departDate&&returnDate?`${numDays} night${numDays!==1?"s":""} · ${new Date(departDate).toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${new Date(returnDate).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`:"Enter your travel dates on the previous screen for more accurate estimates"}
-          </div>
+        // Donut chart helper
+        function donutChart(segments,size=160){
+          const r=58,cx=size/2,cy=size/2,stroke=22;
+          const circ=2*Math.PI*r;
+          let offset=0;
+          const total=segments.reduce((s,sg)=>s+sg.value,0)||1;
+          return(
+            <svg width={size} height={size} className="donut-svg" viewBox={`0 0 ${size} ${size}`}>
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--sand2)" strokeWidth={stroke}/>
+              {segments.filter(sg=>sg.value>0).map((sg,i)=>{
+                const pct=sg.value/total;
+                const dash=pct*circ;
+                const el=(
+                  <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+                    stroke={sg.color} strokeWidth={stroke}
+                    strokeDasharray={`${dash} ${circ-dash}`}
+                    strokeDashoffset={circ/4 - offset}
+                    style={{transition:"stroke-dasharray 0.6s ease"}}
+                  />
+                );
+                offset+=dash;
+                return el;
+              })}
+              {budgetNum>0&&(
+                <>
+                  <text x={cx} y={cy-8} textAnchor="middle" style={{fontSize:"0.6rem",fill:"var(--muted2)",fontFamily:"DM Sans,sans-serif",fontWeight:600,letterSpacing:1}}>REMAINING</text>
+                  <text x={cx} y={cy+10} textAnchor="middle" style={{fontSize:remaining>9999?"1rem":"1.3rem",fill:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",fontWeight:700}}>${remaining.toLocaleString()}</text>
+                  <text x={cx} y={cy+24} textAnchor="middle" style={{fontSize:"0.58rem",fill:"var(--muted2)",fontFamily:"DM Sans,sans-serif"}}>of ${budgetNum.toLocaleString()}</text>
+                </>
+              )}
+            </svg>
+          );
+        }
 
-          {/* Budget breakdown */}
-          {budgetLoading&&(
-            <div className="bbd">
-              <div className="bbd-loading">
-                <div className="bbd-spinner"/>
-                ✦ AI is estimating your trip costs…
+        const segments=[
+          {label:"✈️ Flights",color:"#1b5e8a",value:effFlight},
+          {label:"🏨 Hotel",color:"#4a9fd4",value:effHotel},
+          {label:"💰 Remaining",color:over?"#e07060":"#e8f4ec",value:remaining},
+        ];
+
+        return(
+          <div className="page">
+            <div className="sh">
+              <div className="sey">Step 2 of 5</div>
+              <h2 className="st">Plan your <span>budget</span></h2>
+              <p className="ss">Set your total budget — we'll estimate your travel and accommodation costs so you know what's left for activities.</p>
+            </div>
+
+            <div className="sec-label">Your Total Trip Budget (per person)</div>
+            <div className="total-budget-wrap" style={{marginBottom:6}}>
+              <input className="total-budget-input" type="number" min={0} placeholder="e.g. 2000"
+                value={totalBudget} onChange={e=>setTotalBudget(e.target.value)}/>
+            </div>
+            <div style={{fontSize:"0.75rem",color:"var(--muted2)",marginBottom:24}}>
+              {departDate&&returnDate
+                ?`${numDays} night${numDays!==1?"s":""} · ${new Date(departDate).toLocaleDateString("en-US",{month:"short",day:"numeric"})} → ${new Date(returnDate).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`
+                :"Add travel dates on the previous screen for accurate hotel estimates"}
+            </div>
+
+            {/* Cost estimate cards */}
+            <div className="cost-cards">
+              {/* Flight card */}
+              <div className="cost-card">
+                <div className="cost-card-icon">✈️</div>
+                <div className="cost-card-label">Round-Trip Flight</div>
+                {budgetLoading&&!flightCost
+                  ?<div className="bbd-loading" style={{padding:"8px 0"}}><div className="bbd-spinner"/>Estimating…</div>
+                  :<>
+                    <div className="cost-card-amount">${flightOverride!==""?Number(flightOverride).toLocaleString():(flightCost?.cost??0).toLocaleString()}</div>
+                    <div className="cost-card-note">{flightOverride!==""?"Your estimate":(flightCost?.note||(!originCity?"No origin city set":"AI estimate"))}</div>
+                    <div className="cost-card-edit">
+                      {editingFlight
+                        ?<><input className="cost-card-override" type="number" min={0} placeholder="Enter your price"
+                            value={flightOverride} onChange={e=>setFlightOverride(e.target.value)}
+                            autoFocus onKeyDown={e=>e.key==="Enter"&&setEditingFlight(false)}/>
+                          <button className="cost-card-editbtn" onClick={()=>setEditingFlight(false)}>Done</button></>
+                        :<button className="cost-card-editbtn" onClick={()=>setEditingFlight(true)}>
+                            {flightOverride!==""?"✎ Edit":"✎ Override"}
+                          </button>
+                      }
+                      {flightOverride!==""&&!editingFlight&&<button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>setFlightOverride("")}>Reset</button>}
+                    </div>
+                  </>
+                }
+              </div>
+              {/* Hotel card */}
+              <div className="cost-card">
+                <div className="cost-card-icon">🏨</div>
+                <div className="cost-card-label">Hotel ({numDays} night{numDays!==1?"s":""})</div>
+                {budgetLoading&&!hotelCost
+                  ?<div className="bbd-loading" style={{padding:"8px 0"}}><div className="bbd-spinner"/>Estimating…</div>
+                  :<>
+                    <div className="cost-card-amount">${hotelOverride!==""?(Number(hotelOverride)*numDays).toLocaleString():((hotelCost?.cost??0)*numDays).toLocaleString()}</div>
+                    <div className="cost-card-note">{hotelOverride!==""?`$${hotelOverride}/night · your estimate`:(hotelCost?.note||(!departDate?"Set dates for estimate":"AI estimate"))}</div>
+                    <div className="cost-card-edit">
+                      {editingHotel
+                        ?<><input className="cost-card-override" type="number" min={0} placeholder="Per night price"
+                            value={hotelOverride} onChange={e=>setHotelOverride(e.target.value)}
+                            autoFocus onKeyDown={e=>e.key==="Enter"&&setEditingHotel(false)}/>
+                          <button className="cost-card-editbtn" onClick={()=>setEditingHotel(false)}>Done</button></>
+                        :<button className="cost-card-editbtn" onClick={()=>setEditingHotel(true)}>
+                            {hotelOverride!==""?"✎ Edit":"✎ Override"}
+                          </button>
+                      }
+                      {hotelOverride!==""&&!editingHotel&&<button className="cost-card-editbtn" style={{color:"var(--muted2)"}} onClick={()=>setHotelOverride("")}>Reset</button>}
+                    </div>
+                  </>
+                }
               </div>
             </div>
-          )}
-          {budgetBreakdown&&!budgetLoading&&(()=>{
-            const bd=budgetBreakdown;
-            const items=[
-              {key:"flight",label:"✈️ Flights",color:"#1b5e8a"},
-              {key:"hotel",label:"🏨 Hotel",color:"#2474ad"},
-              {key:"food",label:"🍽️ Food & Dining",color:"#4a7c59"},
-              {key:"activities",label:"🎭 Activities",color:"#c8820a"},
-              {key:"transport",label:"🚌 Local Transport",color:"#7c5cbf"},
-              {key:"misc",label:"🎒 Misc",color:"#9b8c80"},
-            ];
-            const total=items.reduce((s,it)=>s+(bd[it.key]||0),0);
-            const budget_total=Number(totalBudget);
-            const over=total>budget_total;
-            return(
-              <div className="bbd">
-                <div className="bbd-title">
-                  💰 Estimated Cost Breakdown
-                  <span>{over?"⚠️ Over budget":"✓ Within budget"}</span>
-                </div>
-                <div className="bbd-bar">
-                  {items.map(it=>(
-                    <div key={it.key} className="bbd-seg" style={{
-                      width:`${Math.round(((bd[it.key]||0)/Math.max(total,1))*100)}%`,
-                      background:it.color,minWidth:bd[it.key]>0?4:0
-                    }}/>
-                  ))}
-                </div>
-                <div className="bbd-rows">
-                  {items.map(it=>(
-                    <div key={it.key} className="bbd-row">
-                      <div className="bbd-dot" style={{background:it.color}}/>
-                      <div className="bbd-lbl">{it.label}</div>
-                      <div className="bbd-amt">${bd[it.key]||0}</div>
-                      <div className="bbd-pct">{Math.round(((bd[it.key]||0)/Math.max(total,1))*100)}%</div>
+
+            {/* Donut chart */}
+            {budgetNum>0&&(
+              <div className="donut-wrap">
+                {donutChart(segments)}
+                <div className="donut-legend">
+                  {segments.map(sg=>(
+                    <div key={sg.label} className="donut-legend-item">
+                      <div className="donut-legend-dot" style={{background:sg.color}}/>
+                      <div className="donut-legend-lbl">{sg.label}</div>
+                      <div className="donut-legend-amt">${sg.value.toLocaleString()}</div>
+                      <div className="donut-legend-pct">{Math.round(sg.value/Math.max(budgetNum,1)*100)}%</div>
                     </div>
                   ))}
-                  <div className="bbd-row" style={{borderTop:"1.5px solid var(--border2)",paddingTop:8,marginTop:4}}>
-                    <div className="bbd-dot" style={{background:"transparent"}}/>
-                    <div className="bbd-lbl" style={{fontWeight:700,color:"var(--ink)"}}>Total Estimate</div>
-                    <div className="bbd-amt" style={{color:over?"#c45c26":"var(--ocean)"}}>${total}</div>
-                    <div className="bbd-pct" style={{color:over?"#c45c26":"var(--sage)"}}>of ${budget_total}</div>
-                  </div>
+                  {over&&<div className="donut-over-warn">⚠️ Flights + hotel exceed your budget by ${(totalSpend-budgetNum).toLocaleString()}</div>}
                 </div>
-                {bd.warning&&<div className="bbd-warn">⚠️ {bd.warning}</div>}
-                {bd.tip&&<div className="bbd-tip">💡 {bd.tip}</div>}
               </div>
-            );
-          })()}
+            )}
 
-          <div className="sec-label" style={{marginTop:8}}>Getting Around — affects your budget</div>
-          <div className="transport-grid">
-            {TRANSPORT.map(t=>(
-              <div key={t.id} className={`tc ${transport===t.id?"sel":""}`} onClick={()=>{setTransport(t.id);if(totalBudget&&Number(totalBudget)>0)fetchBudgetBreakdown(Number(totalBudget),city,originCity,numDays,t.id);}}>
-                <div className="tc-icon">{t.icon}</div><div className="tc-name">{t.name}</div>
-              </div>
-            ))}
+            <div className="brow"><button className="gobt" onClick={()=>setStep(3)}>Set Preferences →</button></div>
           </div>
-
-          <div className="brow"><button className="gobt" onClick={()=>setStep(3)}>Set Preferences →</button></div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* STEP 3 — PREFERENCES */}
       {step===3&&(
@@ -1679,6 +1728,16 @@ Respond ONLY as JSON, no markdown:
             <h2 className="st">Customize your trip to <span>{city}</span></h2>
             <p className="ss">Tell us what you love, how long you're staying, and when you start each day.</p>
           </div>
+          <div className="sec-label">Getting Around</div>
+          <div className="transport-grid" style={{marginBottom:24}}>
+            {TRANSPORT.map(t=>(
+              <div key={t.id} className={`tc ${transport===t.id?"sel":""}`} onClick={()=>setTransport(t.id)}>
+                <div className="tc-icon">{t.icon}</div><div className="tc-name">{t.name}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="sec-label">Your Interests</div>
           <div className="pg">
             {PREFS.map(p=>(
               <div key={p.val} className={`pc ${prefs.has(p.val)?"sel":""}`} onClick={()=>setPrefs(prev=>{const n=new Set(prev);n.has(p.val)?n.delete(p.val):n.add(p.val);return n;})}>
