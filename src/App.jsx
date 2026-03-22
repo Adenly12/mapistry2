@@ -432,6 +432,15 @@ const BUDGETS = [
   {id:"upscale",tier:"$$$",label:"Upscale",range:"$75–$150/person",desc:"Nicer restaurants, private tours & premium venues.",color:"#7c5cbf"},
   {id:"luxury",tier:"$$$$",label:"Luxury",range:"$150+/person",desc:"Fine dining, exclusive experiences & VIP access.",color:"#1b5e8a"},
 ];
+// Straight-line distance between two lat/lng points in miles
+function haversineMiles(lat1,lng1,lat2,lng2){
+  const R=3958.8; // Earth radius in miles
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
 // Transport cost per mile — multiply:true = scales with travelers
 const TRANSPORT_COSTS = {
   walking:  {perMile:0,    multiply:false, note:"Free"},
@@ -1277,11 +1286,10 @@ export default function App(){
 
   // Fetch weather when entering step 3
   useEffect(()=>{
-    if(step===3&&city){
-      setWeather(null);
+    if(step===3&&city&&!weatherLoading){
       fetchWeather(city, numDays);
     }
-  },[step,city]);
+  },[step]);
 
   // ── ACCOUNTS ──────────────────────────────────────────────
   function createUser(){
@@ -1827,8 +1835,18 @@ export default function App(){
 
         // Transport — only transit and cycling multiply by travelers
         const tCost=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
-        // Use actual distances from travelMap if available, else estimate 1 mile/segment, 4 segments/day
-        const totalMiles=Object.values(travelMap||{}).reduce((s,t)=>s+(t?.distanceMiles||1),0)||numDays*4;
+        const hasMiles2=Object.values(travelMap||{}).some(t=>t?.distanceMiles);
+        const totalMiles=hasMiles2
+          ?Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0)
+          :(()=>{
+            const allPl=dayPlans.flat();
+            let mi=0;
+            for(let i=0;i<allPl.length-1;i++){
+              if(allPl[i].lat&&allPl[i+1].lat) mi+=haversineMiles(allPl[i].lat,allPl[i].lng,allPl[i+1].lat,allPl[i+1].lng);
+              else mi+=1;
+            }
+            return mi||numDays*4;
+          })();
         const effTransport=tCost.perMile*(tCost.multiply?travelers:1)*totalMiles;
 
         const totalSpendWithAll=effFlightTotal+effHotel+effActivities+effTransport;
@@ -2058,18 +2076,24 @@ export default function App(){
           </div>
 
           {/* ── WEATHER STRIP ── */}
-          {(weather||weatherLoading)&&(
-            <div style={{display:"flex",gap:8,marginBottom:14,padding:"10px 14px",background:"rgba(255,255,255,0.7)",borderRadius:12,border:"1px solid var(--border)",overflowX:"auto",alignItems:"center"}}>
-              {weatherLoading&&<div style={{fontSize:"0.78rem",color:"var(--muted2)"}}>Loading weather…</div>}
+          {step===3&&(
+            <div style={{display:"flex",gap:8,marginBottom:14,padding:"10px 14px",background:"rgba(255,255,255,0.7)",borderRadius:12,border:"1px solid var(--border)",overflowX:"auto",alignItems:"center",minHeight:64}}>
+              {weatherLoading&&(
+                <div style={{display:"flex",alignItems:"center",gap:8,color:"var(--muted2)",fontSize:"0.78rem"}}>
+                  <div className="bbd-spinner"/>Loading weather for {city}…
+                </div>
+              )}
+              {!weatherLoading&&!weather&&(
+                <div style={{fontSize:"0.75rem",color:"var(--muted2)"}}>🌤 Weather unavailable for {city}</div>
+              )}
               {weather&&weather.slice(0,numDays).map((day,i)=>{
                 const icon=day.main==="Rain"||day.main==="Drizzle"?"🌧":day.main==="Snow"?"❄️":day.main==="Thunderstorm"?"⛈":day.main==="Clear"?"☀️":day.main==="Clouds"?"⛅":"🌤";
-                const dateStr=new Date(day.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
                 return(
-                  <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:64,padding:"4px 8px",borderRadius:8,background:i===0?"rgba(27,94,138,0.06)":"transparent"}}>
+                  <div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,minWidth:68,padding:"6px 10px",borderRadius:8,background:i===0?"rgba(27,94,138,0.06)":"transparent",flexShrink:0}}>
                     <div style={{fontSize:"0.62rem",color:"var(--muted2)",fontWeight:600,letterSpacing:"0.5px"}}>Day {i+1}</div>
-                    <div style={{fontSize:"1.3rem",lineHeight:1}}>{icon}</div>
-                    <div style={{fontSize:"0.82rem",fontWeight:700,color:"var(--ink)"}}>{day.temp}°F</div>
-                    <div style={{fontSize:"0.6rem",color:"var(--muted2)",textAlign:"center",lineHeight:1.2}}>{day.description}</div>
+                    <div style={{fontSize:"1.4rem",lineHeight:1.1}}>{icon}</div>
+                    <div style={{fontSize:"0.85rem",fontWeight:700,color:"var(--ink)"}}>{day.temp}°F</div>
+                    <div style={{fontSize:"0.6rem",color:"var(--muted2)",textAlign:"center",lineHeight:1.3,maxWidth:64}}>{day.description}</div>
                   </div>
                 );
               })}
@@ -2207,7 +2231,19 @@ export default function App(){
                   try{const ip=getInstantPrice(p);return s+(ip?.cost||0);}catch{return s;}
                 },0)*(travelers||1);
                 const tCostObj=TRANSPORT_COSTS[transport]||{perMile:0,multiply:false};
-                const milesTotal=Object.values(travelMap||{}).reduce((s,t)=>s+(t?.distanceMiles||1),0)||numDays*4;
+                // Use real travelMap distances if available, else sum straight-line between pinned places
+                const hasMiles=Object.values(travelMap||{}).some(t=>t?.distanceMiles);
+                const milesTotal=hasMiles
+                  ?Object.values(travelMap).reduce((s,t)=>s+(t?.distanceMiles||0),0)
+                  :(()=>{
+                    const all=dayPlans.flat();
+                    let miles=0;
+                    for(let i=0;i<all.length-1;i++){
+                      if(all[i].lat&&all[i+1].lat) miles+=haversineMiles(all[i].lat,all[i].lng,all[i+1].lat,all[i+1].lng);
+                      else miles+=1; // 1 mile fallback per segment
+                    }
+                    return miles||numDays*4;
+                  })();
                 const trans=tCostObj.perMile*(tCostObj.multiply?(travelers||1):1)*milesTotal;
                 const spent=flt+hot+act+trans;
                 const rem=Math.max(0,bNum-spent);
@@ -2219,17 +2255,20 @@ export default function App(){
                 const grad=`conic-gradient(#1b5e8a 0% ${fp}%, #4a9fd4 ${fp}% ${fp+hp}%, #4a7c59 ${fp+hp}% ${fp+hp+ap}%, #7c5cbf ${fp+hp+ap}% ${fp+hp+ap+tp}%, ${over?"#e07060":"#c8e6d4"} ${fp+hp+ap+tp}% 100%)`;
                 return(
                   <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10,padding:"12px 0",borderBottom:"1px solid var(--border)",marginBottom:10}}>
-                    <div style={{position:"relative",width:130,height:130,flexShrink:0}}>
-                      <div style={{width:130,height:130,borderRadius:"50%",background:grad,transition:"background 0.4s ease"}}/>
-                      <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:80,height:80,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-                        <div style={{fontSize:"0.7rem",color:over?"#c45c26":"var(--ocean)",fontWeight:700}}>${rem.toLocaleString()}</div>
-                        <div style={{fontSize:"0.58rem",color:"var(--muted2)"}}>left</div>
+                    <div style={{position:"relative",width:180,height:180,flexShrink:0}}>
+                      <div style={{width:180,height:180,borderRadius:"50%",background:grad,transition:"background 0.4s ease"}}/>
+                      <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:112,height:112,borderRadius:"50%",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(26,20,16,0.08)"}}>
+                        <div style={{fontSize:"0.6rem",letterSpacing:"1px",textTransform:"uppercase",color:"var(--muted2)",fontWeight:600}}>Left</div>
+                        <div style={{fontSize:rem>9999?"1rem":"1.25rem",fontWeight:700,color:over?"#c45c26":"var(--ocean)",fontFamily:"Cormorant Garamond,serif",lineHeight:1.1}}>${rem.toLocaleString()}</div>
+                        <div style={{fontSize:"0.58rem",color:"var(--muted2)"}}>of ${bNum.toLocaleString()}</div>
                       </div>
                     </div>
-                    <div style={{width:"100%",fontSize:"0.72rem",display:"flex",flexDirection:"column",gap:4}}>
+                    <div style={{width:"100%",fontSize:"0.76rem",display:"flex",flexDirection:"column",gap:5}}>
                       {[
-                        {label:"Activities",color:"#4a7c59",val:act},
-                        {label:"Transport",color:"#7c5cbf",val:trans},
+                        {label:"✈️ Flights",color:"#1b5e8a",val:flt},
+                        {label:"🏨 Hotel",color:"#4a9fd4",val:hot},
+                        {label:"🎭 Activities",color:"#4a7c59",val:act},
+                        {label:"🚌 Transport",color:"#7c5cbf",val:trans},
                       ].map(seg=>(
                         <div key={seg.label} style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
                           <span style={{color:"var(--muted2)",display:"flex",alignItems:"center",gap:4}}>
