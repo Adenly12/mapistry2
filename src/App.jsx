@@ -541,10 +541,8 @@ function buildStaticMapUrl(places, transport="walking"){
   if(places.length===1){
     return `https://www.google.com/maps/embed/v1/place?key=${GOOGLE_KEY}&q=${places[0].lat},${places[0].lng}&zoom=15`;
   }
-  // Map app transport ids to Google Maps Embed API modes
   const modeMap={walking:"walking",transit:"transit",driving:"driving",cycling:"bicycling",rideshare:"driving"};
   const mode=modeMap[transport]||"walking";
-  // Directions mode: origin, destination, up to 8 waypoints in between
   const origin=`${places[0].lat},${places[0].lng}`;
   const dest=`${places[places.length-1].lat},${places[places.length-1].lng}`;
   const middle=places.slice(1,-1);
@@ -604,7 +602,7 @@ async function aiCall(prompt, maxTokens=1200){
   if(!GEMINI_KEY||GEMINI_KEY==="PASTE_YOUR_GEMINI_KEY_HERE")return null;
   try{
     const r=await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
       {
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -1186,7 +1184,7 @@ export default function App(){
     setActiveSideDay(d=>Math.min(d,numDays-1));
   },[numDays]);
 
-  // Rebuild interactive map URL whenever pinned places or transport mode changes
+  // Rebuild interactive map URL whenever pinned places change
   useEffect(()=>{
     const all=dayPlans.flat();
     if(all.length>0){
