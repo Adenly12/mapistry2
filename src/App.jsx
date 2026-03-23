@@ -1361,7 +1361,7 @@ export default function App(){
     setHist(nh);saveHist(activeUser,nh);
   }
 
-  function addCpref(){const v=cpinput.trim();if(!v)return;if(cprefs.includes(v)){toast.show("Already added!");return;}setCprefs(c=>[...c,v]);setCpinput("");}
+  function addCpref(){const v=cpinput.trim();if(!v)return;if(cprefs.includes(v)){toast.show("Already added!");return;}const next=[...cprefs,v];setCprefs(next);setCpinput("");if(city){setLmsg(`Refreshing places in ${city}…`);setLsub("");setLoading(true);doFetch(city,null,{prefs:[...prefs],cprefs:next}).then(({places:pp,nextToken:nt})=>{nextToken.current=nt;setAllPlaces(pp);setPlaces(pp);setVisibleCount(8);setLoading(false);});}}
 
   // ── FETCH PLACES ──────────────────────────────────────────
   // Budget → search keywords and price_level filter range
@@ -1372,10 +1372,13 @@ export default function App(){
     luxury:{keywords:["luxury","exclusive","fine dining","premium"],priceLevels:[3,4],searchHint:"luxury exclusive"},
   };
 
-  async function doFetch(c,token=null){
+  async function doFetch(c,token=null,overrides={}){
     try{
-      const allP=[...prefs,...cprefs];
-      const bc=budget?BUDGET_CONFIG[budget]:null;
+      const activePrefs=overrides.prefs!==undefined?overrides.prefs:[...prefs];
+      const activeCprefs=overrides.cprefs!==undefined?overrides.cprefs:cprefs;
+      const activeBudget=overrides.budget!==undefined?overrides.budget:budget;
+      const allP=[...activePrefs,...activeCprefs];
+      const bc=activeBudget?BUDGET_CONFIG[activeBudget]:null;
       // Build a richer query that reflects budget + interests
       let q;
       if(token){
@@ -2148,9 +2151,9 @@ export default function App(){
                     style={{cursor:"pointer",padding:"12px 8px",borderRadius:12,border:`2px solid ${budget===b.id?b.color:"var(--border)"}`,
                       background:budget===b.id?b.color+"1a":"white",transition:"all 0.18s",textAlign:"center"}}
                     onClick={()=>{
-                      setBudget(budget===b.id?null:b.id);
-                      clearTimeout(filterDebounce.current);
-                      filterDebounce.current=setTimeout(()=>refreshPlaces(),600);
+                      const nb=budget===b.id?null:b.id;
+                      setBudget(nb);
+                      if(city){clearTimeout(filterDebounce.current);filterDebounce.current=setTimeout(()=>{setLmsg(`Refreshing places in ${city}…`);setLsub("");setLoading(true);doFetch(city,null,{budget:nb}).then(({places:pp,nextToken:nt})=>{nextToken.current=nt;setAllPlaces(pp);setPlaces(pp);setVisibleCount(8);setLoading(false);});},600);}
                     }}>
                     <div style={{fontSize:"1.1rem",marginBottom:4,fontWeight:700,color:budget===b.id?b.color:"var(--muted)"}}>{b.tier}</div>
                     <div style={{fontSize:"0.7rem",fontWeight:700,color:budget===b.id?b.color:"var(--ink)",lineHeight:1.3}}>{b.label}</div>
@@ -2172,9 +2175,7 @@ export default function App(){
                     className={`chip ${prefs.has(p.val)?"sel":""}`}
                     style={{cursor:"pointer",background:prefs.has(p.val)?"var(--ocean)":"rgba(255,255,255,0.85)",color:prefs.has(p.val)?"white":"var(--ink2)",borderColor:prefs.has(p.val)?"var(--ocean)":"var(--border2)",transition:"all 0.18s"}}
                     onClick={()=>{
-                      setPrefs(prev=>{const n=new Set(prev);n.has(p.val)?n.delete(p.val):n.add(p.val);return n;});
-                      clearTimeout(filterDebounce.current);
-                      filterDebounce.current=setTimeout(()=>refreshPlaces(),600);
+                      setPrefs(prev=>{const n=new Set(prev);n.has(p.val)?n.delete(p.val):n.add(p.val);if(city){clearTimeout(filterDebounce.current);filterDebounce.current=setTimeout(()=>{setLmsg(`Refreshing places in ${city}…`);setLsub("");setLoading(true);doFetch(city,null,{prefs:[...n],cprefs}).then(({places:pp,nextToken:nt})=>{nextToken.current=nt;setAllPlaces(pp);setPlaces(pp);setVisibleCount(8);setLoading(false);});},600);}return n;});
                     }}>
                     {p.icon} {p.name}
                   </div>
