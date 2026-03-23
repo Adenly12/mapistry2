@@ -1480,8 +1480,8 @@ export default function App(){
     setModalAiDesc("");
     setModalLoading(true);
     try{
-      const prompt=`You are an expert travel writer. Write a rich, engaging 3–4 sentence description of "${place.name}" (${place.type}) in ${city}. Cover what makes it iconic or unique, the atmosphere and sensory experience, one specific insider tip or best time to visit, and any notable history or cultural significance. Be vivid and specific. Write in second person, present tense.`;
-      const txt=await aiCall(prompt,350);
+      const prompt=`You are an expert travel writer. Write a rich, immersive 3-paragraph description of "${place.name}" (${place.type}) in ${city}. First paragraph: what makes it iconic or unique, its history and cultural significance. Second paragraph: the atmosphere, sensory experience, and what visitors actually feel when they're there. Third paragraph: practical insider tips — best time to visit, what to do, what to avoid, and any hidden gems nearby. Be vivid, specific, and avoid generic tourist-brochure language. Write in second person, present tense.`;
+      const txt=await aiCall(prompt,800);
       setModalAiDesc(txt||place.desc||"No description available.");
     }catch(e){console.error("openPlaceModal error",e);setModalAiDesc(place.desc||"No description available.");}
     setModalLoading(false);
