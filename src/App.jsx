@@ -602,7 +602,7 @@ async function aiCall(prompt, maxTokens=1200){
   if(!GEMINI_KEY||GEMINI_KEY==="PASTE_YOUR_GEMINI_KEY_HERE")return null;
   try{
     const r=await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
       {
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -1482,8 +1482,8 @@ export default function App(){
     try{
       const prompt=`You are an expert travel writer. Write a rich, engaging 3–4 sentence description of "${place.name}" (${place.type}) in ${city}. Cover what makes it iconic or unique, the atmosphere and sensory experience, one specific insider tip or best time to visit, and any notable history or cultural significance. Be vivid and specific. Write in second person, present tense.`;
       const txt=await aiCall(prompt,350);
-      setModalAiDesc(txt||place.desc||"");
-    }catch{setModalAiDesc(place.desc||"");}
+      setModalAiDesc(txt||place.desc||"No description available.");
+    }catch(e){console.error("openPlaceModal error",e);setModalAiDesc(place.desc||"No description available.");}
     setModalLoading(false);
   }
 
