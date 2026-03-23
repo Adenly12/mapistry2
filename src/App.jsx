@@ -752,7 +752,7 @@ async function exportPDF(city,dayPlans,budget,transport,descMap,costMap,travelMa
   // AI badge
   doc.setFillColor(255,255,255,0.1);
   doc.setFont("helvetica","bold");doc.setFontSize(6);doc.setTextColor(160,210,240);
-  doc.text("✦ AI-POWERED ITINERARY  ·  BUILT WITH CLAUDE  ·  ANTHROPIC",MAR,10);
+  doc.text("✦ AI-POWERED ITINERARY  ·  BUILT WITH GEMINI  ·  GOOGLE",MAR,10);
 
   // City name — large serif
   doc.setFont("times","bold");doc.setFontSize(26);doc.setTextColor(...WHITE);
@@ -2124,7 +2124,7 @@ export default function App(){
               <div style={{display:"flex",gap:8,alignItems:"center",padding:"8px 14px",background:"linear-gradient(135deg,#0f3a56,#1b5e8a)",borderRadius:12,color:"white",flexShrink:0}}>
                 <span style={{fontSize:"1.1rem"}}>✦</span>
                 <div>
-                  <div style={{fontSize:"0.7rem",fontWeight:700,letterSpacing:"0.5px"}}>Powered by Claude AI</div>
+                  <div style={{fontSize:"0.7rem",fontWeight:700,letterSpacing:"0.5px"}}>Powered by Gemini AI</div>
                   <div style={{fontSize:"0.58rem",color:"rgba(255,255,255,0.65)"}}>Descriptions, costs & recommendations</div>
                 </div>
               </div>
@@ -2187,7 +2187,7 @@ export default function App(){
                   <span style={{fontSize:"0.9rem"}}>✦</span>
                   <div>
                     <div style={{fontSize:"0.75rem",fontWeight:700,color:"var(--ocean)"}}>Describe your own interests</div>
-                    <div style={{fontSize:"0.62rem",color:"var(--muted2)"}}>Claude will find places that match — be as specific as you want</div>
+                    <div style={{fontSize:"0.62rem",color:"var(--muted2)"}}>Gemini will find places that match — be as specific as you want</div>
                   </div>
                 </div>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
@@ -2466,7 +2466,7 @@ export default function App(){
               {/* AI description */}
               <div style={{marginBottom:16,minHeight:60}}>
                 <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
-                  <span style={{fontSize:"0.65rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--ocean)",fontWeight:600}}>✦ Claude AI</span>
+                  <span style={{fontSize:"0.65rem",letterSpacing:"1.5px",textTransform:"uppercase",color:"var(--ocean)",fontWeight:600}}>✦ Gemini AI</span>
                 </div>
                 {modalLoading
                   ?<div style={{display:"flex",gap:8,alignItems:"center",color:"var(--muted2)",fontSize:"0.82rem"}}><div className="bbd-spinner"/>Writing description…</div>
@@ -2503,7 +2503,7 @@ export default function App(){
               <div className="iml">{allAdded.length} stops · {travelers} traveler{travelers!==1?"s":""}{originCity?` · from ${originCity}`:""}</div>
               <div style={{display:"flex",gap:8,marginTop:6,flexWrap:"wrap"}}>
                 {aiUsed&&<div className="aib">✦ AI descriptions & researched costs</div>}
-                <div style={{fontSize:"0.72rem",padding:"3px 10px",borderRadius:20,background:"linear-gradient(135deg,rgba(27,94,138,0.1),rgba(74,159,212,0.1))",color:"var(--ocean)",fontWeight:600,border:"1px solid rgba(27,94,138,0.2)"}}>Built with Claude · Anthropic</div>
+                <div style={{fontSize:"0.72rem",padding:"3px 10px",borderRadius:20,background:"linear-gradient(135deg,rgba(27,94,138,0.1),rgba(74,159,212,0.1))",color:"var(--ocean)",fontWeight:600,border:"1px solid rgba(27,94,138,0.2)"}}>Built with Gemini · Google</div>
               </div>
               {travelLoading&&<div style={{fontSize:"0.75rem",color:"var(--ocean3)",marginTop:6}}>⏱ Calculating travel times…</div>}
             </div>
@@ -2580,7 +2580,7 @@ export default function App(){
                       <span>👥 {travelers} traveler{travelers!==1?"s":""}</span>
                       <span>{TRANSPORT.find(t=>t.id===transport)?.icon} {TRANSPORT.find(t=>t.id===transport)?.name}</span>
                     </div>
-                    {aiUsed&&<div style={{marginTop:8,fontSize:"0.72rem",color:"rgba(255,255,255,0.5)",fontStyle:"italic"}}>Descriptions & costs researched by Claude AI</div>}
+                    {aiUsed&&<div style={{marginTop:8,fontSize:"0.72rem",color:"rgba(255,255,255,0.5)",fontStyle:"italic"}}>Descriptions & costs researched by Gemini AI</div>}
                   </div>
                   {/* Cost pill */}
                   <div style={{position:"relative",zIndex:1,textAlign:"right"}}>
